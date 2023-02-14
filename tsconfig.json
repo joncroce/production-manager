@@ -29,6 +29,6 @@
     "**/*.mjs"
   ],
   "exclude": [
-    "node_modules, .storybook"
+    "node_modules"
   ]
 }

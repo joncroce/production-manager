@@ -18,16 +18,14 @@
     "project": "./tsconfig.json"
   },
   "ignorePatterns": [
-    "*.cjs",
-    ".storybook/*"
+    "*.cjs"
   ],
   "plugins": [
     "@typescript-eslint"
   ],
   "extends": [
     "next/core-web-vitals",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:storybook/recommended"
+    "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
     "@typescript-eslint/consistent-type-imports": "warn"
