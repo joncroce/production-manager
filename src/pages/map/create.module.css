@@ -30,6 +30,25 @@
 		font-weight: 700;
 	}
 
+	&_controls {
+		display: flex;
+		justify-content: space-evenly;
+		gap: 1em;
+
+		&_label {
+			display: flex;
+			gap: 0.25em;
+			font-weight: 700;
+			font-size: 1.2rem;
+		}
+
+		&_input {
+			text-align: center;
+			font-family: monospace;
+			font-size: inherit;
+		}
+	}
+
 	&_layerContainer {
 		position: relative;
 	}

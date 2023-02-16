@@ -1,6 +1,7 @@
 import styles from './create.module.css';
 import type { NextPage } from 'next';
 import Head from 'next/head';
+import type { ChangeEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 type Coordinates = {
@@ -9,7 +10,6 @@ type Coordinates = {
 };
 
 const CreateMapPage: NextPage = () => {
-
 	return (
 		<>
 			<Head>
@@ -26,80 +26,89 @@ const CreateMapPage: NextPage = () => {
 export default CreateMapPage;
 
 const Canvas: React.FC = () => {
-	const width = 500;
-	const height = 500;
+	const [width, setWidth] = useState<number>(500);
+	const [height, setHeight] = useState<number>(500);
+
+	const [gridSpacing, setGridSpacing] = useState<number>(10);
+
+	const [mousePos, setMousePos] = useState<Coordinates>({ x: 0, y: 0 });
+	const [nearestSnapPos, setNearestSnapPos] = useState<Coordinates>({ x: 0, y: 0 });
 
 	const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const gridCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+	const mapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+	const mapCtxRef = useRef<CanvasRenderingContext2D | null>(null);
 
 	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const overlayCtxRef = useRef<CanvasRenderingContext2D | null>(null);
 
 	useEffect(() => {
 		const gridCanvas = gridCanvasRef.current;
-
-		if (gridCanvas) {
-			gridCanvas.width = width;
-			gridCanvas.height = height;
-			gridCanvas.style.width = `${width}px`;
-			gridCanvas.style.height = `${height}px`;
-			const gridCtx = gridCanvas.getContext('2d');
-
-			if (gridCtx) {
-				gridCtx.lineCap = 'square';
-				gridCtx.lineWidth = 10;
-				drawGrid(gridCtx, 100);
-				gridCtxRef.current = gridCtx;
-			}
-
-			gridCanvas.addEventListener('mousemove', handleMouseMove);
-		}
-
+		const mapCanvas = mapCanvasRef.current;
 		const overlayCanvas = overlayCanvasRef.current;
 
-		if (overlayCanvas) {
-			overlayCanvas.width = width;
-			overlayCanvas.height = height;
-			overlayCanvas.style.width = `${width}px`;
-			overlayCanvas.style.height = `${height}px`;
-			const overlayCtx = overlayCanvas.getContext('2d');
+		if (gridCanvas && mapCanvas && overlayCanvas) {
+			[gridCanvas, mapCanvas, overlayCanvas].forEach((canvas) => {
+				canvas.width = width;
+				canvas.height = height;
+				canvas.style.width = `${width}px`;
+				canvas.style.height = `${height}px`;
+			});
 
-			if (overlayCtx) {
-				overlayCtx.fillStyle = 'black';
-				overlayCtxRef.current = overlayCtx;
+			const [gridCanvasCtx, mapCanvasCtx, overlayCanvasCtx] = [gridCanvas, mapCanvas, overlayCanvas].map(canvas => canvas.getContext('2d'));
+
+			if (gridCanvasCtx && mapCanvasCtx && overlayCanvasCtx) {
+				[gridCanvasCtx, mapCanvasCtx, overlayCanvasCtx].forEach(ctx => {
+					ctx.lineCap = 'square';
+					ctx.lineWidth = 10;
+					ctx.fillStyle = 'black';
+				});
+
+				gridCtxRef.current = gridCanvasCtx;
+				mapCtxRef.current = mapCanvasCtx;
+				overlayCtxRef.current = overlayCanvasCtx;
 			}
+
+			mapCanvas.addEventListener('mousemove', handleMouseMove);
 		}
 
 		return () => {
-			if (gridCanvas) {
-				gridCanvas.removeEventListener('mousemove', handleMouseMove);
+			if (mapCanvas) {
+				mapCanvas.removeEventListener('mousemove', handleMouseMove);
 			}
 		};
-	}, []);
-
-	const [mousePos, setMousePos] = useState<Coordinates>({ x: 0, y: 0 });
-	const [nearestSnapPos, setNearestSnapPos] = useState<Coordinates>({ x: 0, y: 0 });
+	}, [width, height]);
 
 	useEffect(() => {
-		const snapIntervalX = 10;
-		const snapIntervalY = 10;
+		const gridCanvasCtx = gridCtxRef.current;
+
+		if (gridCanvasCtx) {
+			gridCanvasCtx.clearRect(0, 0, width, height);
+			drawGrid(gridCanvasCtx, gridSpacing);
+		}
+	}, [width, height, gridSpacing]);
+
+	useEffect(() => {
+		const snapIntervalX = gridSpacing;
+		const snapIntervalY = gridSpacing;
 		const { x, y } = mousePos;
 		const snapPosX = Math.round(x / snapIntervalX) * snapIntervalX;
 		const snapPosY = Math.round(y / snapIntervalY) * snapIntervalY;
 
 		setNearestSnapPos({ x: snapPosX, y: snapPosY });
 
-	}, [mousePos]);
+	}, [mousePos, gridSpacing]);
 
 	useEffect(() => {
 		const overlayCtx = overlayCtxRef.current;
 
 		if (overlayCtx) {
-			overlayCtx.clearRect(0, 0, width, width);
-			drawCircle(overlayCtx, nearestSnapPos.x, nearestSnapPos.y, width / 100);
+			overlayCtx.clearRect(0, 0, width, height);
+			drawCircle(overlayCtx, nearestSnapPos.x, nearestSnapPos.y, 5);
 		}
 
-	}, [nearestSnapPos]);
+	}, [nearestSnapPos, width, height]);
 
 	const handleMouseMove = (e: MouseEvent) => {
 		const rect = gridCanvasRef.current?.getBoundingClientRect();
@@ -120,13 +129,60 @@ const Canvas: React.FC = () => {
 				<span className={styles.map_name}>My Map</span>
 			</header>
 
-			<pre>Actual: {JSON.stringify(mousePos, undefined, 2)}</pre>
-			<pre>Snap: {JSON.stringify(nearestSnapPos, undefined, 2)}</pre>
+			<div className={styles.map_mouseCoordinates}>Coordinates: <strong>{nearestSnapPos.x}</strong>, <strong>{nearestSnapPos.y}</strong></div>
 
-			<div className={styles.map_layerContainer} style={{ width }}>
+			<div className={styles.map_controls}>
+				<label htmlFor="width" className={styles.map_controls_label}>
+					Map Width
+					<input
+						className={styles.map_controls_input}
+						style={{ width: '4em' }}
+						type="number"
+						value={width}
+						step="10"
+						min="100"
+						onChange={
+							(e: ChangeEvent<HTMLInputElement>) => {
+								setWidth(Number(e.target.value));
+							}
+						} />
+				</label>
+				<label htmlFor="height" className={styles.map_controls_label}>
+					Map Height
+					<input
+						className={styles.map_controls_input}
+						style={{ width: '4em' }}
+						type="number"
+						value={height}
+						step="10"
+						min="100"
+						onChange={
+							(e: ChangeEvent<HTMLInputElement>) => {
+								setHeight(Number(e.target.value));
+							}
+						} />
+				</label>
+				<label htmlFor="gridSpacing" className={styles.map_controls_label}>
+					Grid Spacing
+					<input
+						className={styles.map_controls_input}
+						style={{ width: '3em' }}
+						type="number"
+						value={gridSpacing}
+						step="10"
+						min="10"
+						onChange={
+							(e: ChangeEvent<HTMLInputElement>) => {
+								setGridSpacing(Number(e.target.value));
+							}
+						} />
+				</label>
+			</div>
 
+			<div className={styles.map_layerContainer} style={{ width, height }}>
+				<canvas className={styles.map_layer} ref={mapCanvasRef} style={{ zIndex: 70 }} />
 				<canvas className={styles.map_layer} ref={gridCanvasRef} style={{ zIndex: 60 }} />
-				<canvas className={styles.map_layer} ref={overlayCanvasRef} style={{ zIndex: 50 }} />
+				<canvas className={styles.map_layer} ref={overlayCanvasRef} style={{ zIndex: 50, backgroundColor: '#FFF' }} />
 			</div>
 		</section>
 	);
@@ -134,20 +190,22 @@ const Canvas: React.FC = () => {
 
 const drawCircle = (ctx: CanvasRenderingContext2D, x: number, y: number, d: number) => {
 	ctx.beginPath();
-	ctx.ellipse(x, y, d, d, 0, 0, Math.PI * 2);
+	ctx.arc(x, y, d, 0, Math.PI * 2);
 	ctx.fill();
 };
 
-const drawGrid = (ctx: CanvasRenderingContext2D, width: number) => {
+const drawGrid = (ctx: CanvasRenderingContext2D, spacing: number) => {
+	const spacingSmall = spacing;
+	const spacingLarge = spacing * 10;
 	const data = `
 		<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
 			<defs>
-				<pattern id="smallGrid" width="${width / 10}" height="${width / 10}" patternUnits="userSpaceOnUse">
-					<path d="M ${width / 10} 0 L 0 0 0 ${width / 10}" fill="none" stroke="gray" stroke-width="0.5" />
+				<pattern id="smallGrid" width="${spacingSmall}" height="${spacingSmall}" patternUnits="userSpaceOnUse">
+					<path d="M ${spacingSmall} 0 L 0 0 0 ${spacingSmall}" fill="none" stroke="gray" stroke-width="0.5" />
 				</pattern>
-				<pattern id="grid" width="${width}" height="${width}" patternUnits="userSpaceOnUse">
-					<rect width="${width}" height="${width}" fill="url(#smallGrid)" />
-					<path d="M ${width} 0 L 0 0 0 ${width}" fill="none" stroke="gray" stroke-width="1" />
+				<pattern id="grid" width="${spacingLarge}" height="${spacingLarge}" patternUnits="userSpaceOnUse">
+					<rect width="${spacingLarge}" height="${spacingLarge}" fill="url(#smallGrid)" />
+					<path d="M ${spacingLarge} 0 L 0 0 0 ${spacingLarge}" fill="none" stroke="gray" stroke-width="1" />
 				</pattern>
 			</defs>
 			<rect width="100%" height="100%" fill="url(#grid)" />
