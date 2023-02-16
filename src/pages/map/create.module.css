@@ -1,0 +1,41 @@
+.main {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background-color: oklch(94.69% 0.015 70.89);
+
+	&_header {
+		font-size: 2rem;
+		text-decoration: underline;
+		color: oklch(34.69% 0.015 70.89);
+	}
+}
+
+.map {
+	margin: 2rem auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1rem;
+
+	&_header {
+		display: flex;
+		justify-content: center;
+		font-size: 1.7rem;
+		gap: 0.25em;
+	}
+
+	&_name {
+		font-weight: 700;
+	}
+
+	&_layerContainer {
+		position: relative;
+	}
+
+	&_layer {
+		position: absolute;
+		background-color: transparent;
+	}
+}
