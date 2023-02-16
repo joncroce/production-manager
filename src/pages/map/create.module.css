@@ -17,7 +17,7 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 1rem;
+	gap: 1.5rem;
 
 	&_header {
 		display: flex;
@@ -46,6 +46,30 @@
 			text-align: center;
 			font-family: monospace;
 			font-size: inherit;
+		}
+
+		&_button {
+			padding-block: 0.25em;
+			padding-inline: 0.5em;
+			border-style: solid;
+			border-width: 2px 3px 3px 2px;
+			border-radius: 4px;
+			border-color: oklch(46.2% 0.074 70.89);
+			background-color: oklch(95.8% 0.074 70.89);
+			font-size: inherit;
+			font-weight: 700;
+			color: oklch(26.2% 0.074 70.89);
+			cursor: pointer;
+
+			&:hover, &:active {
+				border-color: oklch(46.2% 0.074 70.89);
+				background-color: oklch(78.6% 0.122 20.07);
+				color: oklch(32% 0.122 20.07);
+			}
+
+			&:active {
+				border-width: 3px 2px 2px 3px;
+			}
 		}
 	}
 

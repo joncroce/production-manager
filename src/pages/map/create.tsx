@@ -9,6 +9,11 @@ type Coordinates = {
 	y: number;
 };
 
+type Line = {
+	start: Coordinates | null;
+	end: Coordinates | null;
+};
+
 const CreateMapPage: NextPage = () => {
 	return (
 		<>
@@ -26,14 +31,6 @@ const CreateMapPage: NextPage = () => {
 export default CreateMapPage;
 
 const Canvas: React.FC = () => {
-	const [width, setWidth] = useState<number>(500);
-	const [height, setHeight] = useState<number>(500);
-
-	const [gridSpacing, setGridSpacing] = useState<number>(10);
-
-	const [mousePos, setMousePos] = useState<Coordinates>({ x: 0, y: 0 });
-	const [nearestSnapPos, setNearestSnapPos] = useState<Coordinates>({ x: 0, y: 0 });
-
 	const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const gridCtxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -42,6 +39,17 @@ const Canvas: React.FC = () => {
 
 	const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const overlayCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+	const [width, setWidth] = useState<number>(500);
+	const [height, setHeight] = useState<number>(500);
+
+	const [gridSpacing, setGridSpacing] = useState<number>(10);
+
+	const [mousePos, setMousePos] = useState<Coordinates>({ x: 0, y: 0 });
+	const [nearestSnapPos, setNearestSnapPos] = useState<Coordinates>({ x: 0, y: 0 });
+
+	const [currentLine, setCurrentLine] = useState<Line>({ start: null, end: null });
+
 
 	useEffect(() => {
 		const gridCanvas = gridCanvasRef.current;
@@ -60,10 +68,12 @@ const Canvas: React.FC = () => {
 
 			if (gridCanvasCtx && mapCanvasCtx && overlayCanvasCtx) {
 				[gridCanvasCtx, mapCanvasCtx, overlayCanvasCtx].forEach(ctx => {
-					ctx.lineCap = 'square';
+					ctx.lineCap = 'round';
 					ctx.lineWidth = 10;
 					ctx.fillStyle = 'black';
 				});
+
+				overlayCanvasCtx.strokeStyle = 'red';
 
 				gridCtxRef.current = gridCanvasCtx;
 				mapCtxRef.current = mapCanvasCtx;
@@ -105,10 +115,14 @@ const Canvas: React.FC = () => {
 
 		if (overlayCtx) {
 			overlayCtx.clearRect(0, 0, width, height);
-			drawCircle(overlayCtx, nearestSnapPos.x, nearestSnapPos.y, 5);
+			if (currentLine.start === null) {
+				drawCircle(overlayCtx, nearestSnapPos.x, nearestSnapPos.y, 5);
+			} else {
+				drawLine(overlayCtx, { start: currentLine.start, end: nearestSnapPos });
+			}
 		}
 
-	}, [nearestSnapPos, width, height]);
+	}, [currentLine, nearestSnapPos, width, height]);
 
 	const handleMouseMove = (e: MouseEvent) => {
 		const rect = gridCanvasRef.current?.getBoundingClientRect();
@@ -122,14 +136,43 @@ const Canvas: React.FC = () => {
 		}
 	};
 
+	const handleMapClick = () => {
+		const isDrawing = currentLine.start !== null;
+		setCurrentLine({
+			start: isDrawing ? currentLine.start : nearestSnapPos,
+			end: isDrawing ? nearestSnapPos : null
+		});
+	};
+
+	useEffect(() => {
+		const ctx = mapCtxRef.current;
+		if (ctx && currentLine.end !== null) {
+			drawLine(ctx, currentLine);
+			setCurrentLine({ start: null, end: null });
+		}
+	}, [currentLine]);
+
+	const drawLine = (ctx: CanvasRenderingContext2D, line: Line) => {
+		if (line.start && line.end) {
+			ctx.beginPath();
+			ctx.moveTo(line.start.x, line.start.y);
+			ctx.lineTo(line.end.x, line.end.y);
+			ctx.stroke();
+		}
+	};
+
+	const clearMap = () => {
+		if (mapCtxRef.current) {
+			mapCtxRef.current.clearRect(0, 0, width, height);
+		}
+	};
+
 	return (
 		<section className={styles.map}>
 			<header className={styles.map_header}>
 				Name:
 				<span className={styles.map_name}>My Map</span>
 			</header>
-
-			<div className={styles.map_mouseCoordinates}>Coordinates: <strong>{nearestSnapPos.x}</strong>, <strong>{nearestSnapPos.y}</strong></div>
 
 			<div className={styles.map_controls}>
 				<label htmlFor="width" className={styles.map_controls_label}>
@@ -179,8 +222,14 @@ const Canvas: React.FC = () => {
 				</label>
 			</div>
 
+			<div className={styles.map_controls}>
+				<button type="button" className={styles.map_controls_button} onClick={clearMap}>Clear Map</button>
+			</div>
+
+			<div className={styles.map_mouseCoordinates}>Coordinates: <strong>{nearestSnapPos.x}</strong>, <strong>{nearestSnapPos.y}</strong></div>
+
 			<div className={styles.map_layerContainer} style={{ width, height }}>
-				<canvas className={styles.map_layer} ref={mapCanvasRef} style={{ zIndex: 70 }} />
+				<canvas className={styles.map_layer} ref={mapCanvasRef} style={{ zIndex: 70 }} onClick={handleMapClick} />
 				<canvas className={styles.map_layer} ref={gridCanvasRef} style={{ zIndex: 60 }} />
 				<canvas className={styles.map_layer} ref={overlayCanvasRef} style={{ zIndex: 50, backgroundColor: '#FFF' }} />
 			</div>
