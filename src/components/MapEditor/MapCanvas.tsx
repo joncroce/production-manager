@@ -4,14 +4,13 @@ import { useEffect, useRef } from 'react';
 type Props = {
 	width: number;
 	height: number;
-	setMapCanvasRef: Dispatch<SetStateAction<HTMLCanvasElement | null>>;
-	setMapCtxRef: Dispatch<SetStateAction<CanvasRenderingContext2D | null>>;
+	setMapCanvas: Dispatch<SetStateAction<HTMLCanvasElement | null>>;
 	handleMouseMove: MouseEventHandler<HTMLCanvasElement>;
 	handleClick: MouseEventHandler<HTMLCanvasElement>;
 };
 
 const MapCanvas: React.FC<Props> = (
-	{ width, height, setMapCanvasRef, setMapCtxRef, handleMouseMove, handleClick }
+	{ width, height, setMapCanvas, handleMouseMove, handleClick }
 ) => {
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -25,18 +24,17 @@ const MapCanvas: React.FC<Props> = (
 			canvas.style.width = `${width}px`;
 			canvas.style.height = `${height}px`;
 
-			setMapCanvasRef(canvas);
+			setMapCanvas(canvas);
 			const ctx = canvas.getContext('2d');
 
 			if (ctx) {
 				ctx.lineCap = 'round';
 				ctx.lineWidth = 10;
 				ctx.fillStyle = 'black';
-				setMapCtxRef(ctx);
 			}
 		}
 
-	}, [width, height, setMapCanvasRef, setMapCtxRef]);
+	}, [width, height, setMapCanvas]);
 
 	return (
 		<canvas

@@ -34,6 +34,43 @@
 			font-size: inherit;
 		}
 
+		&_iconButton {
+			border: none;
+			background: transparent;
+			cursor: pointer;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			font-size: 1.2rem;
+			font-weight: 700;
+			gap: 0.25em;
+
+			svg {	
+				width: 48px;
+				aspect-ratio: 1;
+
+				circle {
+					stroke: oklch(46.2% 0.074 70.89);
+					fill: oklch(95.8% 0.074 70.89);
+				}
+
+				line {
+					stroke: oklch(46.2% 0.074 70.89);
+				}
+			}
+
+			&:hover, &[data-current-mode="true"] {
+				color: green;
+				circle {
+					stroke: oklch(32% 0.122 20.07);
+				}
+
+				line {
+					stroke: oklch(78.6% 0.122 20.07);
+				}
+			}
+		}
+
 		&_button {
 			padding-block: 0.25em;
 			padding-inline: 0.5em;
@@ -71,4 +108,30 @@
 	&_layerContainer {
 		position: relative;
 	}
+
+	&_tanks {
+		&_header {
+			text-align: center;
+			font-size: 1.5rem;
+			font-weight: 700;
+			text-decoration: underline;
+		}
+
+		&_list {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 3rem;
+
+		&_item {
+			grid-column: span 1;
+			font-size: 1.1rem;
+			font-family: monospace;
+			font-weight: 700;
+
+			&_coordinates {
+				font-weight: 400;
+			}
+		}
+	}
+}
 }
