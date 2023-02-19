@@ -1,34 +1,30 @@
 .map {
-	margin: 2rem auto;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1.5rem;
+	margin-inline: auto;
 
 	&_header {
-		display: flex;
-		justify-content: center;
+		margin-block: 2rem;
+		text-align: center;
 		font-size: 1.7rem;
-		gap: 0.25em;
 	}
 
 	&_name {
 		font-weight: 700;
+		margin-inline: 0.25em;
 	}
 
 	&_controls {
+		margin-block: 1.5rem;
 		display: flex;
 		justify-content: space-evenly;
 		gap: 1em;
 
 		&_label {
-			display: flex;
-			gap: 0.25em;
 			font-weight: 700;
 			font-size: 1.2rem;
 		}
 
 		&_input {
+			margin-inline: 0.25em;
 			text-align: center;
 			font-family: monospace;
 			font-size: inherit;
@@ -43,7 +39,7 @@
 			align-items: center;
 			font-size: 1.2rem;
 			font-weight: 700;
-			gap: 0.25em;
+			gap: 0.5em;
 
 			svg {	
 				width: 48px;
@@ -105,7 +101,19 @@
 		}
 	}
 
+	&_mouseCoordinates {
+		margin-block: 1rem;
+		text-align: center;
+		font-size: 1.2rem;
+
+		strong {
+			font-family: monospace;
+			font-size: 1.1em;
+		}
+	}
+
 	&_layerContainer {
+		margin-inline: auto;
 		position: relative;
 	}
 
@@ -122,16 +130,21 @@
 		grid-template-columns: repeat(3, 1fr);
 		gap: 3rem;
 
-		&_item {
-			grid-column: span 1;
-			font-size: 1.1rem;
-			font-family: monospace;
-			font-weight: 700;
+			&_item {
+				grid-column: span 1;
+				font-size: 1.1rem;
+				font-family: monospace;
+				font-weight: 700;
 
-			&_coordinates {
-				font-weight: 400;
+				&_coordinates {
+					font-weight: 400;
+				}
 			}
 		}
 	}
-}
+
+	&_preview {
+		max-width: 60ch;
+		word-break: break-all; 
+	}
 }
