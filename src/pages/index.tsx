@@ -1,6 +1,7 @@
 import styles from "./index.module.css";
 import { type NextPage } from "next";
 import Head from "next/head";
+import Link from 'next/link';
 
 const Home: NextPage = () => {
   return (
@@ -11,7 +12,11 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.svg" />
       </Head>
       <main className={styles.main}>
-
+        <section className={styles.container}>
+          <h2 className={styles.header}>Products</h2>
+          <Link href="/product">Product List</Link>
+          <Link href="/product/add">Add Product</Link>
+        </section>
       </main>
     </>
   );

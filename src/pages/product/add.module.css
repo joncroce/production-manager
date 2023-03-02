@@ -1,0 +1,6 @@
+.formWrapper {
+	width: 100%;
+	padding: 1rem;
+	display: grid;
+	place-items: center;
+}

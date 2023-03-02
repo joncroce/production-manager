@@ -64,3 +64,108 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+
+// Product Models
+
+model ProductBaseCode {
+    id           Int           @id /// 3-digit. First digit indicates general product type.
+    name         String
+    description  String?
+    ProductCodes ProductCode[]
+}
+
+model ProductSizeCode {
+    id           Int           @id /// e.g., 0 = "N/A"; 11 = "bulk"; 5 = "pail"; 55 = "drum"; 275 = "275 Gal. Tote"; 330 = "330 Gal. Tote"
+    name         String
+    description  String?
+    ProductCodes ProductCode[]
+}
+
+/// Used for determining customer-specific requirements for labeling (and other packaging details), formulation details, etc.
+model ProductVariantCode {
+    id           Int           @id /// e.g., 0 = "N/A"; 1 = "Store Brand"
+    name         String
+    description  String?
+    Customer     Customer?     @relation(fields: [customerId], references: [id])
+    customerId   Int?          @unique
+    ProductCodes ProductCode[]
+}
+
+model ProductCode {
+    BaseCode      ProductBaseCode    @relation(fields: [baseCodeId], references: [id])
+    baseCodeId    Int
+    SizeCode      ProductSizeCode    @relation(fields: [sizeCodeId], references: [id])
+    sizeCodeId    Int
+    VariantCode   ProductVariantCode @relation(fields: [variantCodeId], references: [id])
+    variantCodeId Int
+    Product       Product?
+
+    @@id([baseCodeId, sizeCodeId, variantCodeId])
+}
+
+model Product {
+    Code            ProductCode      @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId      Int
+    sizeCodeId      Int
+    variantCodeId   Int
+    description     String?
+    quantityInStock Decimal?         @default(0)
+    salesPrice      Decimal?
+    SalesOrderItems SalesOrderItem[]
+
+    @@unique([baseCodeId, sizeCodeId, variantCodeId])
+}
+
+// Order Models
+
+model Customer {
+    id                       Int                  @id @default(autoincrement())
+    name                     String               @unique
+    Orders                   SalesOrder[]
+    ProductVariantCodes      ProductVariantCode[]
+    Addresses                Address[]
+    DefaultBillingAddress    Address?             @relation(name: "defaultBilling", fields: [defaultBillingAddressId], references: [id])
+    defaultBillingAddressId  String?              @unique
+    DefaultShippingAddress   Address?             @relation(name: "defaultShipping", fields: [defaultShippingAddressId], references: [id])
+    defaultShippingAddressId String?              @unique
+}
+
+model Address {
+    id              String    @id @default(cuid())
+    streetLine1     String
+    streetLine2     String?
+    city            String
+    zip             String
+    Customer        Customer  @relation(fields: [customerId], references: [id])
+    customerId      Int
+    defaultBilling  Customer? @relation(name: "defaultBilling")
+    defaultShipping Customer? @relation(name: "defaultShipping")
+}
+
+model SalesOrderItem {
+    id            String     @id @default(cuid())
+    Order         SalesOrder @relation(fields: [orderId], references: [id])
+    orderId       Int
+    Product       Product    @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId    Int
+    sizeCodeId    Int
+    variantCodeId Int
+    quantity      Decimal
+    price         Decimal
+    notes         String?
+}
+
+model SalesOrder {
+    id              Int              @id @default(autoincrement())
+    Customer        Customer         @relation(fields: [customerId], references: [id])
+    customerId      Int
+    Items           SalesOrderItem[]
+    notes           String?
+    orderedOn       DateTime         @default(now())
+    readyOn         DateTime?
+    shippedOn       DateTime?
+    deliveredOn     DateTime?
+    readyTarget     DateTime?
+    shippedTarget   DateTime?
+    deliveredTarget DateTime?
+}
