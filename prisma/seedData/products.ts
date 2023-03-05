@@ -46,7 +46,7 @@ const bulkProducts: Product[] = baseCodes.map(({ id, name }) => ({
 	baseCodeId: id,
 	sizeCodeId: 11,
 	variantCodeId: 0,
-	description: `${name} Bulk (gallons)`,
+	description: `${name} Bulk`,
 	quantityInStock: new Decimal(Math.floor(Math.random() * 10_000)),
 	salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice)
 }));
