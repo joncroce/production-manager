@@ -3,6 +3,7 @@ import { api } from '@/utils/api';
 import { type NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
+import ProductInventoryTable from './components/ProductInventoryTable';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
@@ -18,6 +19,11 @@ const ProductsHome: NextPage = () => {
 				<div className={rootStyles.container}>
 					<pre>{products.data ? `${products.data.length} products found.` : 'Loading...'}</pre>
 					<Link href="product/add">Add Product</Link>
+					{
+						products.isLoading
+							? <div>Loading...</div>
+							: <ProductInventoryTable products={products.data ?? []} />
+					}
 				</div>
 			</main>
 		</>
