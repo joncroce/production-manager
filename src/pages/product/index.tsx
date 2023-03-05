@@ -3,7 +3,7 @@ import { api } from '@/utils/api';
 import { type NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import ProductList from './components/ProductList';
+import ProductInventoryTable from './components/ProductInventoryTable';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
@@ -22,7 +22,7 @@ const ProductsHome: NextPage = () => {
 					{
 						products.isLoading
 							? <div>Loading...</div>
-							: <ProductList products={products.data ?? []} />
+							: <ProductInventoryTable products={products.data ?? []} />
 					}
 				</div>
 			</main>

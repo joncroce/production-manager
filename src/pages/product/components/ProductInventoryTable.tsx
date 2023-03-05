@@ -1,4 +1,4 @@
-import styles from './productList.module.css';
+import styles from './productInventoryTable.module.css';
 import type { Product } from '@prisma/client';
 
 interface Props {
