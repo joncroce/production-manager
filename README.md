@@ -4,7 +4,7 @@
 
 A [Next.js](https://nextjs.org) app written in [TypeScript](https://www.typescriptlang.org/) using [Prisma](https://prisma.io), [tRPC](https://trpc.io), and [Radix UI](https://www.radix-ui.com/).
 
-Its purpose is to assist in the management of an (imaginary) factory that produces lubricants. 
+Created to assist in the management of a lubricants manufacturer.
 
 Planned functionality addresses concerns of inventory management, product blending formulations, sales & purchase orders, shipping & receiving, and packaging operations.
 
