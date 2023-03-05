@@ -1,0 +1,44 @@
+.table {
+	table-layout: fixed;
+	width: 100%;
+	border-collapse: collapse;
+	border-width: 2px;
+	border-style: solid;
+	border-color: black;
+}
+
+.caption {
+	margin-block: 1rem;
+	font-size: 2rem;
+	font-weight: 600;
+}
+
+.th_code {
+	width: 10%;
+}
+
+.th_baseCodeId,
+.th_sizeCodeId,
+.th_variantCodeId,
+.th_quantityInStock,
+.th_salesPrice {
+	width: 12%;
+}
+
+.th_description {
+	width: 30%;
+}
+
+.th, .td {
+	padding: 0.5em;
+	text-align: center;
+}
+
+.td_code,
+.td_baseCodeId,
+.td_sizeCodeId,
+.td_variantCodeId,
+.td_quantityInStock,
+.td_salesPrice {
+	font-family: monospace;
+}

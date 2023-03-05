@@ -1,3 +1,4 @@
+import styles from './productList.module.css';
 import type { Product } from '@prisma/client';
 
 interface Props {
@@ -14,7 +15,7 @@ const productLabelsByAttribute = new Map<keyof ProductView, string>(
 		['baseCodeId', 'Base Code'],
 		['sizeCodeId', 'Size Code'],
 		['variantCodeId', 'Variant Code'],
-		['quantityInStock', 'Qty. In Stock'],
+		['quantityInStock', 'Quantity'],
 		['salesPrice', 'Price'],
 		['description', 'Description'],
 	]
@@ -61,12 +62,13 @@ const ProductList: React.FC<Props> = ({ products }) => {
 	const productsForView = products.map(formatProduct);
 
 	return (
-		<table>
+		<table className={styles.table}>
+			<caption className={styles.caption}>Product Inventory</caption>
 			<thead>
 				<tr>
 					{
 						[...productLabelsByAttribute.entries()].map(([k, v]) => (
-							<th key={k}>{v}</th>
+							<th key={k} className={`${styles[`th_${k}`] ?? ''} ${styles.th ?? ''}`}>{v}</th>
 						))
 					}
 				</tr>
@@ -77,7 +79,7 @@ const ProductList: React.FC<Props> = ({ products }) => {
 						<tr key={product.get('code')}>
 							{
 								[...product.entries()].map(([k, v]) => (
-									<td key={product.get('code')?.concat(String(k))}>{v}</td>
+									<td key={product.get('code')?.concat(String(k))} className={`${styles[`td_${k}`] ?? ''} ${styles.td ?? ''}`}>{v}</td>
 								))
 							}
 						</tr>
