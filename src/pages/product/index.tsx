@@ -1,4 +1,5 @@
 import rootStyles from '@/pages/index.module.css';
+import styles from './index.module.css';
 import { api } from '@/utils/api';
 import { type NextPage } from 'next';
 import Head from 'next/head';
@@ -17,12 +18,15 @@ const ProductsHome: NextPage = () => {
 			</Head>
 			<main className={rootStyles.main}>
 				<div className={rootStyles.container}>
-					<pre>{products.data ? `${products.data.length} products found.` : 'Loading...'}</pre>
-					<Link href="product/add">Add Product</Link>
+					<ProductPageTitle />
+					<div className={styles.flexRow}>
+						<ProductCount count={products.data?.length} />
+						<Link href="product/add">Add Product</Link>
+					</div>
 					{
 						products.isLoading
 							? <div>Loading...</div>
-							: <ProductInventoryTable products={products.data ?? []} />
+							: <ProductInventoryTable products={products.data} />
 					}
 				</div>
 			</main>
@@ -31,3 +35,10 @@ const ProductsHome: NextPage = () => {
 };
 
 export default ProductsHome;
+
+const ProductPageTitle: React.FC = () => <h2 className={styles.pageHeader}>Products</h2>;
+
+const ProductCount: React.FC<{ count?: number; }> = ({ count }) =>
+	count && count > 0
+		? <span className={styles.productCount}><strong>{count}</strong> Product{count > 1 && 's'}</span>
+		: <></>;

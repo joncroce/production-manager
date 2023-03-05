@@ -3,7 +3,7 @@
   place-items: center;
   min-height: 100vh;
   min-height: 100dvh;
-  background-image: linear-gradient(to bottom, oklch(77.8% 0.076 70.95), oklch(77.8% 0.076 128.745));
+  background-color: var(--amber3);
 }
 
 .container {

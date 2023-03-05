@@ -1,10 +1,6 @@
 import styles from './productInventoryTable.module.css';
 import type { Product } from '@prisma/client';
 
-interface Props {
-	products: Product[];
-}
-
 interface ProductView extends Product {
 	code: string;
 }
@@ -57,15 +53,27 @@ const formatProduct =
 			]
 		);
 
-const ProductList: React.FC<Props> = ({ products }) => {
+
+interface ProductInventoryTableProps {
+	products?: Product[];
+}
+
+const ProductInventoryTable: React.FC<ProductInventoryTableProps> = ({ products }) => {
+
+	if (!products) {
+		return <></>;
+	}
+
+	if (!products.length) {
+		return <span>No Products</span>;
+	}
 
 	const productsForView = products.map(formatProduct);
 
 	return (
 		<table className={styles.table}>
-			<caption className={styles.caption}>Product Inventory</caption>
 			<thead>
-				<tr>
+				<tr className={styles.tr}>
 					{
 						[...productLabelsByAttribute.entries()].map(([k, v]) => (
 							<th key={k} className={`${styles[`th_${k}`] ?? ''} ${styles.th ?? ''}`}>{v}</th>
@@ -76,7 +84,7 @@ const ProductList: React.FC<Props> = ({ products }) => {
 			<tbody>
 				{
 					productsForView.map((product) => (
-						<tr key={product.get('code')}>
+						<tr key={product.get('code')} className={styles.tr}>
 							{
 								[...product.entries()].map(([k, v]) => (
 									<td key={product.get('code')?.concat(String(k))} className={`${styles[`td_${k}`] ?? ''} ${styles.td ?? ''}`}>{v}</td>
@@ -90,4 +98,4 @@ const ProductList: React.FC<Props> = ({ products }) => {
 	);
 };
 
-export default ProductList;
+export default ProductInventoryTable;

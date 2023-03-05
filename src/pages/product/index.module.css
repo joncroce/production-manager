@@ -1,0 +1,16 @@
+.pageHeader {
+	margin-block: 1rem;
+	font-size: 3rem;
+	font-weight: 600;
+}
+
+.productCount {
+	font-size: 0.9rem;
+}
+
+.flexRow {
+	width: 100%;
+	padding-inline: 0.25em;
+	display: flex;
+	justify-content: space-between;
+}

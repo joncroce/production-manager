@@ -4,13 +4,7 @@
 	border-collapse: collapse;
 	border-width: 2px;
 	border-style: solid;
-	border-color: black;
-}
-
-.caption {
-	margin-block: 1rem;
-	font-size: 2rem;
-	font-weight: 600;
+	border-color: var(--amber12);
 }
 
 .th_code {
@@ -41,4 +35,16 @@
 .td_quantityInStock,
 .td_salesPrice {
 	font-family: monospace;
+}
+
+thead > .tr {
+	background-color: var(--amber8);
+}
+
+tbody > .tr:nth-child(even) {
+	background-color: var(--amber6);
+}
+
+tbody > .tr:nth-child(odd) {
+	background-color: var(--amber4);
 }
