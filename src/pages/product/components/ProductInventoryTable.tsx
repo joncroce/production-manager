@@ -50,7 +50,7 @@ const formatProduct =
 				['code', formatProductCode(baseCodeId, sizeCodeId, variantCodeId)],
 				['baseCodeId', String(baseCodeId)],
 				['sizeCodeId', String(sizeCodeId)],
-				['variantCodeId', String(variantCodeId)],
+				['variantCodeId', variantCodeId === 0 ? 'N/A' : String(variantCodeId)],
 				['quantityInStock', String(quantityInStock)],
 				['salesPrice', salesPrice ? Number.parseFloat(salesPrice.toString()).toFixed(2) : ''],
 				['description', description ?? ''],
