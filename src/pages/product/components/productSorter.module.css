@@ -1,0 +1,41 @@
+.wrapper {
+	padding-block: 0.5rem;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	font-weight: 700;
+}
+
+.sortEntryWrapper {
+	padding-inline: 0.25em;
+	gap: 0.25em;
+	font-weight: 600;
+}
+
+.sortEntryField {
+	font-style: italic;
+}
+
+.noSorts {
+	font-weight: 400;
+	padding-inline: 0.25em;
+	font-style: italic;
+	border-width: 1px;
+	border-color: transparent;
+}
+
+.resetSorts {
+	background-color: var(--tomato4);
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--tomato12);
+	border-radius: 4px;
+	padding-inline: 0.25em;
+	margin-inline-end: 0.5em;
+	color: var(--tomato12);
+
+	&:hover {
+		background-color: var(--tomato10);
+		color: var(--tomato3);
+	}
+}

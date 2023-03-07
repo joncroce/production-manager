@@ -1,0 +1,108 @@
+.table {
+	display: grid;
+	grid-template-columns: 
+		minmax(2rem, 0.5fr)
+		minmax(7.5rem, 1.8fr)
+		minmax(4.5rem, 1.2fr)
+		minmax(4.5rem, 1.2fr)
+		minmax(4.5rem, 1.2fr)
+		minmax(4.5rem, 1.2fr)
+		minmax(4.5rem, 1.2fr)
+		minmax(9rem, 2.5fr)
+		;
+	width: 100%;
+	border-width: 2px;
+	border-style: solid;
+	border-color: var(--amber12);
+}
+
+.thead, .tbody, .tr {
+	display: contents;
+}
+
+.th, .td {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.td_index,
+.td_code,
+.td_baseCodeId,
+.td_sizeCodeId,
+.td_variantCodeId,
+.td_quantityInStock,
+.td_salesPrice {
+	font-family: monospace;
+}
+
+.td_description {
+	text-align: center;
+}
+
+thead > tr > .th {
+	display: flex;
+	gap: 0.25em;
+	padding-block: 0.5em;
+	background-color: var(--amber6);
+	border-width: 0px 0px 2px 0px;
+	border-style: solid;
+	border-color: var(--amber12);
+}
+
+thead > tr > .th:first-of-type {
+	background-color: var(--amber12);
+	border-width: 0px 2px 2px 0px;
+}
+
+tbody > tr > .td:first-of-type {
+	border-width: 0px 2px 0px 0px;
+	border-style: solid;
+	border-color: var(--amber12);
+}
+
+tbody > tr:nth-child(even) > .td {
+	background-color: var(--amber6);
+}
+
+tbody > tr:nth-child(odd) > .td {
+	background-color: var(--amber4);
+}
+
+.toggleSortFieldButton {
+	padding-block: 0.15em;
+	padding-inline: 0.35em;
+	border-width: 2px;
+	border-radius: 4px;
+	border-color: var(--lime12);
+
+	&[data-sorting-by="true"] {
+		background-color: var(--lime8);
+	}
+	
+	&[data-sorting-by="false"] {
+		background-color: var(--lime4);
+	}
+
+	&:hover {
+		border-color: var(--orange11);
+	}
+}
+
+.fieldLabel {
+	display: flex;
+	justify-content: center;
+	align-items: baseline;
+	gap: 0.25em;
+}
+
+.toggleDirection {
+	font-size: 1.5rem;
+	background-color: transparent;
+	border: none;
+	color: var(--olive12);
+
+	&:hover {
+		color: var(--orange11);
+	}
+}

@@ -1,13 +1,17 @@
 import rootStyles from '@/pages/index.module.css';
 import styles from './index.module.css';
-import { api } from '@/utils/api';
-import { type NextPage } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import ProductInventoryTable from './components/ProductInventoryTable';
+import { api } from '@/utils/api';
+import useProductSorter from '@/hooks/useProductSorter';
+import { addProductCode, formatForView } from '@/utils/product';
+import ProductInventory from './components/ProductInventory';
+import ProductSorter from './components/ProductSorter';
+import type { NextPage } from 'next';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
+	const { addSort, removeSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter();
 
 	return (
 		<>
@@ -19,14 +23,26 @@ const ProductsHome: NextPage = () => {
 			<main className={rootStyles.main}>
 				<div className={rootStyles.container}>
 					<ProductPageTitle />
-					<div className={styles.flexRow}>
+					<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
 						<ProductCount count={products.data?.length} />
 						<Link href="product/add">Add Product</Link>
 					</div>
+					<ProductSorter resetSorts={resetSorts} sorts={getSorts()} />
 					{
 						products.isLoading
 							? <div>Loading...</div>
-							: <ProductInventoryTable products={products.data} />
+							: <ProductInventory
+								products={
+									(products.data ?? [])
+										.map(addProductCode)
+										.sort(performSorts)
+										.map(formatForView)
+								}
+								sorts={getSorts()}
+								addSort={addSort}
+								removeSort={removeSort}
+								reverseSortDirection={reverseSortDirection}
+							/>
 					}
 				</div>
 			</main>
@@ -41,4 +57,4 @@ const ProductPageTitle: React.FC = () => <h2 className={styles.pageHeader}>Produ
 const ProductCount: React.FC<{ count?: number; }> = ({ count }) =>
 	count && count > 0
 		? <span className={styles.productCount}><strong>{count}</strong> Product{count > 1 && 's'}</span>
-		: <></>;
+		: null;

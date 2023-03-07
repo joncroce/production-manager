@@ -7,10 +7,3 @@
 .productCount {
 	font-size: 0.9rem;
 }
-
-.flexRow {
-	width: 100%;
-	padding-inline: 0.25em;
-	display: flex;
-	justify-content: space-between;
-}
