@@ -1,22 +1,33 @@
-import type { Product } from '@prisma/client';
+import type { ProductWithCode } from '@/utils/product';
 import { useState } from 'react';
 
 export interface SortStateEntry {
-	field: keyof Product;
+	field: keyof ProductWithCode;
 	direction?: 'asc' | 'desc';
 }
+
+const fieldsOfDecimalType: (keyof ProductWithCode)[] = ['quantityInStock', 'salesPrice'];
 
 const useProductSorter = () => {
 	const [sorts, setSorts] = useState<SortStateEntry[]>([]);
 
-	const performSorts = (a: Product, b: Product) => {
+	const performSorts = (a: ProductWithCode, b: ProductWithCode) => {
 		let result: 1 | -1 | 0 = 0;
 
 		for (let i = 0; result === 0 && i < sorts.length; i++) {
 			const sortEntry: SortStateEntry | null = sorts[i] ?? null;
 			if (sortEntry) {
 				const { field, direction } = sortEntry;
-				const [aField, bField] = [a, b].map(product => product[field]);
+				const [aField, bField] = [a, b].map(product => {
+					const result = product[field];
+
+					if (fieldsOfDecimalType.includes(field) && result !== null) {
+						// Decimal fields must be coerced to Number or else will be sorted as a String
+						return +result;
+					}
+					return result;
+
+				});
 
 				if (aField === null || aField === undefined) {
 					if (bField === null || bField === undefined) {

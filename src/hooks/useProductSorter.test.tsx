@@ -2,9 +2,10 @@ import useProductSorter, { type SortStateEntry } from './useProductSorter';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Decimal } from '@prisma/client/runtime';
-import type { Product } from '@prisma/client';
+import type { ProductWithCode } from '@/utils/product';
 
-const mockProductBase: Product = {
+const mockProductBase: ProductWithCode = {
+	code: '',
 	baseCodeId: 0,
 	sizeCodeId: 0,
 	variantCodeId: 0,
@@ -15,7 +16,7 @@ const mockProductBase: Product = {
 
 const shuffleAtRandom = () => Math.random() - 0.5;
 
-const makeShuffledCopy = (arr: Product[]) => {
+const makeShuffledCopy = (arr: ProductWithCode[]) => {
 	const result = [...arr];
 	while (!result.every((v, i) => arr[i] !== v)) {
 		result.sort(shuffleAtRandom);
@@ -378,6 +379,7 @@ describe('product sorting', () => {
 
 	it('can sort by all fields of mixed type and mixed directions', () => {
 		act(() => {
+			result.current.addSort({ field: 'code', direction: 'desc' });
 			result.current.addSort({ field: 'baseCodeId', direction: 'asc' });
 			result.current.addSort({ field: 'sizeCodeId', direction: 'desc' });
 			result.current.addSort({ field: 'variantCodeId', direction: 'asc' });
@@ -386,134 +388,198 @@ describe('product sorting', () => {
 			result.current.addSort({ field: 'description', direction: 'desc' });
 		});
 
-		const products: Product[] = [
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+		const products: ProductWithCode[] = [
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
 
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
-			{ baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: '' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'z', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 0, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 1, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 0, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(3.5), salesPrice: new Decimal(3.5), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(0.0), description: 'a' },
+
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'z' },
+			{ code: 'a', baseCodeId: 1, sizeCodeId: 0, variantCodeId: 1, quantityInStock: new Decimal(0.0), salesPrice: new Decimal(3.5), description: 'a' },
 		];
 
 		expect(makeShuffledCopy(products).sort(result.current.performSorts)).toEqual(products);
