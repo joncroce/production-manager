@@ -11,7 +11,7 @@ import type { NextPage } from 'next';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
-	const { addSort, removeSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter();
+	const { addSort, removeSort, moveSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter();
 
 	return (
 		<>
@@ -27,7 +27,11 @@ const ProductsHome: NextPage = () => {
 						<ProductCount count={products.data?.length} />
 						<Link href="product/add">Add Product</Link>
 					</div>
-					<ProductSorter resetSorts={resetSorts} sorts={getSorts()} />
+					<ProductSorter
+						sorts={getSorts()}
+						moveSort={moveSort}
+						resetSorts={resetSorts}
+					/>
 					{
 						products.isLoading
 							? <div>Loading...</div>

@@ -3,17 +3,33 @@
 	width: 100%;
 	display: flex;
 	align-items: center;
-	font-weight: 700;
-}
-
-.sortEntryWrapper {
-	padding-inline: 0.25em;
-	gap: 0.25em;
 	font-weight: 600;
+	gap: 0.25rem;
 }
 
-.sortEntryField {
-	font-style: italic;
+.sortEntry {
+	padding-inline: 0.35em;
+	font-weight: 600;
+	cursor: move;
+	/* font-style: italic; */
+	border-width: 2px;
+	border-style: dotted;
+	border-color: black;
+
+	&:hover {
+		border-color: var(--amber11);
+		color: var(--amber11);
+	}
+
+	&[data-dragged-over="true"] {
+		border-color: black;
+		border-style: solid;
+		border-color: transparent transparent transparent black;
+	}
+
+	&[data-dragging="true"] {
+		opacity: 0.5;
+	}
 }
 
 .noSorts {
@@ -37,5 +53,11 @@
 	&:hover {
 		background-color: var(--tomato10);
 		color: var(--tomato3);
+	}
+
+	&[aria-disabled="true"], [aria-disabled="true"]:hover {
+		background-color: grey;
+		color: var(--tomato3);
+		cursor: not-allowed;
 	}
 }
