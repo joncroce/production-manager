@@ -11,7 +11,6 @@
 	padding-inline: 0.35em;
 	font-weight: 600;
 	cursor: move;
-	/* font-style: italic; */
 	border-width: 2px;
 	border-style: dotted;
 	border-color: black;
@@ -21,9 +20,17 @@
 		color: var(--amber11);
 	}
 
-	&[data-dragged-over="true"] {
+	&[data-dragged-over-from="before"], 
+	&[data-dragged-over-from="after"] {
 		border-color: black;
 		border-style: solid;
+	}
+
+	&[data-dragged-over-from="before"] {
+		border-color: transparent black transparent transparent;
+	}
+
+	&[data-dragged-over-from="after"] {
 		border-color: transparent transparent transparent black;
 	}
 

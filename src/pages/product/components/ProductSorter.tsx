@@ -1,9 +1,10 @@
 import styles from './productSorter.module.css';
-import { Dispatch, SetStateAction, useState } from 'react';
+import { useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { labelsByField } from '@/utils/product';
 import ArrowRightIcon from './Icons/ArrowRightIcon';
 import type { SortStateEntry } from '@/hooks/useProductSorter';
-import type { DragEvent, DragEventHandler, MouseEventHandler } from 'react';
+import type { DragEventHandler, MouseEventHandler } from 'react';
 
 const ProductSorter: React.FC<{
 	sorts: SortStateEntry[];
@@ -66,15 +67,21 @@ const SortEntry: React.FC<{
 		};
 		const handleDragEnd: DragEventHandler = (e) => {
 			setDragFromIndex(null);
-			e.currentTarget.setAttribute('data-dragged-over', 'false');
+			e.currentTarget.setAttribute('data-dragged-over-from', 'none');
 		};
 
 		const handleDragEnter: DragEventHandler = (e) => {
-			e.currentTarget.setAttribute('data-dragged-over', 'true');
+			e.currentTarget.setAttribute('data-dragged-over-from',
+				dragFromIndex !== null && dragFromIndex !== index
+					? dragFromIndex > index
+						? 'after'
+						: 'before'
+					: 'none'
+			);
 		};
 
 		const handleDragLeave: DragEventHandler = (e) => {
-			e.currentTarget.setAttribute('data-dragged-over', 'false');
+			e.currentTarget.setAttribute('data-dragged-over-from', 'none');
 		};
 
 		const handleDragOver: DragEventHandler = (e) => {
@@ -85,7 +92,8 @@ const SortEntry: React.FC<{
 		const handleDrop: DragEventHandler = (e) => {
 			e.stopPropagation();
 			if (dragFromIndex !== null) {
-				moveSort(index, dragFromIndex);
+				console.log(`from: ${dragFromIndex}, to: ${index}`);
+				moveSort(dragFromIndex, index);
 				setDragFromIndex(null);
 			}
 		};
