@@ -1,5 +1,5 @@
 import styles from './addCustomerForm.module.css';
-import formStyles from '@/components/Form/form.module.css';
+import formStyles from '@/components/Form/index.module.css';
 import Form from '@/components/Form';
 import Input from '@/components/Form/Input';
 import { useZodForm } from '@/hooks/useZodForm';
@@ -34,16 +34,20 @@ const AddCustomerForm: React.FC = () => {
 	return (
 		<Form form={form} onSubmit={submitForm}>
 			<Input type="string" label="Name" autoComplete="off" {...form.register('name')} />
-			<h3 className={styles.formSectionHeader}>Billing Address</h3>
-			<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine1')} />
-			<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine2')} />
-			<Input type="string" label="City" autoComplete="off" {...form.register('DefaultBillingAddress.city')} />
-			<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultBillingAddress.zip')} />
-			<h3 className={styles.formSectionHeader}>Shipping Address</h3>
-			<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine1')} />
-			<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine2')} />
-			<Input type="string" label="City" autoComplete="off" {...form.register('DefaultShippingAddress.city')} />
-			<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultShippingAddress.zip')} />
+			<fieldset className={formStyles.fieldset}>
+				<legend className={formStyles.legend}>Billing Address</legend>
+				<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine1')} />
+				<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine2')} />
+				<Input type="string" label="City" autoComplete="off" {...form.register('DefaultBillingAddress.city')} />
+				<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultBillingAddress.zip')} />
+			</fieldset>
+			<fieldset className={formStyles.fieldset}>
+				<legend className={formStyles.legend}>Shipping Address</legend>
+				<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine1')} />
+				<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine2')} />
+				<Input type="string" label="City" autoComplete="off" {...form.register('DefaultShippingAddress.city')} />
+				<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultShippingAddress.zip')} />
+			</fieldset>
 			<div className={formStyles.buttonRow}>
 				<ResetButton clickHandler={resetForm} />
 				<SubmitButton>Submit</SubmitButton>
