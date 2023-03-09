@@ -1,4 +1,4 @@
-import styles from '@/components/Form/form.module.css';
+import styles from '@/components/Form/index.module.css';
 import schema from '@/schemas/code';
 import { Close as ModalCloseButton } from '@radix-ui/react-dialog';
 import { useState } from 'react';

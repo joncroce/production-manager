@@ -1,5 +1,5 @@
 import styles from '../add.module.css';
-import formStyles from '@/components/Form/form.module.css';
+import formStyles from '@/components/Form/index.module.css';
 import { useState } from 'react';
 import { api } from '@/utils/api';
 import { useZodForm } from '@/hooks/useZodForm';

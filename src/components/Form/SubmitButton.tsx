@@ -1,4 +1,4 @@
-import styles from './form.module.css';
+import styles from './index.module.css';
 import type { ComponentProps } from 'react';
 
 type Props = Omit<ComponentProps<'button'>, 'type'>;

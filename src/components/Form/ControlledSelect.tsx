@@ -1,4 +1,4 @@
-import styles from '@/components/Form/form.module.css';
+import styles from '@/components/Form/index.module.css';
 import * as Select from '@radix-ui/react-select';
 import type { PropsWithChildren } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';

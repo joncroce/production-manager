@@ -1,4 +1,4 @@
-import styles from './form.module.css';
+import styles from './index.module.css';
 import type { ComponentProps } from 'react';
 import { forwardRef } from 'react';
 import { useFormContext } from 'react-hook-form';

@@ -1,4 +1,4 @@
-import formStyles from './form.module.css';
+import formStyles from './index.module.css';
 import * as RadixLabel from '@radix-ui/react-label';
 import React, { type PropsWithChildren } from 'react';
 
