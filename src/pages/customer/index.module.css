@@ -1,0 +1,9 @@
+.pageHeader {
+	margin-block: 1rem;
+	font-size: 3rem;
+	font-weight: 600;
+}
+
+.customerCount {
+	font-size: 0.9rem;
+}

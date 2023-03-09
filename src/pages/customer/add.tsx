@@ -2,7 +2,7 @@ import rootStyles from '@/pages/index.module.css';
 import { type NextPage } from 'next';
 import Head from 'next/head';
 import { useRef } from 'react';
-import AddProductForm from './components/AddProductForm';
+import AddCustomerForm from './components/AddCustomerForm';
 
 const AddProductPage: NextPage = () => {
 	const containerRef = useRef(null);
@@ -10,16 +10,16 @@ const AddProductPage: NextPage = () => {
 	return (
 		<>
 			<Head>
-				<title>Create Product | Production Manager</title>
-				<meta name="description" content="Create a new product for the factory inventory." />
+				<title>Add Customer | Production Manager</title>
+				<meta name="description" content="Add a new customer." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
 			<main className={rootStyles.main} ref={containerRef} >
 				<section className={rootStyles.container}>
 					<h2 className={rootStyles.header}>
-						Add New Product
+						Add New Customer
 					</h2>
-					<AddProductForm containerRef={containerRef} />
+					<AddCustomerForm />
 				</section>
 			</main>
 		</>
