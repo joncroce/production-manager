@@ -21,7 +21,7 @@ const CustomersHome: NextPage = () => {
 					<CustomerPageTitle />
 					<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
 						<CustomerCount count={customers.data?.length} />
-						<Link href="product/add">Add Product</Link>
+						<Link href="customer/add">Add Customer</Link>
 					</div>
 					{
 						customers.isLoading
