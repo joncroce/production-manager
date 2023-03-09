@@ -132,8 +132,7 @@ model Customer {
 
 model Address {
     id              String    @id @default(cuid())
-    streetLine1     String
-    streetLine2     String?
+    street          String
     city            String
     zip             String
     Customer        Customer  @relation(fields: [customerId], references: [id])

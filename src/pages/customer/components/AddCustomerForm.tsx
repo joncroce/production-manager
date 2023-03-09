@@ -36,15 +36,13 @@ const AddCustomerForm: React.FC = () => {
 			<Input type="string" label="Name" autoComplete="off" {...form.register('name')} />
 			<fieldset className={formStyles.fieldset}>
 				<legend className={formStyles.legend}>Billing Address</legend>
-				<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine1')} />
-				<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultBillingAddress.streetLine2')} />
+				<Input type="string" label="Street" autoComplete="off" {...form.register('DefaultBillingAddress.street')} />
 				<Input type="string" label="City" autoComplete="off" {...form.register('DefaultBillingAddress.city')} />
 				<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultBillingAddress.zip')} />
 			</fieldset>
 			<fieldset className={formStyles.fieldset}>
 				<legend className={formStyles.legend}>Shipping Address</legend>
-				<Input type="string" label="Street Address Line 1" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine1')} />
-				<Input type="string" label="Street Address Line 2 (optional)" autoComplete="off" {...form.register('DefaultShippingAddress.streetLine2')} />
+				<Input type="string" label="Street" autoComplete="off" {...form.register('DefaultShippingAddress.street')} />
 				<Input type="string" label="City" autoComplete="off" {...form.register('DefaultShippingAddress.city')} />
 				<Input type="string" label="ZIP" autoComplete="off" {...form.register('DefaultShippingAddress.zip')} />
 			</fieldset>
