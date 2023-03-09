@@ -1,4 +1,4 @@
-import rootStyles from '@/pages/index.module.css';
+import pageStyles from '@/pages/index.module.css';
 import styles from './index.module.css';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -20,8 +20,8 @@ const ProductsHome: NextPage = () => {
 				<meta name="description" content="Products in the factory inventory." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<main className={rootStyles.main}>
-				<div className={rootStyles.container}>
+			<main className={pageStyles.main}>
+				<div className={pageStyles.container}>
 					<ProductPageTitle />
 					<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
 						<ProductCount count={products.data?.length} />

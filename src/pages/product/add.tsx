@@ -1,4 +1,4 @@
-import rootStyles from '@/pages/index.module.css';
+import pageStyles from '@/pages/index.module.css';
 import { type NextPage } from 'next';
 import Head from 'next/head';
 import { useRef } from 'react';
@@ -14,9 +14,9 @@ const AddProductPage: NextPage = () => {
 				<meta name="description" content="Create a new product for the factory inventory." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<main className={rootStyles.main} ref={containerRef} >
-				<section className={rootStyles.container}>
-					<h2 className={rootStyles.header}>
+			<main className={pageStyles.main} ref={containerRef} >
+				<section className={pageStyles.container}>
+					<h2 className={pageStyles.header}>
 						Add New Product
 					</h2>
 					<AddProductForm containerRef={containerRef} />
