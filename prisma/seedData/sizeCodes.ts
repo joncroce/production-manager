@@ -7,7 +7,7 @@ const sizeCodes: ProductSizeCode[] = [
 		description: 'Not Applicable'
 	},
 	{
-		id: 11,
+		id: 1,
 		name: 'Bulk',
 		description: 'Bulk product (typically in tank storange).'
 	},

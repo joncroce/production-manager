@@ -6,7 +6,7 @@ import variantCodes from './variantCodes';
 /**
  * Uses the first 2 digits of the base code to determine cost.
  */
-const pricePerGallonByBaseCode: { [K in number]: number } = {
+const pricePerGallonByBaseCode: Record<number, number> = {
 	50: 1.85,
 	52: 2.65,
 	55: 2.85,
@@ -23,11 +23,10 @@ const pricePerGallonByBaseCode: { [K in number]: number } = {
 const defaultPrice = 2.00;
 
 /**
- * Price multiplier using the sizeCodes that indicate # of gallons
- * Note: Bulk (sizeCode 11) is omitted as Bulk quantity is specified in gallons so multiplier is 1
- * 
+ * Price multiplier using the sizeCodes that indicate # of gallons 
  */
-const priceMultiplierBySizeCode = {
+const priceMultiplierBySizeCode: Record<number, number> = {
+	1: 1, // BULK
 	5: 8,
 	55: 62,
 	275: 300,
@@ -39,16 +38,24 @@ const priceMultiplierBySizeCode = {
  */
 const priceMultiplierForPrivateLabel = 1.05;
 
+const calculateSalesPrice = (baseCodeId: number, sizeCodeId: number, variantCodeId?: number) => {
+	const firstTwoDigitsOfBaseCodeId = Math.floor(baseCodeId / 10);
+	const pricePerGallon = pricePerGallonByBaseCode[firstTwoDigitsOfBaseCodeId] ?? defaultPrice;
+	const priceMultiplier = (priceMultiplierBySizeCode[sizeCodeId] ?? sizeCodeId) * (variantCodeId && variantCodeId > 1 ? priceMultiplierForPrivateLabel : 1);
+
+	return new Decimal(pricePerGallon * priceMultiplier);
+};
+
 /**
  * Generate bulk products for all baseCodes
  */
 const bulkProducts: Product[] = baseCodes.map(({ id, name }) => ({
 	baseCodeId: id,
-	sizeCodeId: 11,
+	sizeCodeId: 1,
 	variantCodeId: 0,
 	description: `${name} Bulk`,
 	quantityInStock: new Decimal(Math.floor(Math.random() * 10_000)),
-	salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice)
+	salesPrice: calculateSalesPrice(id, 1, 0)
 }));
 
 /**
@@ -66,7 +73,7 @@ const pailProductsHouseBrand: Product[] = pailedBaseCodes
 		variantCodeId: 1,
 		description: `"${variantCodes[1]?.name ?? 'House Brand'}" ${name} Pail`,
 		quantityInStock: new Decimal(Math.ceil(Math.random() * 10) * 12 * 3), // 1-20 pallets in 12-block x 3-high
-		salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice * priceMultiplierBySizeCode[5])
+		salesPrice: calculateSalesPrice(id, 5, 1)
 	}));
 
 /**
@@ -79,7 +86,7 @@ const pailProductsPrivateLabel: Product[] = pailedBaseCodes
 		variantCodeId: 2,
 		description: `"${variantCodes[2]?.name ?? 'Private Label'}" ${name} Pail`,
 		quantityInStock: new Decimal(Math.ceil(Math.random() * 10) * 12 * 3), // 1-10 pallets in 12-block x 3-high
-		salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice * priceMultiplierBySizeCode[5] * priceMultiplierForPrivateLabel)
+		salesPrice: calculateSalesPrice(id, 5, 2)
 	}));
 
 /**
@@ -92,7 +99,7 @@ const drumProductsHouseBrand: Product[] = baseCodes
 		variantCodeId: 1,
 		description: `"${variantCodes[1]?.name ?? 'House Brand'}" ${name} Drum`,
 		quantityInStock: new Decimal(Math.ceil(Math.random() * 10) * 4), // 1-10 pallets in 4-block
-		salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice * priceMultiplierBySizeCode[55])
+		salesPrice: calculateSalesPrice(id, 55, 1)
 	}));
 
 /**
@@ -105,7 +112,7 @@ const drumProductsPrivateLabel: Product[] = baseCodes
 		variantCodeId: 2,
 		description: `"${variantCodes[2]?.name ?? 'Private Label'}" ${name} Drum`,
 		quantityInStock: new Decimal(Math.ceil(Math.random() * 10) * 4), // 1-5 pallets in 4-block
-		salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice * priceMultiplierBySizeCode[55])
+		salesPrice: calculateSalesPrice(id, 55, 2)
 	}));
 
 /**
@@ -120,7 +127,7 @@ const toteProducts: Product[] = baseCodes
 			variantCodeId: 0, // N/A (not for distribution; internal production use only)
 			description: `${name} Tote (${size}gal)`,
 			quantityInStock: new Decimal(Math.floor(Math.random() * 12)), // 0-12
-			salesPrice: new Decimal(pricePerGallonByBaseCode[Math.floor(id / 10)] ?? defaultPrice * priceMultiplierBySizeCode[size])
+			salesPrice: calculateSalesPrice(id, size, 0)
 		};
 	});
 

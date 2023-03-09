@@ -75,7 +75,7 @@ model ProductBaseCode {
 }
 
 model ProductSizeCode {
-    id           Int           @id /// e.g., 0 = "N/A"; 11 = "bulk"; 5 = "pail"; 55 = "drum"; 275 = "275 Gal. Tote"; 330 = "330 Gal. Tote"
+    id           Int           @id /// e.g., 0 = "N/A"; 1 = "bulk"; 5 = "pail"; 55 = "drum"; 275 = "275 Gal. Tote"; 330 = "330 Gal. Tote"
     name         String
     description  String?
     ProductCodes ProductCode[]
