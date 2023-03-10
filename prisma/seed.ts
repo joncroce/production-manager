@@ -3,6 +3,8 @@ import baseCodes from './seedData/baseCodes';
 import sizeCodes from './seedData/sizeCodes';
 import variantCodes from './seedData/variantCodes';
 import products from './seedData/products';
+import customers from './seedData/customers';
+import { generateRandomAddress } from './seedData/addresses';
 
 async function main() {
 
@@ -90,6 +92,64 @@ async function main() {
 			}
 		);
 	}
+
+	for await (const {
+		name
+	} of customers) {
+		await prisma.$transaction(async (tx) => {
+			let customer = await tx.customer.create({
+				data: {
+					name
+				}
+			});
+
+			const billingAddress = await tx.address.create({
+				data: {
+					Customer: {
+						connect: {
+							id: customer.id
+						}
+					},
+					...generateRandomAddress()
+				}
+			});
+
+			// 50/50 chance of customer using same address for both billing and shipping
+			const useBillingAddressAsShippingAddress = Boolean(Math.round(Math.random()));
+
+			const shippingAddress = useBillingAddressAsShippingAddress
+				? billingAddress
+				: await tx.address.create({
+					data: {
+						Customer: {
+							connect: {
+								id: customer.id
+							}
+						},
+						...generateRandomAddress()
+					}
+				});
+
+			customer = await tx.customer.update({
+				where: {
+					id: customer.id
+				},
+				data: {
+					DefaultBillingAddress: {
+						connect: {
+							id: billingAddress.id
+						}
+					},
+					DefaultShippingAddress: {
+						connect: {
+							id: shippingAddress.id
+						}
+					}
+				}
+			});
+		});
+	}
+
 }
 
 main()
