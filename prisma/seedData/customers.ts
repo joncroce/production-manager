@@ -5,7 +5,7 @@ import type { Customer } from '@prisma/client';
  * Related Address records will be created and connected during the 
  * same transaction as the Customer. 
  */
-const customers: Pick<Customer, 'name'>[] = [
+const customers: Omit<Customer, 'id' | 'defaultBillingAddressId' | 'defaultShippingAddressId'>[] = [
 	{
 		name: 'Conch Motor Oils'
 	},
