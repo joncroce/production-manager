@@ -131,8 +131,8 @@ async function main() {
 					}
 				});
 
-			// Create 1-10 random sales orders with 1-10 sales order items each
-			for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
+			// Create 1-30 random sales orders with 1-10 sales order items each
+			for (let i = 0; i < Math.floor(Math.random() * 30); i++) {
 				const randomSalesOrder = generateRandomSalesOrder();
 				const salesOrder = await tx.salesOrder.create({
 					data: {
@@ -145,6 +145,7 @@ async function main() {
 					}
 				});
 
+				// Create 1-10 random sales order items for each order
 				for (let j = 0; j < Math.floor(Math.random() * 10); j++) {
 					const { baseCodeId, sizeCodeId, variantCodeId, ...randomSalesOrderItem } = generateRandomSalesOrderItem();
 					await tx.salesOrderItem.create({

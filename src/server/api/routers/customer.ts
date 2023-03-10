@@ -5,14 +5,17 @@ import type { Address } from '@prisma/client';
 export const customerRouter = createTRPCRouter({
 	getAll: publicProcedure.query(({ ctx }) => {
 		return ctx.prisma.customer.findMany({
-			include: {
+			select: {
+				id: true,
+				name: true,
 				Orders: {
-					include: {
-						Items: true
+					select: {
+						readyOn: true,
+						shippedOn: true,
+						deliveredOn: true,
 					}
-				},
-				Addresses: true
-			}
+				}
+			},
 		});
 	}),
 
