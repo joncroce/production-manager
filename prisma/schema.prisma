@@ -134,6 +134,7 @@ model Address {
     id              String    @id @default(cuid())
     street          String
     city            String
+    state           String
     zip             String
     Customer        Customer  @relation(fields: [customerId], references: [id])
     customerId      Int
