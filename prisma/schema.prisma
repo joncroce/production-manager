@@ -151,7 +151,7 @@ model SalesOrderItem {
     sizeCodeId    Int
     variantCodeId Int
     quantity      Decimal
-    price         Decimal
+    pricePerUnit  Decimal
     notes         String?
 }
 
