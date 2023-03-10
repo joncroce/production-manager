@@ -25,6 +25,7 @@ specifiers:
   '@vitejs/plugin-react': ^3.1.0
   babel-loader: ^8.3.0
   css-loader: ^6.7.3
+  dayjs: ^1.11.7
   eslint: ^8.30.0
   eslint-config-next: 13.1.6
   jsdom: ^21.1.0
@@ -60,6 +61,7 @@ dependencies:
   '@trpc/next': 10.11.0_raz3qfxfki7hz5kltyatwmqliq
   '@trpc/react-query': 10.11.0_dcakzkhtr7lfnhwqu5kskkvph4
   '@trpc/server': 10.11.0
+  dayjs: 1.11.7
   next: 13.1.6_pjwopsidmaokadturxaafygjp4
   next-auth: 4.19.2_3vryta7zmbcsw4rrqf4axjqggm
   react: 18.2.0
@@ -2638,6 +2640,10 @@ packages:
       whatwg-mimetype: 3.0.0
       whatwg-url: 11.0.0
     dev: true
+
+  /dayjs/1.11.7:
+    resolution: {integrity: sha512-+Yw9U6YO5TQohxLcIkrXBeY73WP3ejHWVvx8XCk3gxvQDCTEmS48ZrSZCKciI7Bhl/uCMyxYtE9UqRILmFphkQ==}
+    dev: false
 
   /debug/3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
