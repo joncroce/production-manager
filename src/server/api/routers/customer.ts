@@ -8,7 +8,7 @@ export const customerRouter = createTRPCRouter({
 			include: {
 				Orders: {
 					include: {
-						_count: true
+						Items: true
 					}
 				},
 				Addresses: true

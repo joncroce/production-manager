@@ -5,6 +5,7 @@ import variantCodes from './seedData/variantCodes';
 import products from './seedData/products';
 import customers from './seedData/customers';
 import { generateRandomAddress } from './seedData/addresses';
+import { generateRandomSalesOrder, generateRandomSalesOrderItem } from './seedData/salesOrders';
 
 async function main() {
 
@@ -129,6 +130,42 @@ async function main() {
 						...generateRandomAddress()
 					}
 				});
+
+			// Create 1-10 random sales orders with 1-10 sales order items each
+			for (let i = 0; i < Math.floor(Math.random() * 10); i++) {
+				const randomSalesOrder = generateRandomSalesOrder();
+				const salesOrder = await tx.salesOrder.create({
+					data: {
+						Customer: {
+							connect: {
+								id: customer.id
+							}
+						},
+						...randomSalesOrder
+					}
+				});
+
+				for (let j = 0; j < Math.floor(Math.random() * 10); j++) {
+					const { baseCodeId, sizeCodeId, variantCodeId, ...randomSalesOrderItem } = generateRandomSalesOrderItem();
+					await tx.salesOrderItem.create({
+						data: {
+							Order: {
+								connect: {
+									id: salesOrder.id
+								}
+							},
+							Product: {
+								connect: {
+									baseCodeId_sizeCodeId_variantCodeId: {
+										baseCodeId, sizeCodeId, variantCodeId
+									}
+								}
+							},
+							...randomSalesOrderItem
+						}
+					});
+				}
+			}
 
 			customer = await tx.customer.update({
 				where: {
