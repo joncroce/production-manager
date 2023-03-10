@@ -86,8 +86,6 @@ model ProductVariantCode {
     id           Int           @id /// e.g., 0 = "N/A"; 1 = "Store Brand"
     name         String
     description  String?
-    Customer     Customer?     @relation(fields: [customerId], references: [id])
-    customerId   Int?          @unique
     ProductCodes ProductCode[]
 }
 
@@ -119,15 +117,14 @@ model Product {
 // Order Models
 
 model Customer {
-    id                       Int                  @id @default(autoincrement())
-    name                     String               @unique
+    id                       Int          @id @default(autoincrement())
+    name                     String       @unique
     Orders                   SalesOrder[]
-    ProductVariantCodes      ProductVariantCode[]
     Addresses                Address[]
-    DefaultBillingAddress    Address?             @relation(name: "defaultBilling", fields: [defaultBillingAddressId], references: [id])
-    defaultBillingAddressId  String?              @unique
-    DefaultShippingAddress   Address?             @relation(name: "defaultShipping", fields: [defaultShippingAddressId], references: [id])
-    defaultShippingAddressId String?              @unique
+    DefaultBillingAddress    Address?     @relation(name: "defaultBilling", fields: [defaultBillingAddressId], references: [id])
+    defaultBillingAddressId  String?      @unique
+    DefaultShippingAddress   Address?     @relation(name: "defaultShipping", fields: [defaultShippingAddressId], references: [id])
+    defaultShippingAddressId String?      @unique
 }
 
 model Address {
