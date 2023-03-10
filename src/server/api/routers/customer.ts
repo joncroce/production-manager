@@ -4,7 +4,16 @@ import type { Address } from '@prisma/client';
 
 export const customerRouter = createTRPCRouter({
 	getAll: publicProcedure.query(({ ctx }) => {
-		return ctx.prisma.customer.findMany();
+		return ctx.prisma.customer.findMany({
+			include: {
+				Orders: {
+					include: {
+						_count: true
+					}
+				},
+				Addresses: true
+			}
+		});
 	}),
 
 	add: publicProcedure
