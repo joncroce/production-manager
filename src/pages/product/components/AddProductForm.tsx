@@ -3,7 +3,6 @@ import formStyles from '@/components/Form/index.module.css';
 import { useState } from 'react';
 import { api } from '@/utils/api';
 import { useZodForm } from '@/hooks/useZodForm';
-import schema from '@/schemas/product';
 import Form from '@/components/Form';
 import Input from '@/components/Form/Input';
 import Modal from '@/components/Modal';
@@ -13,7 +12,7 @@ import AddCodeModalForm from './AddCodeModalForm';
 import type { MutableRefObject, PropsWithChildren, MouseEventHandler } from 'react';
 import type { ProductBaseCode, ProductSizeCode, ProductVariantCode } from '@prisma/client';
 import type { SubmitHandler } from 'react-hook-form';
-import type { z } from 'zod';
+import { addProductSchema, type AddProduct } from '@/schemas/product';
 
 type ModalFormSuccessData = ProductBaseCode | ProductSizeCode | ProductVariantCode;
 type ModalFormCodeName = 'baseCode' | 'sizeCode' | 'variantCode';
@@ -39,7 +38,7 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 	**/
 	const [keyForReset, setKeyForReset] = useState<number>(0);
 
-	const form = useZodForm({ schema });
+	const form = useZodForm({ schema: addProductSchema });
 
 	const availableBaseCodes = api.baseCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
 	const availableSizeCodes = api.sizeCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
@@ -119,7 +118,7 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 		},
 	});
 
-	const submitForm: SubmitHandler<z.infer<typeof schema>> = (data) => { addProduct.mutate(data); };
+	const submitForm: SubmitHandler<AddProduct> = (data) => { addProduct.mutate(data); };
 	const resetForm = () => {
 		form.reset();
 		setKeyForReset((n) => n + 1);

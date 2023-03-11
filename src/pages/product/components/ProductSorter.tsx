@@ -3,11 +3,12 @@ import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { labelsByField } from '@/utils/product';
 import ArrowRightIcon from './Icons/ArrowRightIcon';
-import type { SortStateEntry } from '@/hooks/useProductSorter';
+import type { SortStateItem } from '@/hooks/useSorter';
+import type { ViewProduct } from '@/schemas/product';
 import type { DragEventHandler, MouseEventHandler } from 'react';
 
 const ProductSorter: React.FC<{
-	sorts: SortStateEntry[];
+	sorts: SortStateItem<ViewProduct>[];
 	moveSort: (fromIndex: number, toIndex: number) => void;
 	resetSorts: () => void;
 }> = ({ sorts, moveSort, resetSorts }) => {
@@ -50,7 +51,7 @@ const ProductSorter: React.FC<{
 export default ProductSorter;
 
 const SortEntry: React.FC<{
-	entry: SortStateEntry;
+	entry: SortStateItem<ViewProduct>;
 	index: number;
 	dragFromIndex: number | null;
 	setDragFromIndex: Dispatch<SetStateAction<number | null>>;

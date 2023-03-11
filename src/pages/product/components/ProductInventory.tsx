@@ -6,12 +6,13 @@ import DescendingNumericIcon from './Icons/DescendingNumericIcon';
 import AscendingNumericIcon from './Icons/AscendingNumericIcon';
 import type { MouseEventHandler, PropsWithChildren } from 'react';
 import type { FormattedProduct } from '@/utils/product';
-import type { SortStateEntry } from '@/hooks/useProductSorter';
+import type { SortStateItem } from '@/hooks/useSorter';
+import type { ViewProduct } from '@/schemas/product';
 
 const ProductInventoryTable: React.FC<{
 	products: FormattedProduct[];
-	sorts: SortStateEntry[];
-	addSort: (entry: SortStateEntry) => void;
+	sorts: SortStateItem<ViewProduct>[];
+	addSort: (entry: SortStateItem<ViewProduct>) => void;
 	removeSort: (index: number) => void;
 	reverseSortDirection: (index: number) => void;
 }> = ({

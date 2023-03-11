@@ -3,15 +3,16 @@ import styles from './index.module.css';
 import Head from 'next/head';
 import Link from 'next/link';
 import { api } from '@/utils/api';
-import useProductSorter from '@/hooks/useProductSorter';
-import { addProductCode, formatForView } from '@/utils/product';
+import useProductSorter from '@/hooks/useSorter';
+import { formatForView } from '@/utils/product';
 import ProductInventory from './components/ProductInventory';
 import ProductSorter from './components/ProductSorter';
 import type { NextPage } from 'next';
+import type { ViewProduct } from '@/schemas/product';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
-	const { addSort, removeSort, moveSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter();
+	const { addSort, removeSort, moveSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter<ViewProduct>();
 
 	return (
 		<>
@@ -38,7 +39,7 @@ const ProductsHome: NextPage = () => {
 							: <ProductInventory
 								products={
 									(products.data ?? [])
-										.map(addProductCode)
+										// .map(addProductCode)
 										.sort(performSorts)
 										.map(formatForView)
 								}

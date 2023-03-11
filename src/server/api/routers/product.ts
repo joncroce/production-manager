@@ -1,13 +1,15 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import schema from '@/schemas/product';
+import { addProductSchema } from '@/schemas/product';
+import { addProductCode } from '@/utils/product';
 
 export const productRouter = createTRPCRouter({
 
-	getAll: publicProcedure.query(({ ctx }) => {
-		return ctx.prisma.product.findMany();
-	}),
+	getAll: publicProcedure.query(({ ctx }) =>
+		ctx.prisma.product.findMany()
+			.then((products) => products.map(addProductCode))
+	),
 	add: publicProcedure
-		.input(schema)
+		.input(addProductSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { baseCodeId, sizeCodeId, variantCodeId, ...inputValues } = input;
 			const product = await ctx.prisma.product.create({

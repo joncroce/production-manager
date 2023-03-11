@@ -1,33 +1,22 @@
-import type { ProductWithCode } from '@/utils/product';
 import { useState } from 'react';
 
-export interface SortStateEntry {
-	field: keyof ProductWithCode;
+export interface SortStateItem<T> {
+	field: keyof T;
 	direction?: 'asc' | 'desc';
 }
 
-const fieldsOfDecimalType: (keyof ProductWithCode)[] = ['quantityInStock', 'salesPrice'];
+const useProductSorter = <T>() => {
 
-const useProductSorter = () => {
-	const [sorts, setSorts] = useState<SortStateEntry[]>([]);
+	const [sorts, setSorts] = useState<SortStateItem<T>[]>([]);
 
-	const performSorts = (a: ProductWithCode, b: ProductWithCode) => {
+	const performSorts = (a: T, b: T) => {
 		let result: 1 | -1 | 0 = 0;
 
 		for (let i = 0; result === 0 && i < sorts.length; i++) {
-			const sortEntry: SortStateEntry | null = sorts[i] ?? null;
+			const sortEntry: SortStateItem<T> | null = sorts[i] ?? null;
 			if (sortEntry) {
 				const { field, direction } = sortEntry;
-				const [aField, bField] = [a, b].map(product => {
-					const result = product[field];
-
-					if (fieldsOfDecimalType.includes(field) && result !== null) {
-						// Decimal fields must be coerced to Number or else will be sorted as a String
-						return +result;
-					}
-					return result;
-
-				});
+				const [aField, bField] = [a, b].map(product => product[field]);
 
 				if (aField === null || aField === undefined) {
 					if (bField === null || bField === undefined) {
@@ -55,7 +44,7 @@ const useProductSorter = () => {
 		{
 			field,
 			direction = 'asc'
-		}: SortStateEntry
+		}: SortStateItem<T>
 	) => {
 		setSorts((prevSorts) => [...prevSorts, { field, direction }]);
 	};
@@ -117,7 +106,7 @@ const useProductSorter = () => {
 		reverseSortDirection,
 		performSorts,
 		resetSorts,
-		getSorts
+		getSorts,
 	};
 };
 
