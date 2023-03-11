@@ -9,6 +9,7 @@ import ProductInventory from './components/ProductInventory';
 import ProductSorter from './components/ProductSorter';
 import type { NextPage } from 'next';
 import type { ViewProduct } from '@/schemas/product';
+import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
@@ -26,7 +27,7 @@ const ProductsHome: NextPage = () => {
 					<ProductPageTitle />
 					<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
 						<ProductCount count={products.data?.length} />
-						<Link href="product/add">Add Product</Link>
+						<AddProductLink />
 					</div>
 					<ProductSorter
 						sorts={getSorts()}
@@ -63,3 +64,5 @@ const ProductCount: React.FC<{ count?: number; }> = ({ count }) =>
 	count && count > 0
 		? <span className={styles.productCount}><strong>{count}</strong> Product{count > 1 && 's'}</span>
 		: null;
+
+const AddProductLink: React.FC = () => <Link href="product/add" className={styles.addProductLink}>Add Product <ArrowTopRightIcon /></Link>;
