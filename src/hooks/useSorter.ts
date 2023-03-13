@@ -5,7 +5,7 @@ export interface SortStateItem<T> {
 	direction?: 'asc' | 'desc';
 }
 
-const useProductSorter = <T>() => {
+const useSorter = <T>() => {
 
 	const [sorts, setSorts] = useState<SortStateItem<T>[]>([]);
 
@@ -110,4 +110,4 @@ const useProductSorter = <T>() => {
 	};
 };
 
-export default useProductSorter;
+export default useSorter;

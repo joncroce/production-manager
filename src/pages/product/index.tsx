@@ -4,9 +4,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { api } from '@/utils/api';
 import useProductSorter from '@/hooks/useSorter';
-import { formatForView } from '@/utils/product';
+import { formatForView, labelsByField } from '@/utils/product';
 import ProductInventory from './components/ProductInventory';
-import ProductSorter from './components/ProductSorter';
+import Sorter from '@/components/Sorter';
 import type { NextPage } from 'next';
 import type { ViewProduct } from '@/schemas/product';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
@@ -29,7 +29,8 @@ const ProductsHome: NextPage = () => {
 						<ProductCount count={products.data?.length} />
 						<AddProductLink />
 					</div>
-					<ProductSorter
+					<Sorter<ViewProduct>
+						labels={labelsByField}
 						sorts={getSorts()}
 						moveSort={moveSort}
 						resetSorts={resetSorts}
