@@ -2,7 +2,7 @@ import styles from './productSorter.module.css';
 import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { labelsByField } from '@/utils/product';
-import ArrowRightIcon from './Icons/ArrowRightIcon';
+import ArrowRightIcon from '@/components/Icons/ArrowRightIcon';
 import type { SortStateItem } from '@/hooks/useSorter';
 import type { ViewProduct } from '@/schemas/product';
 import type { DragEventHandler, MouseEventHandler } from 'react';

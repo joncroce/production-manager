@@ -1,9 +1,9 @@
 import styles from './productInventory.module.css';
 import { labelsByField } from '@/utils/product';
-import DescendingAlphabeticicIcon from './Icons/DescendingAlphabeticIcon';
-import AscendingAlphabeticIcon from './Icons/AscendingAlphabeticIcon';
-import DescendingNumericIcon from './Icons/DescendingNumericIcon';
-import AscendingNumericIcon from './Icons/AscendingNumericIcon';
+import DescendingAlphabeticicIcon from '@/components/Icons/DescendingAlphabeticIcon';
+import AscendingAlphabeticIcon from '@/components/Icons/AscendingAlphabeticIcon';
+import DescendingNumericIcon from '@/components/Icons/DescendingNumericIcon';
+import AscendingNumericIcon from '@/components/Icons/AscendingNumericIcon';
 import type { MouseEventHandler, PropsWithChildren } from 'react';
 import type { FormattedProduct } from '@/utils/product';
 import type { SortStateItem } from '@/hooks/useSorter';
