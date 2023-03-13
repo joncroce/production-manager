@@ -40,7 +40,6 @@ const ProductsHome: NextPage = () => {
 							: <ProductInventory
 								products={
 									(products.data ?? [])
-										// .map(addProductCode)
 										.sort(performSorts)
 										.map(formatForView)
 								}
