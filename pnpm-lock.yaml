@@ -30,6 +30,7 @@ specifiers:
   eslint-config-next: 13.1.6
   jsdom: ^21.1.0
   mini-css-extract-plugin: ^2.7.2
+  nanoid: ^4.0.1
   next: 13.1.6
   next-auth: ^4.19.0
   postcss: ^8.4.21
@@ -62,6 +63,7 @@ dependencies:
   '@trpc/react-query': 10.11.0_dcakzkhtr7lfnhwqu5kskkvph4
   '@trpc/server': 10.11.0
   dayjs: 1.11.7
+  nanoid: 4.0.1
   next: 13.1.6_pjwopsidmaokadturxaafygjp4
   next-auth: 4.19.2_3vryta7zmbcsw4rrqf4axjqggm
   react: 18.2.0
@@ -4150,6 +4152,12 @@ packages:
     resolution: {integrity: sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
+
+  /nanoid/4.0.1:
+    resolution: {integrity: sha512-udKGtCCUafD3nQtJg9wBhRP3KMbPglUsgV5JVsXhvyBs/oefqb4sqMEhKBBgqZncYowu58p1prsZQBYvAj/Gww==}
+    engines: {node: ^14 || ^16 || >=18}
+    hasBin: true
+    dev: false
 
   /natural-compare-lite/1.4.0:
     resolution: {integrity: sha512-Tj+HTDSJJKaZnfiuw+iaF9skdPpTo2GtEly5JHnWV/hfv2Qj/9RKsGISQtLh2ox3l5EAGw487hnBee0sIJ6v2g==}
