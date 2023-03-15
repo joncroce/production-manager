@@ -7,3 +7,14 @@
 .customerCount {
 	font-size: 0.9rem;
 }
+
+.addCustomerLink {
+	padding: 0.25em 0.5em;
+	display: flex;
+	gap: 0.25em;
+	border: 2px solid var(--green12);
+	background-color: var(--green7);
+	color: black;
+	font-weight: 600;
+	text-decoration: none;
+}

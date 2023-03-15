@@ -6,3 +6,5 @@ export const addCustomerSchema = z.object({
 	DefaultShippingAddress: addAddressSchema,
 	DefaultBillingAddress: addAddressSchema,
 });
+
+export type AddCustomer = z.infer<typeof addCustomerSchema>;

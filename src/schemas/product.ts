@@ -9,9 +9,4 @@ export const addProductSchema = z.object({
 	salesPrice: z.coerce.number().optional().default(99999)
 });
 
-export const viewProductSchema = z.object({
-	code: z.string(),
-}).merge(addProductSchema);
-
 export type AddProduct = z.infer<typeof addProductSchema>;
-export type ViewProduct = z.infer<typeof viewProductSchema>;

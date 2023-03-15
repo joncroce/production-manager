@@ -1,42 +1,54 @@
-import styles from './productInventory.module.css';
-import { labelsByField } from '@/utils/product';
+import styles from './index.module.css';
 import DescendingAlphabeticicIcon from '@/components/Icons/DescendingAlphabeticIcon';
 import AscendingAlphabeticIcon from '@/components/Icons/AscendingAlphabeticIcon';
 import DescendingNumericIcon from '@/components/Icons/DescendingNumericIcon';
 import AscendingNumericIcon from '@/components/Icons/AscendingNumericIcon';
 import type { MouseEventHandler, PropsWithChildren } from 'react';
-import type { FormattedProduct } from '@/utils/product';
-import type { SortStateItem } from '@/hooks/useSorter';
-import type { ViewProduct } from '@/schemas/product';
+import { nanoid } from 'nanoid';
+import useSorter from '@/hooks/useSorter';
+import Sorter from '../Sorter';
 
-const ProductInventoryTable: React.FC<{
-	products: FormattedProduct[];
-	sorts: SortStateItem<ViewProduct>[];
-	addSort: (entry: SortStateItem<ViewProduct>) => void;
-	removeSort: (index: number) => void;
-	reverseSortDirection: (index: number) => void;
-}> = ({
-	products,
-	sorts,
-	addSort,
-	removeSort,
-	reverseSortDirection
-}) => {
-		if (!products.length) {
-			return <span>No Products</span>;
-		}
+export type SortType = 'alphabetic' | 'numeric';
 
-		return (
-			<table className={styles.table}>
+interface SortableTableProps<T> {
+	items: T[];
+	itemLabel: string;
+	fieldLabels: Map<keyof T & string, string>;
+	fieldSortTypes: Map<keyof T & string, SortType>;
+	formatter: (item: T) => Map<keyof T & string, string>;
+}
+
+function SortableDataTable<T>({
+	items,
+	itemLabel,
+	fieldLabels,
+	fieldSortTypes,
+	formatter,
+}: SortableTableProps<T>) {
+	const { addSort, removeSort, moveSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useSorter<T>();
+
+	if (!items.length) {
+		return <span>No {itemLabel ?? 'Item'}s</span>;
+	}
+
+	const sorts = getSorts();
+
+	return (
+		<>
+			<Sorter<T>
+				sorts={sorts}
+				labels={fieldLabels}
+				moveSort={moveSort}
+				resetSorts={resetSorts}
+			/>
+			<table className={styles.table} style={{ gridTemplateColumns: `repeat(${fieldLabels.size}, 1fr)` }}>
 				<thead className={styles.thead}>
 					<tr className={styles.tr}>
-						<th className={styles.th}>
-						</th>
 						{
-							[...labelsByField.entries()].map(([fieldName, labelText]) => (
-								<th key={fieldName} className={`${styles[`th_${fieldName}`] ?? ''} ${styles.th ?? ''}`}>
+							[...fieldLabels.entries()].map(([fieldName, labelText]) => (
+								<th key={String(fieldName)} className={styles.th}>
 									<ToggleSortFieldButton
-										key={fieldName}
+										key={String(fieldName)}
 										sortingBy={Boolean(sorts.find(sort => sort.field === fieldName))}
 										handleClick={
 											(() => {
@@ -57,16 +69,15 @@ const ProductInventoryTable: React.FC<{
 											(() => {
 												const sortBy = sorts.find(sort => sort.field === fieldName);
 												if (!Boolean(sortBy)) return <></>;
-												if ([
-													'code', 'description'
-												].includes(fieldName)) {
-													return sortBy?.direction === 'desc'
-														? <DescendingAlphabeticicIcon />
-														: <AscendingAlphabeticIcon />;
-												} else {
+												const sortType = fieldSortTypes.get(fieldName) ?? 'alphabetic';
+												if (sortType === 'numeric') {
 													return sortBy?.direction === 'desc'
 														? <DescendingNumericIcon />
 														: <AscendingNumericIcon />;
+												} else {
+													return sortBy?.direction === 'desc'
+														? <DescendingAlphabeticicIcon />
+														: <AscendingAlphabeticIcon />;
 												}
 											})()
 										}
@@ -78,12 +89,11 @@ const ProductInventoryTable: React.FC<{
 				</thead>
 				<tbody className={styles.tbody}>
 					{
-						products.map((product, index) => (
-							<tr key={product.get('code')} className={styles.tr}>
-								<td className={`${styles.td ?? ''} ${styles.td_index ?? ''}`}>{index + 1}</td>
+						[...items].sort(performSorts).map(formatter).map((item) => (
+							<tr key={nanoid(6)} className={styles.tr}>
 								{
-									[...product.entries()].map(([k, v]) => (
-										<td key={product.get('code')?.concat(String(k))} className={`${styles[`td_${k}`] ?? ''} ${styles.td ?? ''}`}>{v}</td>
+									[...item.entries()].map(([/* k */, v]) => (
+										<td key={nanoid(6)} className={styles.td}>{v}</td>
 									))
 								}
 							</tr>
@@ -91,10 +101,11 @@ const ProductInventoryTable: React.FC<{
 					}
 				</tbody>
 			</table>
-		);
-	};
+		</>
+	);
+}
 
-export default ProductInventoryTable;
+export default SortableDataTable;
 
 const ToggleSortFieldButton: React.FC<
 	PropsWithChildren &

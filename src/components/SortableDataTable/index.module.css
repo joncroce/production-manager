@@ -1,15 +1,6 @@
 .table {
 	display: grid;
-	grid-template-columns: 
-		minmax(2rem, 0.5fr)
-		minmax(7.5rem, 1.8fr)
-		minmax(4.5rem, 1.2fr)
-		minmax(4.5rem, 1.2fr)
-		minmax(4.5rem, 1.2fr)
-		minmax(4.5rem, 1.2fr)
-		minmax(4.5rem, 1.2fr)
-		minmax(9rem, 2.5fr)
-		;
+	/* grid-template-columns: SET AS INLINE STYLE */
 	width: 100%;
 	border-width: 2px;
 	border-style: solid;
@@ -26,37 +17,18 @@
 	align-items: center;
 }
 
-.td_index,
-.td_code,
-.td_baseCodeId,
-.td_sizeCodeId,
-.td_variantCodeId,
-.td_quantityInStock,
-.td_salesPrice {
+.td {
 	font-family: monospace;
-}
-
-.td_description {
-	text-align: center;
 }
 
 thead > tr > .th {
 	display: flex;
+	justify-content: center;
+	align-items: center;
 	gap: 0.25em;
 	padding-block: 0.5em;
 	background-color: var(--amber6);
 	border-width: 0px 0px 2px 0px;
-	border-style: solid;
-	border-color: var(--amber12);
-}
-
-thead > tr > .th:first-of-type {
-	background-color: var(--amber12);
-	border-width: 0px 2px 2px 0px;
-}
-
-tbody > tr > .td:first-of-type {
-	border-width: 0px 2px 0px 0px;
 	border-style: solid;
 	border-color: var(--amber12);
 }

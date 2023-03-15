@@ -1,12 +1,10 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { addProductSchema } from '@/schemas/product';
-import { addProductCode } from '@/utils/product';
 
 export const productRouter = createTRPCRouter({
 
 	getAll: publicProcedure.query(({ ctx }) =>
 		ctx.prisma.product.findMany()
-			.then((products) => products.map(addProductCode))
 	),
 	add: publicProcedure
 		.input(addProductSchema)
@@ -39,3 +37,5 @@ export const productRouter = createTRPCRouter({
 			return product;
 		})
 });
+
+export type ProductRouter = typeof productRouter;

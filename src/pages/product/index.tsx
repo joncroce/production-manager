@@ -2,18 +2,86 @@ import pageStyles from '@/pages/index.module.css';
 import styles from './index.module.css';
 import Head from 'next/head';
 import Link from 'next/link';
+import { z } from 'zod';
 import { api } from '@/utils/api';
-import useProductSorter from '@/hooks/useSorter';
-import { formatForView, labelsByField } from '@/utils/product';
-import ProductInventory from './components/ProductInventory';
-import Sorter from '@/components/Sorter';
-import type { NextPage } from 'next';
-import type { ViewProduct } from '@/schemas/product';
+import { buildProductCode } from '@/utils/product';
 import { ArrowTopRightIcon } from '@radix-ui/react-icons';
+import SortableDataTable, { type SortType } from '@/components/SortableDataTable';
+import type { NextPage } from 'next';
+import type { inferRouterOutputs } from '@trpc/server';
+import type { ProductRouter } from '@/server/api/routers/product';
+
+type RouterOutput = inferRouterOutputs<ProductRouter>;
+type ProductGetAllOutput = RouterOutput['getAll'];
+
+const sortableProductSchema = z.object({
+	code: z.string(),
+	baseCodeId: z.number(),
+	sizeCodeId: z.number(),
+	variantCodeId: z.number(),
+	quantityInStock: z.number().default(0),
+	salesPrice: z.number().nullable(),
+	description: z.string().default(''),
+});
+
+type SortableProduct = z.infer<typeof sortableProductSchema>;
+
+const toSortable = (product: ProductGetAllOutput[number]): SortableProduct => {
+	const { baseCodeId, sizeCodeId, variantCodeId, quantityInStock, salesPrice, description } = product;
+
+	return {
+		code: buildProductCode(baseCodeId, sizeCodeId, variantCodeId),
+		baseCodeId,
+		sizeCodeId,
+		variantCodeId,
+		quantityInStock: Number(quantityInStock ?? 0),
+		salesPrice: salesPrice !== null ? Number(salesPrice) : null,
+		description: String(description ?? ''),
+	};
+};
+
+const fieldLabels: Map<keyof SortableProduct & string, string> = new Map(
+	[
+		['code', 'Code'],
+		['baseCodeId', 'BaseId'],
+		['sizeCodeId', 'SizeId'],
+		['variantCodeId', 'VariantId'],
+		['quantityInStock', 'Quantity'],
+		['salesPrice', 'Price'],
+		['description', 'Description'],
+	]
+);
+
+const fieldSortTypes: Map<keyof SortableProduct & string, SortType> = new Map(
+	[
+		['code', 'alphabetic'],
+		['baseCodeId', 'numeric'],
+		['sizeCodeId', 'numeric'],
+		['variantCodeId', 'numeric'],
+		['quantityInStock', 'numeric'],
+		['salesPrice', 'numeric'],
+		['description', 'alphabetic'],
+	]
+);
+
+const formatter = (product: SortableProduct): Map<keyof SortableProduct & string, string> => {
+	const { code, baseCodeId, sizeCodeId, variantCodeId, quantityInStock, salesPrice, description } = product;
+
+	return new Map(
+		[
+			['code', code],
+			['baseCodeId', String(baseCodeId)],
+			['sizeCodeId', String(sizeCodeId)],
+			['variantCodeId', variantCodeId === 0 ? 'N/A' : String(variantCodeId)],
+			['quantityInStock', String(quantityInStock)],
+			['salesPrice', salesPrice !== null ? Number.parseFloat(salesPrice.toString()).toFixed(2) : 'NA'],
+			['description', description],
+		]
+	);
+};
 
 const ProductsHome: NextPage = () => {
 	const products = api.products.getAll.useQuery();
-	const { addSort, removeSort, moveSort, reverseSortDirection, resetSorts, getSorts, performSorts } = useProductSorter<ViewProduct>();
 
 	return (
 		<>
@@ -29,27 +97,13 @@ const ProductsHome: NextPage = () => {
 						<ProductCount count={products.data?.length} />
 						<AddProductLink />
 					</div>
-					<Sorter<ViewProduct>
-						labels={labelsByField}
-						sorts={getSorts()}
-						moveSort={moveSort}
-						resetSorts={resetSorts}
+					<SortableDataTable<SortableProduct>
+						items={(products.data ?? []).map(toSortable)}
+						itemLabel="Product"
+						fieldLabels={fieldLabels}
+						fieldSortTypes={fieldSortTypes}
+						formatter={formatter}
 					/>
-					{
-						products.isLoading
-							? <div>Loading...</div>
-							: <ProductInventory
-								products={
-									(products.data ?? [])
-										.sort(performSorts)
-										.map(formatForView)
-								}
-								sorts={getSorts()}
-								addSort={addSort}
-								removeSort={removeSort}
-								reverseSortDirection={reverseSortDirection}
-							/>
-					}
 				</div>
 			</main>
 		</>
