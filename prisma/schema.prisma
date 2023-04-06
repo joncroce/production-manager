@@ -55,6 +55,7 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
+    Blends        Blend[]
 }
 
 model VerificationToken {
@@ -68,10 +69,12 @@ model VerificationToken {
 // Product Models
 
 model ProductBaseCode {
-    id           Int           @id /// 3-digit. First digit indicates general product type.
-    name         String
-    description  String?
-    ProductCodes ProductCode[]
+    id                     Int                     @id /// 3-digit. First digit indicates general product type.
+    name                   String
+    description            String?
+    ProductCodes           ProductCode[]
+    BlendableProducts      BlendableProduct[]
+    BlendFormulaComponents BlendFormulaComponent[]
 }
 
 model ProductSizeCode {
@@ -112,6 +115,61 @@ model Product {
     SalesOrderItems SalesOrderItem[]
 
     @@unique([baseCodeId, sizeCodeId, variantCodeId])
+}
+
+// Blend Models
+
+model BlendableProduct {
+    BaseCode   ProductBaseCode @relation(fields: [baseCodeId], references: [id])
+    baseCodeId Int             @unique
+    Formulas   BlendFormula[]
+    Blends     Blend[]
+}
+
+model BlendFormula {
+    id         String                  @id @default(cuid())
+    Product    BlendableProduct        @relation(fields: [productId], references: [baseCodeId])
+    productId  Int
+    Components BlendFormulaComponent[]
+    Blends     Blend[]
+}
+
+model BlendFormulaComponent {
+    id              String           @id @default(cuid())
+    Formula         BlendFormula     @relation(fields: [formulaId], references: [id])
+    formulaId       String
+    BaseCode        ProductBaseCode  @relation(fields: [baseCodeId], references: [id])
+    baseCodeId      Int
+    proportion      Decimal
+    note            String?
+    BlendComponents BlendComponent[]
+
+    @@unique([formulaId, baseCodeId])
+}
+
+model BlendComponent {
+    FormulaComponent   BlendFormulaComponent @relation(fields: [formulaComponentId], references: [id])
+    formulaComponentId String
+    Blend              Blend                 @relation(fields: [blendId], references: [id])
+    blendId            String
+    source             String
+    quantity           Decimal
+    note               String?
+
+    @@unique([formulaComponentId, blendId])
+}
+
+model Blend {
+    id            String           @id @default(cuid())
+    Product       BlendableProduct @relation(fields: [productId], references: [baseCodeId])
+    productId     Int
+    Formula       BlendFormula     @relation(fields: [formulaId], references: [id])
+    formulaId     String
+    Components    BlendComponent[]
+    quantity      Int
+    destination   String
+    RequestedBy   User             @relation(fields: [requestedById], references: [id])
+    requestedById String
 }
 
 // Order Models
