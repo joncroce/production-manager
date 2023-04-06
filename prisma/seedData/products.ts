@@ -90,9 +90,14 @@ const pailProductsPrivateLabel: Product[] = pailedBaseCodes
 	}));
 
 /**
+ * Drummed baseCodes for motor oils (500s & 600s), hydraulic fluids (700s), gear oils (800s), and automatic transmission fluids (900s)
+ */
+const drummedBaseCodes = baseCodes.filter(({ id }) => [5, 6, 7, 8, 9].includes(Math.floor(id / 100)));
+
+/**
  * Generate "House Brand" drum products
  */
-const drumProductsHouseBrand: Product[] = baseCodes
+const drumProductsHouseBrand: Product[] = drummedBaseCodes
 	.map(({ id, name }) => ({
 		baseCodeId: id,
 		sizeCodeId: 55,
@@ -105,7 +110,7 @@ const drumProductsHouseBrand: Product[] = baseCodes
 /**
  * Generate private label drum products
  */
-const drumProductsPrivateLabel: Product[] = baseCodes
+const drumProductsPrivateLabel: Product[] = drummedBaseCodes
 	.map(({ id, name }) => ({
 		baseCodeId: id,
 		sizeCodeId: 55,
@@ -116,9 +121,14 @@ const drumProductsPrivateLabel: Product[] = baseCodes
 	}));
 
 /**
+ * Toted baseCodes for additive packages (300s & 400s), motor oils (500s & 600s), hydraulic fluids (700s), gear oils (800s), and automatic transmission fluids (900s)
+ */
+const totedBaseCodes = baseCodes.filter(({ id }) => [3, 4, 5, 6, 7, 8, 9].includes(Math.floor(id / 100)));
+
+/**
  * Generate unbranded tote products
  */
-const toteProducts: Product[] = baseCodes
+const toteProducts: Product[] = totedBaseCodes
 	.map(({ id, name }) => {
 		const size = Math.round(Math.random()) ? 275 : 330; // 50/50 whether small (275gal) or large (330gal) tote 
 		return {
