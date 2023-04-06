@@ -2,6 +2,61 @@ import type { ProductBaseCode } from '@prisma/client';
 
 const baseCodes: ProductBaseCode[] = [
 	{
+		id: 100,
+		name: 'Base Oil A',
+		description: 'Base Oil Type A'
+	},
+	{
+		id: 101,
+		name: 'Base Oil B',
+		description: 'Base Oil Type B'
+	},
+	{
+		id: 102,
+		name: 'Base Oil C',
+		description: 'Base Oil Type C'
+	},
+	{
+		id: 110,
+		name: 'Syn Base Oil A',
+		description: 'Synthetic Base Oil Type A'
+	},
+	{
+		id: 111,
+		name: 'Syn Base Oil B',
+		description: 'Synthetic Base Oil Type B'
+	},
+	{
+		id: 112,
+		name: 'Syn Base Oil C',
+		description: 'Synthetic Base Oil Type C'
+	},
+	{
+		id: 200,
+		name: 'VI A',
+		description: 'Viscosity Improver Type A'
+	},
+	{
+		id: 201,
+		name: 'VI B',
+		description: 'Viscosity Improver Type B'
+	},
+	{
+		id: 210,
+		name: 'Syn VI A',
+		description: 'Synthetic Viscosity Improver Type A'
+	},
+	{
+		id: 300,
+		name: 'AP 41548',
+		description: 'Additive Package #41548'
+	},
+	{
+		id: 301,
+		name: 'AP 91114',
+		description: 'Additive Package #91114'
+	},
+	{
 		id: 500,
 		name: '5W-20',
 		description: 'Conventional 5W-20 motor oil.'
