@@ -6,6 +6,7 @@ import products from './seedData/products';
 import customers from './seedData/customers';
 import { generateRandomAddress } from './seedData/addresses';
 import { generateRandomSalesOrder, generateRandomSalesOrderItem } from './seedData/salesOrders';
+import { generateTanksForProduct } from './seedData/tanks';
 
 async function main() {
 
@@ -38,6 +39,11 @@ async function main() {
 			}
 		);
 	}
+
+	// Upsert Products (and related Tanks for Bulk Unlabeled Products)
+
+	let tankZone = 'A';
+	let tankNumber = 1;
 
 	for await (const {
 		baseCodeId,
@@ -92,6 +98,45 @@ async function main() {
 				update: {}
 			}
 		);
+
+		if (sizeCodeId === 1 && variantCodeId === 0) {
+			const tanks = generateTanksForProduct({
+				baseCodeId, sizeCodeId, variantCodeId, quantityInStock
+			}, tankZone, tankNumber);
+
+			for await (const {
+				id,
+				quantity,
+				capacity,
+				heel,
+				isDefaultSource
+			} of tanks) {
+				await prisma.tank.upsert({
+					where: { id },
+					create: {
+						id,
+						quantity,
+						capacity,
+						heel,
+						isDefaultSource,
+						Product: {
+							connect: {
+								baseCodeId_sizeCodeId_variantCodeId: {
+									baseCodeId, sizeCodeId, variantCodeId
+								}
+							}
+						}
+					},
+					update: {},
+				});
+			}
+
+			tankNumber += tanks.length;
+			if (tankNumber > 40) {
+				tankNumber = 1;
+				tankZone = String.fromCharCode(tankZone.charCodeAt(0) + 1);
+			}
+		}
 	}
 
 	for await (const {
