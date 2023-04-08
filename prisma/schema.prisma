@@ -110,11 +110,26 @@ model Product {
     sizeCodeId      Int
     variantCodeId   Int
     description     String?
-    quantityInStock Decimal?         @default(0)
+    quantityInStock Decimal          @default(0)
     salesPrice      Decimal?
     SalesOrderItems SalesOrderItem[]
+    sourceTanks     Tank[]
 
     @@unique([baseCodeId, sizeCodeId, variantCodeId])
+}
+
+// Tank Models
+
+model Tank {
+    id              String  @id /// Matches pattern /[A-Z]{1,2}\-\d{2}/ e.g., A-01 for Storage Tank or BL-01 for Blend Tank
+    Product         Product @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId      Int
+    sizeCodeId      Int     @default(1) /// Defaults to sizeCodeId for Bulk products
+    variantCodeId   Int     @default(0) /// Defaults to variantCodeId for Unbranded products
+    quantity        Decimal @default(0) /// Defaults to empty
+    capacity        Decimal
+    heel            Decimal
+    isDefaultSource Boolean @default(false)
 }
 
 // Blend Models
