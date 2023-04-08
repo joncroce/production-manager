@@ -1,0 +1,133 @@
+.page {
+  padding: 1rem;
+  display: grid;
+  place-items: center;
+
+  &__heading {
+    text-align: center;
+    font-size: 3rem;
+  }
+
+  &__form {
+  }
+}
+
+.add-formula-form {
+  display: grid;
+  place-items: center;
+
+  &__section {
+    margin-block: 1rem;
+    display: grid;
+    place-items: center;
+  }
+
+  &__heading {
+    margin-block: 0.5em;
+    font-size: 2rem;
+  }
+
+  &__base-code {
+    margin-block: 0.5em;
+    font-size: 1.5rem;
+
+    &::before {
+      content: "✔ ";
+      color: green;
+    }
+  }
+
+  &__component-list {
+    list-style: none;
+    margin-block: 1rem;
+  }
+
+  &__label {
+    font-weight: 700;
+    font-size: 1.35rem;
+  }
+
+  &__button {
+    font-size: 1.2em;
+    padding-inline: 0.5em;
+    border: 1px solid black;
+  }
+
+  &__controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+.formula-component {
+  margin-block: 1rem;
+  display: grid;
+  min-width: min(800px, 100vw);
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: auto;
+  gap: 1rem;
+
+  &__remove {
+    grid-column: span 1;
+    place-self: center;
+  }
+
+  &__number {
+    grid-column: span 1;
+    place-self: center;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 1.5rem;
+  }
+
+  &__base-code {
+    grid-column: span 3;
+    font-size: 1rem;
+  }
+
+  &__proportion {
+    grid-column: span 1;
+  }
+
+  &__note {
+    grid-column: span 6;
+  }
+
+  &__input {
+    width: 100%;
+    border: 1px solid black;
+    padding-inline: 0.25em;
+  }
+
+  &__button {
+    border: 1px solid black;
+    padding: 0.25em 0.5em;
+
+    &--remove {
+      background-color: pink;
+    }
+  }
+
+  &__label {
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+}
+
+.base-code {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+
+  &__label {
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+
+  &__button {
+    border: 1px solid black;
+    padding-inline: 0.5em;
+  }
+}
