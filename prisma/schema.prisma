@@ -55,7 +55,8 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    Blends        Blend[]
+    // TODO
+    // Blends        Blend[]
 }
 
 model VerificationToken {
@@ -121,15 +122,17 @@ model Product {
 // Tank Models
 
 model Tank {
-    id              String  @id /// Matches pattern /[A-Z]{1,2}\-\d{2}/ e.g., A-01 for Storage Tank or BL-01 for Blend Tank
-    Product         Product @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId      Int
-    sizeCodeId      Int     @default(1) /// Defaults to sizeCodeId for Bulk products
-    variantCodeId   Int     @default(0) /// Defaults to variantCodeId for Unbranded products
-    quantity        Decimal @default(0) /// Defaults to empty
-    capacity        Decimal
-    heel            Decimal
-    isDefaultSource Boolean @default(false)
+    id                     String           @id /// Matches pattern /[A-Z]{1,2}\-\d{2}/ e.g., A-01 for Storage Tank or BL-01 for Blend Tank
+    Product                Product          @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId             Int
+    sizeCodeId             Int              @default(1) /// Defaults to sizeCodeId for Bulk products
+    variantCodeId          Int              @default(0) /// Defaults to variantCodeId for Unbranded products
+    quantity               Decimal          @default(0) /// Defaults to empty
+    capacity               Decimal
+    heel                   Decimal
+    isDefaultSource        Boolean          @default(false)
+    BlendsDestined         Blend[]
+    BlendComponentsSourced BlendComponent[]
 }
 
 // Blend Models
@@ -162,29 +165,35 @@ model BlendFormulaComponent {
     @@unique([formulaId, baseCodeId])
 }
 
+model Blend {
+    id                String           @id @default(cuid())
+    Product           BlendableProduct @relation(fields: [productId], references: [baseCodeId])
+    productId         Int
+    Formula           BlendFormula     @relation(fields: [formulaId], references: [id])
+    formulaId         String
+    Components        BlendComponent[]
+    targetQuantity    Decimal
+    actualQuantity    Decimal?
+    DestinationTank   Tank?            @relation(fields: [destinationTankId], references: [id])
+    destinationTankId String
+    note              String?
+    // TODO
+    // RequestedBy   User             @relation(fields: [requestedById], references: [id])
+    // requestedById String
+}
+
 model BlendComponent {
     FormulaComponent   BlendFormulaComponent @relation(fields: [formulaComponentId], references: [id])
     formulaComponentId String
     Blend              Blend                 @relation(fields: [blendId], references: [id])
     blendId            String
-    source             String
-    quantity           Decimal
+    SourceTank         Tank                  @relation(fields: [sourceTankId], references: [id])
+    sourceTankId       String
+    targetQuantity     Decimal
+    actualQuantity     Decimal?
     note               String?
 
     @@unique([formulaComponentId, blendId])
-}
-
-model Blend {
-    id            String           @id @default(cuid())
-    Product       BlendableProduct @relation(fields: [productId], references: [baseCodeId])
-    productId     Int
-    Formula       BlendFormula     @relation(fields: [formulaId], references: [id])
-    formulaId     String
-    Components    BlendComponent[]
-    quantity      Int
-    destination   String
-    RequestedBy   User             @relation(fields: [requestedById], references: [id])
-    requestedById String
 }
 
 // Order Models
