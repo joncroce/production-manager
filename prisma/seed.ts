@@ -1,5 +1,5 @@
 import { prisma } from '../src/server/db';
-import baseCodes from './seedData/baseCodes';
+import baseCodes, { BaseOilCategorizer } from './seedData/baseCodes';
 import sizeCodes from './seedData/sizeCodes';
 import variantCodes from './seedData/variantCodes';
 import products from './seedData/products';
@@ -7,6 +7,7 @@ import customers from './seedData/customers';
 import { generateRandomAddress } from './seedData/addresses';
 import { generateRandomSalesOrder, generateRandomSalesOrderItem } from './seedData/salesOrders';
 import { generateTanksForProduct } from './seedData/tanks';
+import { generateRandomBlendFormula } from './seedData/blendFormulas';
 
 async function main() {
 
@@ -135,6 +136,37 @@ async function main() {
 			if (tankNumber > 40) {
 				tankNumber = 1;
 				tankZone = String.fromCharCode(tankZone.charCodeAt(0) + 1);
+			}
+
+			if (
+				[
+					BaseOilCategorizer.isMotorOil,
+					BaseOilCategorizer.isHeavyDutyMotorOil,
+					BaseOilCategorizer.isHydraulicFluid,
+					BaseOilCategorizer.isGearOil,
+					BaseOilCategorizer.isTransmissionFluid
+				]
+					.map((fn) => fn.apply(undefined, [baseCodeId]))
+					.includes(true)
+			) {
+				const blendFormula = generateRandomBlendFormula(baseCodeId);
+
+				await prisma.blendFormula.create({
+					data: {
+						Product: {
+							create: {
+								BaseCode: {
+									connect: {
+										id: baseCodeId
+									}
+								}
+							}
+						},
+						Components: {
+							create: blendFormula.formulaComponents
+						}
+					}
+				});
 			}
 		}
 	}
