@@ -159,3 +159,72 @@ const baseCodes: ProductBaseCode[] = [
 ];
 
 export default baseCodes;
+
+const isBaseOil = (baseCodeId: number) => 1 === Math.floor(baseCodeId / 100);
+const isViscosityImprover = (baseCodeId: number) => 2 === Math.floor(baseCodeId / 100);
+const isAdditivePackage = (baseCodeId: number) => 3 === Math.floor(baseCodeId / 100);
+const isMotorOil = (baseCodeId: number) => [4, 5].includes(Math.floor(baseCodeId / 100));
+const isHeavyDutyMotorOil = (baseCodeId: number) => 6 === Math.floor(baseCodeId / 100);
+const isHydraulicFluid = (baseCodeId: number) => 7 === Math.floor(baseCodeId / 100);
+const isGearOil = (baseCodeId: number) => 8 === Math.floor(baseCodeId / 100);
+const isTransmissionFluid = (baseCodeId: number) => 9 === Math.floor(baseCodeId / 100);
+
+export const BaseOilCategorizer = {
+	isBaseOil,
+	isViscosityImprover,
+	isAdditivePackage,
+	isMotorOil,
+	isHeavyDutyMotorOil,
+	isHydraulicFluid,
+	isGearOil,
+	isTransmissionFluid
+};
+
+export const groupBaseCodesByCategory = (baseCodes: ProductBaseCode[]) => baseCodes.reduce(
+	(
+		result: {
+			[K in 'baseOils'
+			| 'viscosityImprovers'
+			| 'additivePackages'
+			| 'motorOils'
+			| 'heavyDutyMotorOils'
+			| 'hydraulicFluids'
+			| 'gearOils'
+			| 'transmissionFluids'
+			]: ProductBaseCode[]
+		},
+		curr
+	) => {
+		const baseCodeId = curr.id;
+
+		if (isBaseOil(baseCodeId))
+			return { ...result, baseOils: [...result.baseOils, curr] };
+		if (isViscosityImprover(baseCodeId))
+			return { ...result, viscosityImprovers: [...result.viscosityImprovers, curr] };
+		if (isAdditivePackage(baseCodeId))
+			return { ...result, additivePackages: [...result.additivePackages, curr] };
+		if (isMotorOil(baseCodeId))
+			return { ...result, motorOils: [...result.motorOils, curr] };
+		if (isHeavyDutyMotorOil(baseCodeId))
+			return { ...result, heavyDutyMotorOils: [...result.heavyDutyMotorOils, curr] };
+		if (isHydraulicFluid(baseCodeId))
+			return { ...result, hydraulicFluids: [...result.hydraulicFluids, curr] };
+		if (isGearOil(baseCodeId))
+			return { ...result, gearOils: [...result.gearOils, curr] };
+		if (isTransmissionFluid(baseCodeId))
+			return { ...result, transmissionFluids: [...result.transmissionFluids, curr] };
+
+		return result;
+	}, {
+	baseOils: [],
+	viscosityImprovers: [],
+	additivePackages: [],
+	motorOils: [],
+	heavyDutyMotorOils: [],
+	hydraulicFluids: [],
+	gearOils: [],
+	transmissionFluids: []
+});
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const getRandomBaseCodeFromArray = (arr: ProductBaseCode[]): ProductBaseCode => arr[Math.floor(Math.random() * arr.length)]!;
