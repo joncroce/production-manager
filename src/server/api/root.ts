@@ -5,6 +5,7 @@ import { sizeCodeRouter } from './routers/sizeCode';
 import { variantCodeRouter } from './routers/variantCode';
 import { customerRouter } from './routers/customer';
 import { blendingRouter } from './routers/blending';
+import { tankRouter } from './routers/tank';
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   variantCode: variantCodeRouter,
   customers: customerRouter,
   blending: blendingRouter,
+  tank: tankRouter
 });
 
 // export type definition of API
