@@ -70,12 +70,10 @@ model VerificationToken {
 // Product Models
 
 model ProductBaseCode {
-    id                     Int                     @id /// 3-digit. First digit indicates general product type.
-    name                   String
-    description            String?
-    ProductCodes           ProductCode[]
-    BlendableProducts      BlendableProduct[]
-    BlendFormulaComponents BlendFormulaComponent[]
+    id           Int           @id /// 3-digit. First digit indicates general product type.
+    name         String
+    description  String?
+    ProductCodes ProductCode[]
 }
 
 model ProductSizeCode {
@@ -106,15 +104,17 @@ model ProductCode {
 }
 
 model Product {
-    Code            ProductCode      @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId      Int
-    sizeCodeId      Int
-    variantCodeId   Int
-    description     String?
-    quantityInStock Decimal          @default(0)
-    salesPrice      Decimal?
-    SalesOrderItems SalesOrderItem[]
-    sourceTanks     Tank[]
+    Code                   ProductCode             @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId             Int
+    sizeCodeId             Int
+    variantCodeId          Int
+    description            String?
+    quantityInStock        Decimal                 @default(0)
+    salesPrice             Decimal?
+    SalesOrderItems        SalesOrderItem[]
+    SourceTanks            Tank[]
+    BlendableProducts      BlendableProduct[]
+    BlendFormulaComponents BlendFormulaComponent[]
 
     @@unique([baseCodeId, sizeCodeId, variantCodeId])
 }
@@ -138,37 +138,45 @@ model Tank {
 // Blend Models
 
 model BlendableProduct {
-    BaseCode   ProductBaseCode @relation(fields: [baseCodeId], references: [id])
-    baseCodeId Int             @unique
-    Formulas   BlendFormula[]
-    Blends     Blend[]
+    Product       Product        @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId    Int
+    sizeCodeId    Int            @default(1)
+    variantCodeId Int            @default(0)
+    Formulas      BlendFormula[]
+    Blends        Blend[]
+
+    @@unique([baseCodeId, sizeCodeId, variantCodeId])
 }
 
 model BlendFormula {
-    id         String                  @id @default(cuid())
-    Product    BlendableProduct        @relation(fields: [productId], references: [baseCodeId])
-    productId  Int
-    Components BlendFormulaComponent[]
-    Blends     Blend[]
+    id               String                  @id @default(cuid())
+    BlendableProduct BlendableProduct        @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId       Int
+    sizeCodeId       Int                     @default(1)
+    variantCodeId    Int                     @default(0)
+    Components       BlendFormulaComponent[]
+    Blends           Blend[]
 }
 
 model BlendFormulaComponent {
     id              String           @id @default(cuid())
     Formula         BlendFormula     @relation(fields: [formulaId], references: [id])
     formulaId       String
-    BaseCode        ProductBaseCode  @relation(fields: [baseCodeId], references: [id])
+    Product         Product          @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
     baseCodeId      Int
+    sizeCodeId      Int              @default(1)
+    variantCodeId   Int              @default(0)
     proportion      Decimal
     note            String?
     BlendComponents BlendComponent[]
-
-    @@unique([formulaId, baseCodeId])
 }
 
 model Blend {
     id                String           @id @default(cuid())
-    Product           BlendableProduct @relation(fields: [productId], references: [baseCodeId])
-    productId         Int
+    BlendableProduct  BlendableProduct @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId        Int
+    sizeCodeId        Int
+    variantCodeId     Int              @default(0)
     Formula           BlendFormula     @relation(fields: [formulaId], references: [id])
     formulaId         String
     Components        BlendComponent[]
