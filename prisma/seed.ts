@@ -149,24 +149,29 @@ async function main() {
 					.map((fn) => fn.apply(undefined, [baseCodeId]))
 					.includes(true)
 			) {
-				const blendFormula = generateRandomBlendFormula(baseCodeId);
 
-				await prisma.blendFormula.create({
-					data: {
-						Product: {
-							create: {
-								BaseCode: {
-									connect: {
-										id: baseCodeId
+				const blendFormulas = Array.from({ length: 2 }, () => generateRandomBlendFormula(baseCodeId));
+				for await (const blendFormula of blendFormulas) {
+					await prisma.blendFormula.create({
+						data: {
+							BlendableProduct: {
+								connectOrCreate: {
+									where: {
+										baseCodeId_sizeCodeId_variantCodeId: {
+											baseCodeId, sizeCodeId, variantCodeId
+										}
+									},
+									create: {
+										baseCodeId, sizeCodeId, variantCodeId
 									}
 								}
+							},
+							Components: {
+								create: blendFormula.formulaComponents
 							}
-						},
-						Components: {
-							create: blendFormula.formulaComponents
 						}
-					}
-				});
+					});
+				}
 			}
 		}
 	}
