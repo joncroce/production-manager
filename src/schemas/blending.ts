@@ -2,8 +2,12 @@ import { z } from 'zod';
 
 export const addFormulaSchema = z.object({
 	baseCodeId: z.coerce.number().min(100).max(999),
+	sizeCodeId: z.coerce.number().optional().default(1),
+	variantCodeId: z.coerce.number().optional().default(0),
 	formulaComponents: z.array(z.object({
 		baseCodeId: z.coerce.number().min(100).max(999),
+		sizeCodeId: z.coerce.number().min(1).optional().default(1),
+		variantCodeId: z.coerce.number().optional().default(0),
 		proportion: z.coerce.number().min(0).max(1),
 		note: z.string().optional()
 	}))
@@ -21,17 +25,25 @@ export const blendComponentSchema = z.object({
 });
 
 export const addBlendSchema = z.object({
-	productId: z.coerce.number().min(100).max(999),
+	baseCodeId: z.coerce.number().min(100).max(999),
+	sizeCodeId: z.coerce.number().min(1).optional().default(1),
+	variantCodeId: z.coerce.number().optional().default(0),
 	formulaId: z.string(),
 	targetQuantity: z.coerce.number(),
-	destinationTankId: z.string(),
+	destinationTankId: z.string().optional(),
 	note: z.string().optional(),
 	components: z.array(
 		z.object({
-			baseCodeId: z.coerce.number().min(100).max(999),
+			formulaComponentId: z.string(),
 			sourceTankId: z.string(),
 			targetQuantity: z.coerce.number(),
 			note: z.string().optional()
 		})
 	)
+});
+
+export const getBlendableProductSchema = z.object({
+	baseCodeId: z.coerce.number().min(100).max(999).optional(),
+	sizeCodeId: z.coerce.number().min(1).optional().default(1),
+	variantCodeId: z.coerce.number().optional().default(1)
 });
