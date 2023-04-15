@@ -4,7 +4,17 @@ import { addProductSchema } from '@/schemas/product';
 export const productRouter = createTRPCRouter({
 
 	getAll: publicProcedure.query(({ ctx }) =>
-		ctx.prisma.product.findMany()
+		ctx.prisma.product.findMany({
+			include: {
+				Code: {
+					include: {
+						BaseCode: true,
+						SizeCode: true,
+						VariantCode: true
+					}
+				}
+			}
+		})
 	),
 	add: publicProcedure
 		.input(addProductSchema)
