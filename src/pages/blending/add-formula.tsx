@@ -1,42 +1,74 @@
 import styles from './add-formula.module.css';
-import Form from '@/components/Form';
-import { useZodForm } from '@/hooks/useZodForm';
-import { addFormulaSchema } from '@/schemas/blending';
-import { api } from '@/utils/api';
-import { type ProductBaseCode } from '@prisma/client';
-import type { NextPage } from 'next';
-import Head from 'next/head';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, forwardRef } from 'react';
 import { useFieldArray } from 'react-hook-form';
-import type { SubmitHandler, UseFormReturn } from 'react-hook-form';
-import type { z } from 'zod';
+import { useZodForm } from '@/hooks/useZodForm';
+import { api } from '@/utils/api';
+import { buildProductCode } from '@/utils/product';
+import { addFormulaSchema } from '@/schemas/blending';
+import Head from 'next/head';
+import Form from '@/components/Form';
 import Modal from '@/components/Modal';
-import ChooseBaseCodeModalForm from './components/ChooseBaseCodeModalForm';
+import ChooseProductModalForm from './components/ChooseProductModalForm';
+import type { NextPage } from 'next';
+import type { MouseEventHandler, ComponentProps, PropsWithChildren } from 'react';
+import type { SubmitHandler, UseFormRegister } from 'react-hook-form';
+import type { z } from 'zod';
+import type {
+	Product as TProduct,
+	ProductCode as TProductCode,
+	ProductBaseCode as TProductBaseCode,
+	ProductSizeCode as TProductSizeCode,
+	ProductVariantCode as TProductVariantCode
+} from '@prisma/client';
+
+type TDetailedProductCode = TProductCode & {
+	BaseCode: TProductBaseCode;
+	SizeCode: TProductSizeCode;
+	VariantCode: TProductVariantCode;
+};
+
+type TDetailedProduct = TProduct & {
+	Code: TDetailedProductCode;
+};
+
+type TAddFormulaSchema = z.infer<typeof addFormulaSchema>;
 
 const AddFormula: NextPage = () => {
-	const [matchingBaseCode, setMatchingBaseCode] = useState<ProductBaseCode>();
-	const [matchingComponentBaseCodes, setMatchingComponentBaseCodes] = useState<(ProductBaseCode | undefined)[]>([]);
+	const [matchingProduct, setMatchingProduct] = useState<TDetailedProduct>();
+	const [matchingComponentProducts, setMatchingComponentProducts] = useState<(TDetailedProduct | undefined)[]>([]);
 	const [modalOpen, setModalOpen] = useState<boolean>(false);
-	const [modalFormFieldId, setModalFormFieldId] = useState<'baseCodeId' | `formulaComponents.${number}.baseCodeId`>('baseCodeId');
-	const availableBaseCodes = api.baseCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
+	const [modalOpenForComponentNumber, setModalOpenForComponentNumber] = useState<number | undefined>();
+	const products = api.products.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
 	const containerRef = useRef(null);
+
+	const defaultNumberOfFormulaComponents = 2;
 
 	const defaultFormulaComponentFormValue = {
 		baseCodeId: '',
+		sizeCodeId: '',
+		variantCodeId: '',
 		proportion: '',
 		note: ''
 	};
 
 	const defaultFormValues = {
 		baseCodeId: '',
-		formulaComponents: Array.from({ length: 2 }, () => defaultFormulaComponentFormValue)
+		sizeCodeId: '',
+		variantCodeId: '',
+		formulaComponents: Array.from(
+			{ length: defaultNumberOfFormulaComponents },
+			() => defaultFormulaComponentFormValue
+		)
 	};
 
 	const form = useZodForm({
 		schema: addFormulaSchema,
 		mode: 'onBlur',
 		// @ts-expect-error string inputs coerced to number
-		defaultValues: defaultFormValues
+		defaultValues: defaultFormValues,
+		resetOptions: {
+			keepDefaultValues: true
+		}
 	});
 
 	const { fields, append, remove } = useFieldArray({
@@ -44,37 +76,75 @@ const AddFormula: NextPage = () => {
 		name: 'formulaComponents'
 	});
 
-	const openModal = (fieldId: 'baseCodeId' | `formulaComponents.${number}.baseCodeId`) => {
-		setModalFormFieldId(fieldId);
+	const openModal = (forComponentNumber?: number) => {
+		setModalOpenForComponentNumber(forComponentNumber);
 		setModalOpen(true);
 	};
 
-	const closeModal = (selectedBaseCodeId?: number) => {
-		if (selectedBaseCodeId && modalFormFieldId) {
-			form.setValue(modalFormFieldId, selectedBaseCodeId);
-
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			const match = matchBaseCode(selectedBaseCodeId)!;
-			if (modalFormFieldId === 'baseCodeId') {
-				setMatchingBaseCode(match);
-			} else {
-				const start = modalFormFieldId.indexOf('.') + 1;
-				const end = modalFormFieldId.lastIndexOf('.');
-				const componentNumber = parseInt(modalFormFieldId.slice(start, end));
-				updateMatchedComponentBaseCode(match, componentNumber);
+	const closeModal = (selectedProductCode?: TDetailedProductCode) => {
+		if (selectedProductCode) {
+			const matchingProduct = findMatchingProductByProductCode(selectedProductCode);
+			if (matchingProduct) {
+				if (modalOpenForComponentNumber === undefined) {
+					updateMatchingProduct(matchingProduct);
+				} else {
+					updateMatchingComponentProduct(matchingProduct, modalOpenForComponentNumber);
+				}
 			}
 		}
 		setModalOpen(false);
 	};
 
-	const appendFormulaComponent = () => {
+	const findMatchingProductByProductCode = (selectedProductCode: TDetailedProductCode) => {
+		return products.data?.find((product) =>
+			selectedProductCode.BaseCode.id === product.Code.BaseCode.id
+			&& selectedProductCode.SizeCode.id === product.Code.SizeCode.id
+			&& selectedProductCode.VariantCode.id === product.Code.VariantCode.id
+		);
+	};
+
+	const updateMatchingProduct = (matchingProduct: TDetailedProduct) => {
+		form.setValue('baseCodeId', matchingProduct.Code.BaseCode.id);
+		form.setValue('sizeCodeId', matchingProduct.Code.SizeCode.id);
+		form.setValue('variantCodeId', matchingProduct.Code.VariantCode.id);
+		setMatchingProduct(matchingProduct);
+	};
+
+	const updateMatchingComponentProduct = (matchingProduct: TDetailedProduct, index: number) => {
+		form.setValue(`formulaComponents.${index}.baseCodeId`, matchingProduct.Code.BaseCode.id);
+		form.setValue(`formulaComponents.${index}.sizeCodeId`, matchingProduct.Code.SizeCode.id);
+		form.setValue(`formulaComponents.${index}.variantCodeId`, matchingProduct.Code.VariantCode.id);
+		setMatchingComponentProducts(prevState =>
+			prevState
+				.slice(0, index)
+				.concat([matchingProduct])
+				.concat(prevState.slice(index + 1))
+		);
+	};
+
+	const addFormulaComponent = () => {
 		// @ts-expect-error string inputs coerced to number
 		append(defaultFormulaComponentFormValue);
 	};
 
+	const removeFormulaComponent = (index: number) => {
+		remove(index);
+		setMatchingComponentProducts(prevState => {
+			const nextState = prevState.slice(0, index).concat(prevState.slice(index + 1));
+			nextState.forEach((componentProduct, i) => {
+				if (componentProduct) {
+					form.setValue(`formulaComponents.${i}.baseCodeId`, componentProduct.Code.BaseCode.id);
+					form.setValue(`formulaComponents.${i}.sizeCodeId`, componentProduct.Code.SizeCode.id);
+					form.setValue(`formulaComponents.${i}.variantCodeId`, componentProduct.Code.VariantCode.id);
+				}
+			});
+			return nextState;
+		});
+	};
+
 	const addFormula = api.blending.addFormula.useMutation({
 		onSuccess(data) {
-			alert(`Successfully created new BlendFormula for Product ID ${data.productId}`);
+			alert(`Successfully created new BlendFormula for ${buildProductCode(data.baseCodeId, data.sizeCodeId, data.variantCodeId)}`);
 			resetForm();
 		},
 		onError(error) {
@@ -83,34 +153,17 @@ const AddFormula: NextPage = () => {
 		}
 	});
 
-	const submitForm: SubmitHandler<z.infer<typeof addFormulaSchema>> = (data) => {
+	const submitForm: SubmitHandler<TAddFormulaSchema> = (data) => {
 		addFormula.mutate(data);
 	};
 
 	const resetForm = () => {
 		form.reset();
-		fields.forEach((_, i) => {
-			remove(i);
-		});
-		setMatchingBaseCode(undefined);
-		setMatchingComponentBaseCodes([]);
-	};
-
-	const updateMatchedComponentBaseCode = (match: ProductBaseCode, index: number) => {
-		setMatchingComponentBaseCodes(prevState => prevState.slice(0, index).concat([match]).concat(prevState.slice(index + 1)));
-	};
-
-	const matchBaseCode = (value: string | number) => {
-		console.log(`matching ${value}`);
-		const baseCodeInput = typeof value === 'number' ? value : parseInt(value);
-		const match = availableBaseCodes.data?.find((val) => val.id === baseCodeInput);
-
-		return match ?? null;
-	};
-
-	const removeComponent = (index: number) => {
-		remove(index);
-		setMatchingComponentBaseCodes(prevState => prevState.slice(0, index).concat(prevState.slice(index + 1)));
+		// fields.forEach((_, i) => {
+		// 	remove(i);
+		// });
+		setMatchingProduct(undefined);
+		setMatchingComponentProducts([]);
 	};
 
 	return (
@@ -121,57 +174,39 @@ const AddFormula: NextPage = () => {
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
 			<main ref={containerRef}>
-				<article className={styles['page']}>
-					<h1 className={styles['page__heading']}>Add Blend Formula</h1>
+				<article className={styles['add-formula']}>
+					<h1 className={styles['add-formula__header']}>Add Formula</h1>
 					<Form
-						className={styles['add-formula-form']}
+						className={styles['add-formula__form']}
 						form={form}
 						onSubmit={submitForm}
 					>
-						<section className={styles['add-formula-form__section']}>
-							<h2 className={styles['add-formula-form__heading']}>Finished Product</h2>
-							<BaseCode
-								form={form}
-								fieldId='baseCodeId'
-								baseCode={matchingBaseCode}
-								openModal={openModal}
-							/>
-						</section>
-						<section className={styles['add-formula-form__section']}>
-							<h2 className={styles['add-formula-form__heading']}>Blend Formula Components</h2>
-							<button className={styles['add-formula-form__button']} type="button" onClick={appendFormulaComponent}>+ Add Component</button>
-							<ol className={styles['add-formula-form__component-list']}>
-								{fields.map((field, index) => (
-									<li
-										className={styles['add-formula-form__component-list-item']}
-										key={field.id}
-									>
-										<FormulaComponent
-											form={form}
-											index={index}
-											baseCode={matchingComponentBaseCodes[index]}
-											openModal={openModal}
-											remove={removeComponent}
-										/>
-									</li>
-								))}
-							</ol>
-						</section>
-						<section className={styles['add-formula-form__controls']}>
-							<button className={styles['add-formula-form__button']} type="button" onClick={resetForm}>Reset</button>
-							<button className={styles['add-formula-form__button']} type="submit">Submit</button>
-						</section>
+						<FormulaProduct
+							product={matchingProduct}
+							openProductSelector={() => openModal()}
+						/>
+						<FormulaComponents
+							show={Boolean(matchingProduct)}
+							register={form.register}
+							matchingComponentProducts={fields.map((_, i) => matchingComponentProducts[i])}
+							openModal={openModal}
+							addFormulaComponent={addFormulaComponent}
+							removeFormulaComponent={removeFormulaComponent}
+						/>
+						<FormControls show={Boolean(matchingProduct)}>
+							<button className={styles['form-controls__button']} type="button" onClick={resetForm}>Reset</button>
+							<button className={styles['form-controls__button']} type="submit">Submit</button>
+						</FormControls>
 					</Form>
 				</article>
 				<Modal
 					open={modalOpen}
 					onOpenChange={setModalOpen}
 					containerRef={containerRef}
-					title="Choose Base Code"
+					title="Choose Product Code"
 				>
-					<ChooseBaseCodeModalForm
-						fieldId={modalFormFieldId}
-						availableBaseCodes={availableBaseCodes.data}
+					<ChooseProductModalForm
+						productCodes={products?.data?.map((product) => product.Code)}
 						closeModal={closeModal}
 					/>
 				</Modal>
@@ -182,89 +217,170 @@ const AddFormula: NextPage = () => {
 
 export default AddFormula;
 
-const BaseCode: React.FC<
+const FormulaProduct: React.FC<
 	{
-		form: UseFormReturn<{
-			baseCodeId: number;
-			formulaComponents: {
-				note?: string | undefined;
-				baseCodeId: number;
-				proportion: number;
-			}[];
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		}, any>;
-		fieldId: 'baseCodeId' | `formulaComponents.${number}.baseCodeId`;
-		baseCode?: ProductBaseCode;
-		openModal: (fieldId: 'baseCodeId' | `formulaComponents.${number}.baseCodeId`) => void;
+		product?: TDetailedProduct;
+		openProductSelector: MouseEventHandler;
 	}
-> = ({ form, fieldId, baseCode, openModal }) => (
-	<div className={styles['base-code']}>
-		<h3 className={styles['base-code__label']}>Base Code</h3>
-		<input hidden type="string" {...form.register(fieldId)} />
-		{
-			baseCode
-				? <div className={styles['base-code__value']}><strong>{baseCode.id}</strong>: {baseCode.name}</div>
-				: null
-		}
-		<button className={styles['base-code__button']} type="button" onClick={() => openModal(fieldId)}>{baseCode ? 'Replace' : 'Choose...'}</button>
-	</div>
-);
+> = ({ product, openProductSelector }) => {
+	const productSelected = Boolean(product);
+	const formattedProductCode = product?.Code
+		? buildProductCode(
+			product?.Code.baseCodeId,
+			product?.Code.sizeCodeId,
+			product?.Code.variantCodeId
+		)
+		: '';
+	const productDescription = product?.description ?? '';
 
-const FormulaComponent: React.FC<
-	{
-		form: UseFormReturn<{
-			baseCodeId: number;
-			formulaComponents: {
-				note?: string | undefined;
-				baseCodeId: number;
-				proportion: number;
-			}[];
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		}, any>;
-		index: number;
-		baseCode?: ProductBaseCode;
-		openModal: (fieldId: 'baseCodeId' | `formulaComponents.${number}.baseCodeId`) => void;
-		remove: (index: number) => void;
-
-	}
-> = ({ form, index, baseCode, openModal, remove }) => (
-	<div className={styles['formula-component']}>
-		<div className={styles['formula-component__remove']}>
-			<button
-				className={
-					[
-						styles['formula-component__button'],
-						styles['formula-component__button--remove']
-					].join(' ')
+	return (
+		<section className={styles['formula-product']}>
+			<h2 className={styles['formula-product__header']}>Product</h2>
+			<button className={styles['formula-product__selector']} type="button" onClick={openProductSelector}>
+				{
+					Boolean(product)
+						? 'Change Product...'
+						: 'Choose Product...'
 				}
-				type="button"
-				onClick={() => remove(index)}
-			>
-				Remove
 			</button>
-		</div>
-		<div className={styles['formula-component__number']}>
-			{index + 1}.
-		</div>
-		<div className={styles['formula-component__base-code']}>
-			<BaseCode
-				form={form}
-				fieldId={`formulaComponents.${index}.baseCodeId`}
-				baseCode={baseCode}
-				openModal={openModal}
-			/>
-		</div>
-		<div className={styles['formula-component__proportion']}>
-			<label className={styles['formula-component__label']} htmlFor={`formulaComponents.${index}.proportion`}>
-				Proportion
-			</label>
-			<input className={styles['formula-component__input']} id={`formulaComponents.${index}.proportion`} type="text" {...form.register(`formulaComponents.${index}.proportion`)} />
-		</div>
-		<div className={styles['formula-component__note']}>
-			<label className={styles['formula-component__label']} htmlFor={`formulaComponents.${index}.note`}>
-				Note (optional)
-			</label>
-			<input className={styles['formula-component__input']} id={`formulaComponents.${index}.note`} type="text" {...form.register(`formulaComponents.${index}.note`)} />
-		</div>
-	</div>
+			{
+				productSelected
+					? (
+						<div className={styles['formula-product__value']}>
+							<p>{formattedProductCode}</p>
+							<p>{productDescription}</p>
+						</div>
+					)
+					: null
+			}
+		</section>
+	);
+};
+
+const FormulaComponents: React.FC<
+	{
+		show: boolean;
+		register: UseFormRegister<TAddFormulaSchema>;
+		matchingComponentProducts: (TDetailedProduct | undefined)[];
+		openModal: (forComponentNumber?: number) => void;
+		addFormulaComponent: () => void;
+		removeFormulaComponent: (componentNumber: number) => void;
+	}
+> = ({ show, register, matchingComponentProducts, openModal, addFormulaComponent, removeFormulaComponent }) =>
+		show ? (
+			<section className={styles['formula-components']}>
+				<h2 className={styles['formula-components__header']}>Components</h2>
+				<button className={styles['formula-components__button']} type="button" onClick={addFormulaComponent}>Add</button>
+				<ol className={styles['formula-components__list']}>
+					{
+						matchingComponentProducts.map((product, index) =>
+							<li
+								className={styles['formula-components__list-item']}
+								key={`${product ? buildProductCode(product.baseCodeId, product.sizeCodeId, product.variantCodeId) : 'undefined'}-${index}`}
+							>
+								<RemoveComponent clickHandler={() => removeFormulaComponent(index)} />
+								<ComponentNumber number={index + 1} />
+								<ComponentProduct
+									product={product}
+									openProductSelector={() => openModal(index)}
+								/>
+								<ComponentProportion
+									{...register(`formulaComponents.${index}.proportion`)}
+								/>
+								<ComponentNote
+									{...register(`formulaComponents.${index}.note`)}
+								/>
+							</li>
+						)
+					}
+				</ol>
+			</section>
+		) : null;
+
+const RemoveComponent: React.FC<
+	{
+		clickHandler: MouseEventHandler;
+	}
+> = ({ clickHandler }) => (
+	<section className={styles['component-remove']}>
+		<button className={styles['component-remove__button']} type="button" onClick={clickHandler}>Remove</button>
+	</section>
 );
+
+const ComponentNumber: React.FC<
+	{
+		number: number;
+	}
+> = ({ number }) => (
+	<section className={styles['component-number']}>
+		<h3 className={styles['component-number__header']}>
+			#
+		</h3>
+		<span className={styles['component-number__value']}>
+			{number}
+		</span>
+	</section>
+);
+
+const ComponentProduct: React.FC<
+	{
+		product?: TDetailedProduct;
+		openProductSelector: MouseEventHandler;
+	}
+> = ({ product, openProductSelector }) => {
+	const productSelected = Boolean(product);
+	const formattedProductCode = product?.Code
+		? buildProductCode(
+			product?.Code.baseCodeId,
+			product?.Code.sizeCodeId,
+			product?.Code.variantCodeId
+		)
+		: '';
+	const productDescription = product?.description ?? '';
+
+	return (
+		<section className={styles['component-product']}>
+			<h2 className={styles['component-product__header']}>Product</h2>
+			<button className={styles['component-product__selector']} type="button" onClick={openProductSelector}>
+				{
+					Boolean(product)
+						? 'Change Product...'
+						: 'Choose Product...'
+				}
+			</button>
+			{
+				productSelected
+					? (
+						<div className={styles['component-product__value']}>
+							<p>{formattedProductCode}</p>
+							<p>{productDescription}</p>
+						</div>
+					)
+					: null
+			}
+		</section>
+	);
+};
+
+const ComponentProportion = forwardRef<HTMLInputElement, ComponentProps<'input'>>((props, ref) => (
+	<section className={styles['component-proportion']}>
+		<h3 className={styles['component-proportion__header']}>Proportion</h3>
+		<input className={styles['component-proportion__input']} {...props} id={props.name} ref={ref} />
+	</section>
+));
+ComponentProportion.displayName = 'ComponentProportion';
+
+const ComponentNote = forwardRef<HTMLInputElement, ComponentProps<'input'>>((props, ref) => (
+	<section className={styles['component-note']}>
+		<h3 className={styles['component-note__header']}>Note</h3>
+		<input className={styles['component-note__input']} {...props} id={props.name} ref={ref} />
+	</section>
+));
+ComponentNote.displayName = 'ComponentNote';
+
+const FormControls: React.FC<{ show: boolean; } & PropsWithChildren> = ({ show, children }) =>
+	show ? (
+		<section className={styles['form-controls']}>
+			{children}
+		</section>
+	) : null;

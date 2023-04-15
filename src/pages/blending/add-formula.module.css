@@ -1,133 +1,158 @@
-.page {
-  padding: 1rem;
-  display: grid;
-  place-items: center;
+.add-formula {
+  margin: 1rem;
+  font-size: var(--step-0);
 
-  &__heading {
+  &__header {
+    margin-block: var(--step-1);
+    font-size: var(--step-4);
     text-align: center;
-    font-size: 3rem;
   }
 
   &__form {
   }
 }
 
-.add-formula-form {
-  display: grid;
-  place-items: center;
-
-  &__section {
-    margin-block: 1rem;
-    display: grid;
-    place-items: center;
+.formula-product,
+.component-product {
+  &__header {
+    margin-block: var(--step-0);
+    font-size: var(--step-3);
   }
 
-  &__heading {
+  &__selector {
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    font-weight: var(--font-weight-bold);
+  }
+
+  &__value {
     margin-block: 0.5em;
-    font-size: 2rem;
-  }
-
-  &__base-code {
-    margin-block: 0.5em;
-    font-size: 1.5rem;
-
-    &::before {
-      content: "✔ ";
-      color: green;
-    }
-  }
-
-  &__component-list {
-    list-style: none;
-    margin-block: 1rem;
-  }
-
-  &__label {
-    font-weight: 700;
-    font-size: 1.35rem;
-  }
-
-  &__button {
-    font-size: 1.2em;
-    padding-inline: 0.5em;
-    border: 1px solid black;
-  }
-
-  &__controls {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    font-family: monospace;
+    font-size: var(--step-1);
   }
 }
 
-.formula-component {
-  margin-block: 1rem;
+.formula-product {
   display: grid;
-  min-width: min(800px, 100vw);
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: auto;
-  gap: 1rem;
+  place-items: center;
+}
 
-  &__remove {
-    grid-column: span 1;
-    place-self: center;
+.formula-components {
+  &__header {
+    margin-block: var(--step-0);
+    font-size: var(--step-3);
   }
+  &__list {
+  }
+  &__list-item {
+    list-style: none;
+    display: grid;
+    grid-template-areas: "remove number product proportion note";
+    grid-template-columns: 10% 5% 30% 15% 40%;
+  }
+  &__button {
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    font-weight: var(--font-weight-bold);
+  }
+}
 
-  &__number {
-    grid-column: span 1;
-    place-self: center;
-    font-weight: bold;
-    font-family: monospace;
-    font-size: 1.5rem;
-  }
+.component-remove {
+  grid-area: remove;
+  display: grid;
+  place-items: end start;
 
-  &__base-code {
-    grid-column: span 3;
-    font-size: 1rem;
+  &__button {
+    margin-block: var(--step--2);
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    font-weight: var(--font-weight-bold);
   }
+}
 
-  &__proportion {
-    grid-column: span 1;
-  }
+.component-number {
+  grid-area: number;
+}
 
-  &__note {
-    grid-column: span 6;
+.component-product {
+  grid-area: product;
+
+  &__button {
+    background-color: transparent;
+    font-weight: var(--font-weight-bold);
+    font-size: 1.5em;
   }
+}
+
+.component-proportion {
+  grid-area: proportion;
+}
+
+.component-note {
+  grid-area: note;
 
   &__input {
     width: 100%;
-    border: 1px solid black;
-    padding-inline: 0.25em;
-  }
-
-  &__button {
-    border: 1px solid black;
-    padding: 0.25em 0.5em;
-
-    &--remove {
-      background-color: pink;
-    }
-  }
-
-  &__label {
-    font-weight: 700;
-    font-size: 1.25rem;
   }
 }
 
-.base-code {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
+.component-number,
+.component-product,
+.component-proportion,
+.component-note {
+  padding-inline: 0.5em;
 
-  &__label {
-    font-weight: 700;
-    font-size: 1.25rem;
+  &__header {
+    margin-block: var(--step--2);
+    font-size: var(--step-2);
   }
 
+  &__value {
+    font-family: monospace;
+  }
+}
+
+.component-number {
+  &__value {
+    &::after {
+      content: ". ";
+    }
+  }
+}
+
+.component-proportion,
+.component-note {
+  &__input {
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+.formula-components__list-item:not(:first-of-type) .component-remove__header,
+.formula-components__list-item:not(:first-of-type) .component-number__header,
+.formula-components__list-item:not(:first-of-type) .component-product__header,
+.formula-components__list-item:not(:first-of-type)
+  .component-proportion__header,
+.formula-components__list-item:not(:first-of-type) .component-note__header {
+  visibility: hidden;
+  margin-block: 0;
+}
+
+.form-controls {
+  display: flex;
+  justify-content: center;
+  margin-block: var(--step-3);
+
   &__button {
-    border: 1px solid black;
-    padding-inline: 0.5em;
+    margin-inline: 0.5rem;
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    font-weight: var(--font-weight-bold);
   }
 }
