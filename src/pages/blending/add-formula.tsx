@@ -8,7 +8,7 @@ import { addFormulaSchema } from '@/schemas/blending';
 import Head from 'next/head';
 import Form from '@/components/Form';
 import Modal from '@/components/Modal';
-import ChooseProductModalForm from './components/ChooseProductModalForm';
+import ChooseProductModalForm from '@/components/ChooseProductModalForm';
 import type { NextPage } from 'next';
 import type { MouseEventHandler, ComponentProps, PropsWithChildren } from 'react';
 import type { SubmitHandler, UseFormRegister } from 'react-hook-form';

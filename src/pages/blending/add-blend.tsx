@@ -3,7 +3,7 @@ import React, { forwardRef, useRef, useState } from 'react';
 import Head from 'next/head';
 import Form from '@/components/Form';
 import Modal from '@/components/Modal';
-import ChooseProductModalForm from './components/ChooseProductModalForm';
+import ChooseProductModalForm from '@/components/ChooseProductModalForm';
 import IcBaselineChevronLeft from '@/components/Icons/IcBaselineChevronLeft';
 import IcBaselineChevronRight from '@/components/Icons/IcBaselineChevronRight';
 import { api } from '@/utils/api';

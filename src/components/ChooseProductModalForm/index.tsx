@@ -1,4 +1,4 @@
-import styles from './chooseProductModalForm.module.css';
+import styles from './index.module.css';
 import React from 'react';
 import Form from '@/components/Form';
 import { z } from 'zod';
