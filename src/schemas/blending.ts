@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const blendStatusSchema = z.enum(
+	[
+		'CREATED', 'QUEUED', 'ASSEMBLING',
+		'BLENDING', 'TESTING', 'ADJUSTING',
+		'PASSED', 'PUSHED', 'FLAGGED', 'COMPLETE'
+	]
+);
+
 export const addFormulaSchema = z.object({
 	baseCodeId: z.coerce.number().min(100).max(999),
 	sizeCodeId: z.coerce.number().optional().default(1),
@@ -32,6 +40,7 @@ export const addBlendSchema = z.object({
 	targetQuantity: z.coerce.number(),
 	destinationTankId: z.string().optional(),
 	note: z.string().optional(),
+	status: blendStatusSchema.optional().default('CREATED'),
 	components: z.array(
 		z.object({
 			formulaComponentId: z.string(),

@@ -131,7 +131,8 @@ model Tank {
     capacity               Decimal
     heel                   Decimal
     isDefaultSource        Boolean          @default(false)
-    BlendsDestined         Blend[]
+    BlendsDestined         Blend[]          @relation(name: "Destination Tank")
+    BlendsBlended          Blend[]          @relation(name: "Blend Tank")
     BlendComponentsSourced BlendComponent[]
 }
 
@@ -182,9 +183,12 @@ model Blend {
     Components        BlendComponent[]
     targetQuantity    Decimal
     actualQuantity    Decimal?
-    DestinationTank   Tank?            @relation(fields: [destinationTankId], references: [id])
+    DestinationTank   Tank?            @relation(fields: [destinationTankId], references: [id], name: "Destination Tank")
     destinationTankId String
+    BlendTank         Tank?            @relation(fields: [blendTankId], references: [id], name: "Blend Tank")
+    blendTankId       String
     note              String?
+    status            String           @default("CREATED") /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHED, FLAGGED, COMPLETE
     // TODO
     // RequestedBy   User             @relation(fields: [requestedById], references: [id])
     // requestedById String
