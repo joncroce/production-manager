@@ -113,7 +113,7 @@ model Product {
     salesPrice             Decimal?
     SalesOrderItems        SalesOrderItem[]
     SourceTanks            Tank[]
-    BlendableProducts      BlendableProduct[]
+    BlendFormulas          BlendFormula[]
     BlendFormulaComponents BlendFormulaComponent[]
 
     @@unique([baseCodeId, sizeCodeId, variantCodeId])
@@ -138,55 +138,17 @@ model Tank {
 
 // Blend Models
 
-model BlendableProduct {
-    Product       Product        @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId    Int
-    sizeCodeId    Int            @default(1)
-    variantCodeId Int            @default(0)
-    Formulas      BlendFormula[]
-    Blends        Blend[]
-
-    @@unique([baseCodeId, sizeCodeId, variantCodeId])
-}
-
-model BlendFormula {
-    id               String                  @id @default(cuid())
-    BlendableProduct BlendableProduct        @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId       Int
-    sizeCodeId       Int                     @default(1)
-    variantCodeId    Int                     @default(0)
-    Components       BlendFormulaComponent[]
-    Blends           Blend[]
-}
-
-model BlendFormulaComponent {
-    id              String           @id @default(cuid())
-    Formula         BlendFormula     @relation(fields: [formulaId], references: [id])
-    formulaId       String
-    Product         Product          @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId      Int
-    sizeCodeId      Int              @default(1)
-    variantCodeId   Int              @default(0)
-    proportion      Decimal
-    note            String?
-    BlendComponents BlendComponent[]
-}
-
 model Blend {
     id                String           @id @default(cuid())
-    BlendableProduct  BlendableProduct @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
-    baseCodeId        Int
-    sizeCodeId        Int
-    variantCodeId     Int              @default(0)
     Formula           BlendFormula     @relation(fields: [formulaId], references: [id])
     formulaId         String
     Components        BlendComponent[]
     targetQuantity    Decimal
     actualQuantity    Decimal?
     DestinationTank   Tank?            @relation(fields: [destinationTankId], references: [id], name: "Destination Tank")
-    destinationTankId String
+    destinationTankId String?
     BlendTank         Tank?            @relation(fields: [blendTankId], references: [id], name: "Blend Tank")
-    blendTankId       String
+    blendTankId       String?
     note              String?
     status            String           @default("CREATED") /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHED, FLAGGED, COMPLETE
     // TODO
@@ -206,6 +168,29 @@ model BlendComponent {
     note               String?
 
     @@unique([formulaComponentId, blendId])
+}
+
+model BlendFormula {
+    id            String                  @id @default(cuid())
+    Product       Product                 @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId    Int
+    sizeCodeId    Int                     @default(1)
+    variantCodeId Int                     @default(0)
+    Components    BlendFormulaComponent[]
+    Blends        Blend[]
+}
+
+model BlendFormulaComponent {
+    id              String           @id @default(cuid())
+    Formula         BlendFormula     @relation(fields: [formulaId], references: [id])
+    formulaId       String
+    Product         Product          @relation(fields: [baseCodeId, sizeCodeId, variantCodeId], references: [baseCodeId, sizeCodeId, variantCodeId])
+    baseCodeId      Int
+    sizeCodeId      Int              @default(1)
+    variantCodeId   Int              @default(0)
+    proportion      Decimal
+    note            String?
+    BlendComponents BlendComponent[]
 }
 
 // Order Models

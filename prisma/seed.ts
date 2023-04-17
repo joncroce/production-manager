@@ -160,17 +160,12 @@ async function main() {
 				for await (const blendFormula of blendFormulas) {
 					await prisma.blendFormula.create({
 						data: {
-							BlendableProduct: {
-								connectOrCreate: {
-									where: {
-										baseCodeId_sizeCodeId_variantCodeId: {
-											baseCodeId, sizeCodeId, variantCodeId
-										}
-									},
-									create: {
+							Product: {
+								connect: {
+									baseCodeId_sizeCodeId_variantCodeId: {
 										baseCodeId, sizeCodeId, variantCodeId
 									}
-								}
+								},
 							},
 							Components: {
 								create: blendFormula.formulaComponents

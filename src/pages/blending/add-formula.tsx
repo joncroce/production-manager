@@ -159,9 +159,6 @@ const AddFormula: NextPage = () => {
 
 	const resetForm = () => {
 		form.reset();
-		// fields.forEach((_, i) => {
-		// 	remove(i);
-		// });
 		setMatchingProduct(undefined);
 		setMatchingComponentProducts([]);
 	};

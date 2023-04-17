@@ -20,7 +20,6 @@ export const addFormulaSchema = z.object({
 		note: z.string().optional()
 	}))
 });
-
 export type AddFormula = z.infer<typeof addFormulaSchema>;
 
 export const blendComponentSchema = z.object({
@@ -33,9 +32,6 @@ export const blendComponentSchema = z.object({
 });
 
 export const addBlendSchema = z.object({
-	baseCodeId: z.coerce.number().min(100).max(999),
-	sizeCodeId: z.coerce.number().min(1).optional().default(1),
-	variantCodeId: z.coerce.number().optional().default(0),
 	formulaId: z.string(),
 	targetQuantity: z.coerce.number(),
 	destinationTankId: z.string().optional(),
@@ -50,6 +46,7 @@ export const addBlendSchema = z.object({
 		})
 	)
 });
+export type AddBlend = z.infer<typeof addBlendSchema>;
 
 export const getBlendableProductSchema = z.object({
 	baseCodeId: z.coerce.number().min(100).max(999).optional(),

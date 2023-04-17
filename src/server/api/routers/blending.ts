@@ -3,17 +3,23 @@ import { addBlendSchema, addFormulaSchema, getBlendableProductSchema } from '@/s
 
 export const blendingRouter = createTRPCRouter({
 	getAllBlendableProducts: publicProcedure.query(({ ctx }) => {
-		return ctx.prisma.blendableProduct.findMany({
+		return ctx.prisma.product.findMany({
+			where: {
+				BlendFormulas: {
+					some: {}
+				}
+			},
 			include: {
-				Product: {
+				Code: {
 					include: {
-						Code: {
-							include: {
-								BaseCode: true,
-								SizeCode: true,
-								VariantCode: true,
-							}
-						}
+						BaseCode: true,
+						SizeCode: true,
+						VariantCode: true,
+					}
+				},
+				BlendFormulas: {
+					include: {
+						_count: true
 					}
 				}
 			}
@@ -26,26 +32,22 @@ export const blendingRouter = createTRPCRouter({
 			if (baseCodeId === undefined) {
 				return null;
 			}
-			return ctx.prisma.blendableProduct.findUnique({
+			return ctx.prisma.product.findUnique({
 				where: {
 					baseCodeId_sizeCodeId_variantCodeId: {
 						baseCodeId, sizeCodeId, variantCodeId
 					}
 				},
 				include: {
-					Product: {
+					Code: {
 						include: {
-							Code: {
-								include: {
-									BaseCode: true,
-									SizeCode: true,
-									VariantCode: true,
-								}
-							},
-							SourceTanks: true
+							BaseCode: true,
+							SizeCode: true,
+							VariantCode: true,
 						}
 					},
-					Formulas: {
+					SourceTanks: true,
+					BlendFormulas: {
 						include: {
 							Components: {
 								include: {
@@ -71,18 +73,11 @@ export const blendingRouter = createTRPCRouter({
 	addBlend: publicProcedure
 		.input(addBlendSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { baseCodeId, sizeCodeId, variantCodeId, formulaId, destinationTankId, targetQuantity, note } = input;
+			const { formulaId, destinationTankId, targetQuantity, note } = input;
 
 			return await ctx.prisma.$transaction(async (tx) => {
 				const blend = await tx.blend.create({
 					data: {
-						BlendableProduct: {
-							connect: {
-								baseCodeId_sizeCodeId_variantCodeId: {
-									baseCodeId, sizeCodeId, variantCodeId
-								}
-							}
-						},
 						Formula: {
 							connect: {
 								id: formulaId
@@ -134,15 +129,10 @@ export const blendingRouter = createTRPCRouter({
 
 			const formula = await ctx.prisma.blendFormula.create({
 				data: {
-					BlendableProduct: {
-						connectOrCreate: {
-							where: {
-								baseCodeId_sizeCodeId_variantCodeId: {
-									baseCodeId, sizeCodeId, variantCodeId
-								}
-							},
-							create: {
-								baseCodeId, variantCodeId
+					Product: {
+						connect: {
+							baseCodeId_sizeCodeId_variantCodeId: {
+								baseCodeId, sizeCodeId, variantCodeId
 							}
 						}
 					},

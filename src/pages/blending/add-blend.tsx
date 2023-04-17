@@ -16,7 +16,6 @@ import type { SubmitHandler } from 'react-hook-form';
 import type {
 	BlendFormula as TBlendFormula,
 	BlendFormulaComponent as TBlendFormulaComponent,
-	BlendableProduct as TBlendableProduct,
 	Product as TProduct,
 	ProductBaseCode as TProductBaseCode,
 	ProductCode as TProductCode,
@@ -33,10 +32,13 @@ type TDetailedProductCode = TProductCode & {
 	VariantCode: TProductVariantCode;
 };
 
-type TDetailedBlendableProduct = TBlendableProduct & {
-	Product: TProduct & {
-		Code: TDetailedProductCode;
+type TDetailedProduct = TProduct & {
+	Code: TProductCode & {
+		BaseCode: TProductBaseCode;
+		SizeCode: TProductSizeCode;
+		VariantCode: TProductVariantCode;
 	};
+	BlendFormulas: TBlendFormula[];
 };
 
 type TDetailedFormula = TBlendFormula & {
@@ -56,7 +58,7 @@ type TDetailedFormulaComponent = TBlendFormulaComponent & {
 };
 
 const AddBlend: NextPage = () => {
-	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TDetailedBlendableProduct>();
+	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TDetailedProduct>();
 	const [formulaComponents, setFormulaComponents] = useState<TDetailedFormulaComponent[]>([]);
 	const [selectedDestinationTank, setSelectedDestinationTank] = useState<TTank>();
 	const [selectedFormula, setSelectedFormula] = useState<TDetailedFormula>();
@@ -70,9 +72,9 @@ const AddBlend: NextPage = () => {
 			refetchOnWindowFocus: false,
 			onSuccess: (data) => {
 				if (data) {
-					setBlendableProductCodeFormValues(data);
-					setSelectedDestinationTankToDefault(data.Product.SourceTanks);
-					setSelectedFormulaToDefault(data.Formulas);
+					// setBlendableProductCodeFormValues(data);
+					setSelectedDestinationTankToDefault(data.SourceTanks);
+					setSelectedFormulaToDefault(data.BlendFormulas);
 				}
 			}
 		}
@@ -89,8 +91,8 @@ const AddBlend: NextPage = () => {
 
 	const addBlend = api.blending.addBlend.useMutation({
 		onSuccess(data) {
-			alert(`Successfully created new Blend for product ${data.baseCodeId}.`);
-			// resetForm();
+			alert(`Successfully created new Blend.`);
+			resetForm();
 		},
 		onError(error) {
 			console.error(error);
@@ -116,13 +118,7 @@ const AddBlend: NextPage = () => {
 	};
 
 	const closeModal = (selectedProductCode?: TDetailedProductCode) => {
-
 		if (selectedProductCode) {
-			const { BaseCode, SizeCode, VariantCode } = selectedProductCode;
-			form.setValue('baseCodeId', BaseCode.id);
-			form.setValue('sizeCodeId', SizeCode.id);
-			form.setValue('variantCodeId', VariantCode.id);
-
 			setMatchingBlendableProduct(findMatchingBlendableProductByProductCode(selectedProductCode));
 		}
 		setModalOpen(false);
@@ -130,24 +126,10 @@ const AddBlend: NextPage = () => {
 
 	const findMatchingBlendableProductByProductCode = (selectedProductCode: TDetailedProductCode) => {
 		return blendableProducts.data?.find((blendableProduct) =>
-			selectedProductCode.BaseCode.id === blendableProduct.Product.Code.BaseCode.id
-			&& selectedProductCode.SizeCode.id === blendableProduct.Product.Code.SizeCode.id
-			&& selectedProductCode.VariantCode.id === blendableProduct.Product.Code.VariantCode.id
+			selectedProductCode.BaseCode.id === blendableProduct.Code.BaseCode.id
+			&& selectedProductCode.SizeCode.id === blendableProduct.Code.SizeCode.id
+			&& selectedProductCode.VariantCode.id === blendableProduct.Code.VariantCode.id
 		);
-	};
-
-	const setBlendableProductCodeFormValues = (blendableProduct: TDetailedBlendableProduct) => {
-		if (typeof blendableProduct.baseCodeId === 'number') {
-			form.setValue('baseCodeId', blendableProduct.baseCodeId);
-		}
-
-		if (typeof blendableProduct.sizeCodeId === 'number') {
-			form.setValue('sizeCodeId', blendableProduct.sizeCodeId);
-		}
-
-		if (typeof blendableProduct.variantCodeId === 'number') {
-			form.setValue('variantCodeId', blendableProduct.variantCodeId);
-		}
 	};
 
 	const setSelectedDestinationTankToDefault = (destinationTanks?: TTank[]) => {
@@ -198,7 +180,7 @@ const AddBlend: NextPage = () => {
 
 	const updateSelectedDestinationTank = (offset: -1 | 1) => {
 		if (selectedDestinationTank) {
-			const destinationTanks = selectedBlendableProduct.data?.Product.SourceTanks;
+			const destinationTanks = selectedBlendableProduct.data?.SourceTanks;
 			if (destinationTanks && destinationTanks.length) {
 				const selectedTankIndex = destinationTanks.findIndex((tank) => tank.id === selectedDestinationTank.id);
 				const newIndex =
@@ -217,7 +199,7 @@ const AddBlend: NextPage = () => {
 
 	const updateSelectedFormula = (offset: -1 | 1) => {
 		if (selectedFormula) {
-			const formulas = selectedBlendableProduct.data?.Formulas;
+			const formulas = selectedBlendableProduct.data?.BlendFormulas;
 			if (formulas && formulas.length) {
 				const selectedFormulaIndex = formulas.findIndex((formula) => formula.id === selectedFormula.id);
 				const newIndex = offset === -1
@@ -310,17 +292,17 @@ const AddBlend: NextPage = () => {
 								selectedTankId={selectedDestinationTank ? selectedDestinationTank.id : undefined}
 								selectPrevious={() => updateSelectedDestinationTank(-1)}
 								selectNext={() => updateSelectedDestinationTank(1)}
-								selectionDisabled={selectedBlendableProduct.data?.Product.SourceTanks ? selectedBlendableProduct.data?.Product.SourceTanks.length < 2 : true}
+								selectionDisabled={selectedBlendableProduct.data?.SourceTanks ? selectedBlendableProduct.data?.SourceTanks.length < 2 : true}
 							/>
 						</BlendDestinationTank>
 						<BlendFormula show={Boolean(selectedBlendableProduct.data)}>
 							<FormulaSelector
-								show={Boolean(selectedBlendableProduct.data && selectedBlendableProduct.data?.Formulas && selectedFormula)}
-								numberOfFormulas={selectedBlendableProduct.data?.Formulas?.length ?? 0}
-								selectedFormulaIndex={selectedBlendableProduct.data?.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
+								show={Boolean(selectedBlendableProduct.data && selectedBlendableProduct.data?.BlendFormulas && selectedFormula)}
+								numberOfFormulas={selectedBlendableProduct.data?.BlendFormulas?.length ?? 0}
+								selectedFormulaIndex={selectedBlendableProduct.data?.BlendFormulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
 								selectPrevious={() => updateSelectedFormula(-1)}
 								selectNext={() => updateSelectedFormula(1)}
-								selectionDisabled={selectedBlendableProduct.data?.Formulas ? selectedBlendableProduct.data?.Formulas.length < 2 : true}
+								selectionDisabled={selectedBlendableProduct.data?.BlendFormulas ? selectedBlendableProduct.data?.BlendFormulas.length < 2 : true}
 							/>
 							<FormulaComponents
 								show={Boolean(formulaComponents.length)}
@@ -343,7 +325,7 @@ const AddBlend: NextPage = () => {
 					title="Choose Blendable Product"
 				>
 					<ChooseProductModalForm
-						productCodes={blendableProducts.data?.map((blendableProduct) => blendableProduct.Product.Code)}
+						productCodes={blendableProducts.data?.map((blendableProduct) => blendableProduct.Code)}
 						closeModal={closeModal}
 					/>
 				</Modal>
@@ -356,19 +338,19 @@ export default AddBlend;
 
 const BlendProduct: React.FC<
 	{
-		product?: TDetailedBlendableProduct | null;
+		product?: TDetailedProduct | null;
 		openProductSelector: () => void;
 	}
 > = ({ product, openProductSelector }) => {
 	const productSelected = Boolean(product);
-	const formattedProductCode = product?.Product.Code
+	const formattedProductCode = product?.Code
 		? buildProductCode(
-			product?.Product.Code.baseCodeId,
-			product?.Product.Code.sizeCodeId,
-			product?.Product.Code.variantCodeId
+			product?.Code.baseCodeId,
+			product?.Code.sizeCodeId,
+			product?.Code.variantCodeId
 		)
 		: '';
-	const productDescription = product?.Product.description ?? '';
+	const productDescription = product?.description ?? '';
 
 	return (
 		<section className={styles['blend-product']}>
