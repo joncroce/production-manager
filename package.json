@@ -10,7 +10,8 @@
     "start": "next start",
     "test": "vitest --reporter=verbose",
     "db-reset": "NODE_ENV=development prisma db push --force-reset",
-    "db-seed": "NODE_ENV=development prisma db seed"
+    "db-seed": "NODE_ENV=development prisma db seed",
+    "db-studio": "NODE_ENV=development prisma studio"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
