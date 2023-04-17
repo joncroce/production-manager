@@ -93,7 +93,10 @@
 
 .component-note {
   grid-area: note;
+}
 
+.component-proportion,
+.component-note {
   &__input {
     width: 100%;
   }
