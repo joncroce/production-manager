@@ -100,6 +100,7 @@ async function main() {
 			}
 		);
 
+		// Generate Tanks for bulk, unlabeled products
 		if (sizeCodeId === 1 && variantCodeId === 0) {
 			const tanks = generateTanksForProduct({
 				baseCodeId, sizeCodeId, variantCodeId, quantityInStock
@@ -138,6 +139,7 @@ async function main() {
 				tankZone = String.fromCharCode(tankZone.charCodeAt(0) + 1);
 			}
 
+			// Generate formulas for select categories of bulk, unlabeled products
 			if (
 				[
 					BaseOilCategorizer.isMotorOil,
@@ -150,7 +152,11 @@ async function main() {
 					.includes(true)
 			) {
 
-				const blendFormulas = Array.from({ length: 2 }, () => generateRandomBlendFormula(baseCodeId));
+				const blendFormulas = Array.from(
+					{ length: 2 },
+					() => generateRandomBlendFormula({ baseCodeId, sizeCodeId, variantCodeId })
+				);
+
 				for await (const blendFormula of blendFormulas) {
 					await prisma.blendFormula.create({
 						data: {

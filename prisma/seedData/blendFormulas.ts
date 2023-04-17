@@ -1,17 +1,18 @@
 import baseCodes, { groupBaseCodesByCategory, getRandomBaseCodeFromArray } from './baseCodes';
 import type { AddFormula } from '@/schemas/blending';
 
-
 const {
 	baseOils,
 	viscosityImprovers,
 	additivePackages
 } = groupBaseCodesByCategory(baseCodes);
 
-const sizeCodeId = 1; // bulk
-const variantCodeId = 0; // unbranded
 
-export const generateRandomBlendFormula = (baseCodeId: number): AddFormula => {
+export const generateRandomBlendFormula = ({ baseCodeId, sizeCodeId = 1, variantCodeId = 0 }: {
+	baseCodeId: number;
+	sizeCodeId?: number;
+	variantCodeId?: number;
+}): AddFormula => {
 	const additivePackageFormulaComponent = {
 		baseCodeId: getRandomBaseCodeFromArray(additivePackages).id,
 		sizeCodeId,
