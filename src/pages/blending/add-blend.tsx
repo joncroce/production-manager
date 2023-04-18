@@ -11,7 +11,6 @@ import { useZodForm } from '@/hooks/useZodForm';
 import { addBlendSchema } from '@/schemas/blending';
 import { buildProductCode } from '@/utils/product';
 import type { ComponentProps, PropsWithChildren, ChangeEvent } from 'react';
-import type { NextPage } from 'next';
 import type { SubmitHandler } from 'react-hook-form';
 import type {
 	BlendFormula as TBlendFormula,
@@ -25,6 +24,8 @@ import type {
 } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime';
 import type { z } from 'zod';
+import { NextPageWithLayout } from '../_app';
+import Layout from '@/components/Layout';
 
 type TDetailedProductCode = TProductCode & {
 	BaseCode: TProductBaseCode;
@@ -57,7 +58,7 @@ type TDetailedFormulaComponent = TBlendFormulaComponent & {
 	};
 };
 
-const AddBlend: NextPage = () => {
+const AddBlend: NextPageWithLayout = () => {
 	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TDetailedProduct>();
 	const [formulaComponents, setFormulaComponents] = useState<TDetailedFormulaComponent[]>([]);
 	const [selectedDestinationTank, setSelectedDestinationTank] = useState<TTank>();
@@ -72,7 +73,6 @@ const AddBlend: NextPage = () => {
 			refetchOnWindowFocus: false,
 			onSuccess: (data) => {
 				if (data) {
-					// setBlendableProductCodeFormValues(data);
 					setSelectedDestinationTankToDefault(data.SourceTanks);
 					setSelectedFormulaToDefault(data.BlendFormulas);
 				}
@@ -335,6 +335,14 @@ const AddBlend: NextPage = () => {
 };
 
 export default AddBlend;
+
+AddBlend.getLayout = function getLayout(page) {
+	return (
+		<Layout>
+			{page}
+		</Layout>
+	);
+};
 
 const BlendProduct: React.FC<
 	{
