@@ -20,3 +20,7 @@
 
   --font-weight-bold: 700;
 }
+
+body {
+  background: url("/background.svg");
+}
