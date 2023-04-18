@@ -7,7 +7,7 @@
   margin-inline-start: 3rem;
   padding-block: 2.5rem;
   padding-inline: 2rem 4rem;
-  background: #5a534c;
+  background: var(--color-brown);
   border-top-left-radius: 2rem;
   border-bottom-left-radius: 2rem;
 

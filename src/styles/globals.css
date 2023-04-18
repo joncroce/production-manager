@@ -19,6 +19,9 @@
   --step-5: clamp(2.8rem, calc(2.45rem + 1.77vw), 3.82rem);
 
   --font-weight-bold: 700;
+
+  --color-brown: oklch(44.68% 0.015 67.44);
+  --color-brown-dark: oklch(34.68% 0.015 67.44);
 }
 
 body {
