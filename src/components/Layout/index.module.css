@@ -7,7 +7,6 @@
 .main-container {
   display: flex;
   height: calc(100lvh - 8rem);
-  overflow-y: auto;
 }
 
 .main {
@@ -17,6 +16,7 @@
   flex: 1;
   margin-inline-start: -2rem;
   padding: 1rem;
+  overflow-y: auto;
 
   &--not-logged-in {
     height: calc(100lvh - 8rem);
