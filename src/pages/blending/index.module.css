@@ -1,11 +1,15 @@
-.main {
-  padding: 1rem;
+.page-title {
+  composes: page-title from "@/pages/index.module.css";
+}
+
+.nav {
+  margin-inline: auto;
   display: grid;
   place-items: center;
+  gap: var(--step-0);
+  font-size: var(--step-2);
 
-  &__heading {
-    margin-block: 2rem;
-    font-size: 3rem;
-    text-align: center;
+  &__item {
+    text-underline-offset: 0.3rem;
   }
 }
