@@ -1,6 +1,6 @@
-import { Component, ComponentProps, ReactElement, SVGProps } from 'react';
 import styles from './index.module.css';
 import Link from 'next/link';
+import type { SVGProps } from 'react';
 
 export default function NavBar() {
 	return (
@@ -20,7 +20,6 @@ export default function NavBar() {
 		</nav>
 	);
 }
-
 
 export function MingcuteLayoutGridFill(props: SVGProps<SVGSVGElement>) {
 	return (
