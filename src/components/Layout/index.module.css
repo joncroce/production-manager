@@ -1,0 +1,39 @@
+.menubar {
+  display: grid;
+  align-items: center;
+  height: 4rem;
+}
+
+.main-container {
+  display: flex;
+  height: calc(100lvh - 8rem);
+  overflow-y: auto;
+}
+
+.main {
+  border-top-left-radius: 2rem;
+  border-bottom-left-radius: 2rem;
+  background: #d6af81;
+  flex: 1;
+  margin-inline-start: -2rem;
+  padding: 1rem;
+
+  &--not-logged-in {
+    height: calc(100lvh - 8rem);
+    display: grid;
+    place-items: center;
+    background: transparent;
+    margin: none;
+  }
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__message {
+    margin-block: 1rem;
+    font-size: 2rem;
+  }
+}
