@@ -1,25 +1,74 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
+import { addTankSchema } from '@/schemas/tank';
+import type { Tank } from '@prisma/client';
 
 export const tankRouter = createTRPCRouter({
-	getTanksByBaseCodeIds: publicProcedure
-		.input(z.object({ baseCodeIds: z.array(z.coerce.number()) }))
+	getTanksByBaseCodes: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			baseCodes: z.array(z.coerce.number())
+		}))
 		.query(({ ctx, input }) => {
-			const { baseCodeIds } = input ?? [];
-			if (!baseCodeIds.length) {
+			const { factoryId, baseCodes } = input;
+
+			if (!factoryId || !baseCodes.length) {
 				return null;
 			}
 
 			return ctx.prisma.tank.findMany({
 				where: {
-					baseCodeId: {
-						in: baseCodeIds
+					factoryId,
+					baseCode: {
+						in: baseCodes
 					}
 				},
 				include: {
 					Product: true
 				}
 			});
+		}),
+	addTanks: publicProcedure
+		.input(z.array(addTankSchema))
+		.mutation(async ({ ctx, input }) => {
+			const tanks: Tank[] = [];
 
+			for await (const {
+				factoryId,
+				baseCode,
+				sizeCode,
+				variantCode,
+				name,
+				quantity,
+				capacity,
+				heel,
+				isDefaultSource
+			} of input) {
+				const tank = await ctx.prisma.tank.create({
+					data: {
+						Factory: {
+							connect: {
+								id: factoryId
+							}
+						},
+						Product: {
+							connect: {
+								factoryId_baseCode_sizeCode_variantCode: {
+									factoryId, baseCode, sizeCode, variantCode
+								}
+							}
+						},
+						name,
+						quantity,
+						capacity,
+						heel,
+						isDefaultSource
+					}
+				});
+
+				tanks.push(tank);
+			}
+
+			return tanks;
 		})
 });
