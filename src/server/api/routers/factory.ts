@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { addFactorySchema, changeFactoryNameSchema } from '@/schemas/factory';
+import { addFactorySchema, changeFactoryNameSchema, deleteFactorySchema } from '@/schemas/factory';
 
 export const factoryRouter = createTRPCRouter({
 	getById: publicProcedure
@@ -41,6 +41,17 @@ export const factoryRouter = createTRPCRouter({
 			await ctx.prisma.factory.update({
 				where: { id },
 				data: { name }
+			});
+		}),
+	delete: publicProcedure
+		.input(deleteFactorySchema)
+		.mutation(async ({ ctx, input }) => {
+			const { id } = input;
+
+			await ctx.prisma.factory.delete({
+				where: {
+					id
+				}
 			});
 		})
 });

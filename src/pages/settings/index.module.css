@@ -1,0 +1,15 @@
+.settings {
+  composes: article from "@/styles/article.module.css";
+
+  &__header {
+    composes: article__header from "@/styles/article.module.css";
+  }
+
+  &__button {
+    padding: 0.25em 0.5em;
+    border: 2px solid black;
+    border-radius: 0.25em;
+    background-color: #9c3335;
+    font-weight: 700;
+  }
+}

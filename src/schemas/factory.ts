@@ -11,3 +11,8 @@ export const changeFactoryNameSchema = z.object({
 	name: z.string()
 });
 export type TChangeFactoryNameSchema = z.infer<typeof changeFactoryNameSchema>;
+
+export const deleteFactorySchema = z.object({
+	id: z.string()
+});
+export type TDeleteFactorySchema = z.infer<typeof deleteFactorySchema>;
