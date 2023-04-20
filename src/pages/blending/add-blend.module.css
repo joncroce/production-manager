@@ -1,16 +1,14 @@
 .add-blend {
-  margin: 1rem;
-  font-size: var(--step-0);
+  composes: article from "@/styles/article.module.css";
 
   &__header {
-    margin-block: var(--step-1);
-    font-size: var(--step-4);
-    text-align: center;
+    composes: article__header from "@/styles/article.module.css";
   }
 
   &__form {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
   }
 }
 
