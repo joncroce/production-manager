@@ -1,3 +1,4 @@
+import styles from './index.module.css';
 import { useState } from 'react';
 import { api } from '@/utils/api';
 import productBases, { BaseOilCategorizer } from './seedData/productBases';
@@ -16,6 +17,7 @@ import type {
 	ProductVariant as TProductVariant,
 	Tank as TTank
 } from '@prisma/client';
+import Link from 'next/link';
 
 const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 	const [seedLog, setSeedLog] = useState<{ type: 'success' | 'error'; message: string; }[]>([]);
@@ -213,15 +215,32 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 	};
 
 	return (
-		<>
+		<section className={styles['factory-seeder']}>
+			<h3 className={styles['factory-seeder__header']}>Factory Seeder</h3>
 			{seeding
 				? <SeedLog seedLog={seedLog} />
-				: <button type="button" onClick={() => startSeeding()}>Seed Factory</button>
+				: <button
+					className={styles['factory-seeder__button']}
+					type="button"
+					onClick={() => startSeeding()}>
+					Seed Factory
+				</button>
 			}
 			{
-				seeded ? <span>Factory Seeded!</span> : error ? <span>Error seeding factory.</span> : null
+				<p className={styles['factory-seeder__status']}>
+					{seeded
+						? 'Factory Seeded!'
+						: error
+							? 'Error seeding factory.'
+							: null
+					}
+				</p>
 			}
-		</>
+			{seeded
+				? <Link href="/dashboard">Go to Dashboard</Link>
+				: null
+			}
+		</section>
 	);
 };
 

@@ -8,13 +8,13 @@ import { addFactorySchema, type TAddFactorySchema } from '@/schemas/factory';
 import type { SubmitHandler } from 'react-hook-form';
 
 interface TAddFactoryStatus {
-	value: 'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR';
+	type: 'IDLE' | 'LOADING' | 'SUCCESS' | 'ERROR';
 	message: string;
 }
 
 const FactoryCreator: React.FC<{ userId: string; }> = ({ userId }) => {
 	const [factoryId, setFactoryId] = useState<string>();
-	const [status, setStatus] = useState<TAddFactoryStatus>({ value: 'IDLE', message: '' });
+	const [status, setStatus] = useState<TAddFactoryStatus>({ type: 'IDLE', message: '' });
 	const utils = api.useContext();
 
 	const form = useZodForm({
@@ -30,7 +30,7 @@ const FactoryCreator: React.FC<{ userId: string; }> = ({ userId }) => {
 
 	const addFactory = api.factory.add.useMutation({
 		onSuccess(data) {
-			setStatus({ value: 'SUCCESS', message: `Successfully created factory ${data.name}` });
+			setStatus({ type: 'SUCCESS', message: `✔ Successfully created factory: ${data.name}` });
 			setFactoryId(data.id);
 			utils.user.getFactory.invalidate({ userId })
 				.then(() => {
@@ -41,25 +41,27 @@ const FactoryCreator: React.FC<{ userId: string; }> = ({ userId }) => {
 				});
 		},
 		onError(error) {
-			setStatus({ value: 'ERROR', message: `Error creating factory: ${error.message}` });
+			setStatus({ type: 'ERROR', message: `Error creating factory: ${error.message}` });
 		},
 	});
 
 	const submitForm: SubmitHandler<TAddFactorySchema> = (data) => {
-		setStatus({ value: 'LOADING', message: "Creating factory..." });
+		setStatus({ type: 'LOADING', message: "Creating factory..." });
 		addFactory.mutate(data);
 	};
 
 	return (
-		<section className={styles['factory-creator']}>
-			<pre>{JSON.stringify(form.getValues(), undefined, 2)}</pre>
-			<h2 className={styles['factory-creator__header']}>Factory Starter</h2>
-			<p>To use <strong>Production Manager</strong>, you first need to create a factory.</p>
-			<p>While you can choose to start from a blank slate with an empty factory, it is recommended that you first familiarize yourself with <strong>Production Manager</strong> by letting us bootstrap a factory for you that includes predefined Products, Formulas, Blends, etc.</p>
-			<AddFactoryStatus status={status} />
+		<>
+			<section className={styles['factory-creator']}>
+				<h3 className={styles['factory-creator__header']}>Factory Creator</h3>
+				<p>To use <strong>Production Manager</strong>, you first need to create a factory.</p>
+				<p>While you can choose to start from a blank slate with an empty factory, it is recommended that you first familiarize yourself with <strong>Production Manager</strong> by letting us bootstrap a factory for you that includes predefined Products, Formulas, Blends, etc.</p>
+				<AddFactoryStatus status={status} />
+			</section>
 			{
 				!factoryId
 					? <Form
+						className={styles['factory-creator__form']}
 						form={form}
 						onSubmit={submitForm}
 					>
@@ -67,14 +69,13 @@ const FactoryCreator: React.FC<{ userId: string; }> = ({ userId }) => {
 							Name
 						</label>
 						<input className={styles['factory-creator__input']} type="text" id="name" {...form.register('name')} />
-						<button className={styles['factory-creator__button']} type="submit" disabled={status.value === 'LOADING'}>
+						<button className={styles['factory-creator__button']} type="submit" disabled={status.type === 'LOADING'}>
 							Create Factory
 						</button>
 					</Form>
 					: <FactorySeeder factoryId={factoryId} />
 			}
-
-		</section>
+		</>
 	);
 };
 
@@ -84,6 +85,10 @@ const AddFactoryStatus: React.FC<{
 	status: TAddFactoryStatus;
 }> = ({ status }) => {
 	return (
-		<span>{status.message}</span>
+		<p
+			className={styles['factory-creator__status']}
+			data-status-type={status.type}
+		>{status.message}
+		</p>
 	);
 };

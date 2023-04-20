@@ -1,4 +1,4 @@
-.factory-creator {
+.factory-seeder {
   &__header {
     font-size: var(--step-3);
     margin-block: var(--step-0);
@@ -17,21 +17,7 @@
   &__form {
   }
 
-  &__label {
-    display: block;
-    font-size: var(--step-1);
-    font-weight: 700;
-  }
-
-  &__input {
-    padding: 0.25em 0.5em;
-    border: 2px solid black;
-    border-radius: 0.25em;
-    font-weight: var(--font-weight-bold);
-  }
-
   &__button {
-    margin-inline: 1rem;
     padding: 0.25em 0.5em;
     border: 2px solid black;
     border-radius: 0.25em;
