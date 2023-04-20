@@ -1,34 +1,28 @@
 import styles from './index.module.css';
 import NavBar from '../NavBar';
+import FactoryMenu from '../FactoryMenu';
 import UserMenu from '../UserMenu';
-import type { ReactElement } from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { useSession } from 'next-auth/react';
-import LoginButton from '../LoginButton';
 
-export default function Layout({ children }: { children: ReactElement; }) {
+const Layout: React.FC<PropsWithChildren> = ({ children }) => {
 
 	const { data: sessionData } = useSession();
 
 	return (
 		<>
 			<div className={styles['menubar']}>
-				<UserMenu sessionData={sessionData} />
+				<FactoryMenu factoryId={sessionData?.user.factoryId} />
+				<UserMenu user={sessionData?.user} />
 			</div>
-			{
-				sessionData?.user
-					? <div className={styles['main-container']}>
-						<NavBar />
-						<main className={styles['main']}>
-							{children}
-						</main>
-					</div>
-					: <main className={styles['main--not-logged-in']}>
-						<div className={styles['welcome']}>
-							<p className={styles['welcome__message']}>Welcome to <strong>Production Manager</strong></p>
-							<LoginButton />
-						</div>
-					</main>
-			}
+			<div className={styles['main-container']}>
+				<NavBar />
+				<main className={styles['main']}>
+					{children}
+				</main>
+			</div>
 		</>
 	);
-}
+};
+
+export default Layout;

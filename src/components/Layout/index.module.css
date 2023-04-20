@@ -1,7 +1,9 @@
 .menubar {
   display: grid;
+  grid-auto-flow: column;
   align-items: center;
   height: 4rem;
+  margin-inline-start: 4rem;
 }
 
 .main-container {
