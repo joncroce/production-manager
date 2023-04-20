@@ -1,0 +1,18 @@
+.factory-menu {
+  place-self: center start;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+
+  &__label {
+    font-family: sans-serif;
+    font-weight: 700;
+  }
+
+  &__select {
+    border: 2px solid black;
+    margin-inline: 1rem;
+    font-size: 0.75em;
+    font-family: monospace;
+  }
+}
