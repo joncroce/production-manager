@@ -29,24 +29,19 @@ import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 
+type TDetailedProduct = TProduct & {
+	Code: TDetailedProductCode;
+	Formulas: TFormula[];
+};
+
 type TDetailedProductCode = TProductCode & {
 	ProductBase: TProductBase;
 	ProductSize: TProductSize;
 	ProductVariant: TProductVariant;
 };
 
-type TDetailedProduct = TProduct & {
-	Code: TDetailedProductCode;
-	Formulas: TFormula[];
-};
-
 type TDetailedFormula = TFormula & {
-	Components: (TFormulaComponent & {
-		Product: TProduct & {
-			Code: TDetailedProductCode;
-			SourceTanks: TTank[];
-		};
-	})[];
+	Components: TDetailedFormulaComponent[];
 };
 
 type TDetailedFormulaComponent = TFormulaComponent & {
