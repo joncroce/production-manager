@@ -1,12 +1,13 @@
+import { env } from "../env.mjs";
 import type { GetServerSidePropsContext } from "next";
 import {
   getServerSession,
   type NextAuthOptions,
   type DefaultSession,
 } from "next-auth";
+import { getSession } from 'next-auth/react';
 import DiscordProvider from "next-auth/providers/discord";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { env } from "../env.mjs";
 import { prisma } from "./db";
 
 /**
@@ -73,4 +74,22 @@ export const getServerAuthSession = (ctx: {
   res: GetServerSidePropsContext["res"];
 }) => {
   return getServerSession(ctx.req, ctx.res, authOptions);
+};
+
+export const authenticatedSSProps = async (context: GetServerSidePropsContext) => {
+  const session = await getSession({ req: context.req });
+  let redirect;
+
+  if (!session) {
+    redirect = { destination: '/login', permanent: false };
+  } else if (!session.user.factoryId) {
+    redirect = { destination: '/onboard', permanent: false };
+  }
+
+  return {
+    props: {
+      user: session?.user
+    },
+    redirect
+  };
 };
