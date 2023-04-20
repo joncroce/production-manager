@@ -11,6 +11,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 	if (!session) {
 		redirect = { destination: '/login', permanent: false };
+	} else if (session.user.factoryId) {
+		redirect = { destination: '/dashboard', permanent: false };
 	}
 
 	return {
