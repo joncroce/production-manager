@@ -1,78 +1,82 @@
 import pageStyles from '@/pages/index.module.css';
 import styles from './index.module.css';
 import Head from 'next/head';
+import Layout from '@/components/Layout';
 import Link from 'next/link';
+import SortableDataTable, { type SortType } from '@/components/SortableDataTable';
+import { ArrowTopRightIcon } from '@radix-ui/react-icons';
 import { z } from 'zod';
+import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
 import { buildProductCode } from '@/utils/product';
-import { ArrowTopRightIcon } from '@radix-ui/react-icons';
-import SortableDataTable, { type SortType } from '@/components/SortableDataTable';
-import type { NextPage } from 'next';
+import type { GetServerSideProps } from 'next';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { ProductRouter } from '@/server/api/routers/product';
+import type { Session } from 'next-auth';
+import type { NextPageWithLayout } from '../_app';
 
 type RouterOutput = inferRouterOutputs<ProductRouter>;
 type ProductGetAllOutput = RouterOutput['getAll'];
 
 const sortableProductSchema = z.object({
 	code: z.string(),
-	baseCodeId: z.number(),
-	sizeCodeId: z.number(),
-	variantCodeId: z.number(),
+	baseCode: z.number(),
+	sizeCode: z.number(),
+	variantCode: z.number(),
 	quantityInStock: z.number().default(0),
 	salesPrice: z.number().nullable(),
 	description: z.string().default(''),
 });
 
-type SortableProduct = z.infer<typeof sortableProductSchema>;
+type TSortableProductSchema = z.infer<typeof sortableProductSchema>;
 
-const toSortable = (product: ProductGetAllOutput[number]): SortableProduct => {
-	const { baseCodeId, sizeCodeId, variantCodeId, quantityInStock, salesPrice, description } = product;
+const toSortable = (product: ProductGetAllOutput[number]): TSortableProductSchema => {
+	const { baseCode, sizeCode, variantCode, quantityInStock, salesPrice, description } = product;
 
 	return {
-		code: buildProductCode(baseCodeId, sizeCodeId, variantCodeId),
-		baseCodeId,
-		sizeCodeId,
-		variantCodeId,
+		code: buildProductCode(baseCode, sizeCode, variantCode),
+		baseCode,
+		sizeCode,
+		variantCode,
 		quantityInStock: Number(quantityInStock ?? 0),
 		salesPrice: salesPrice !== null ? Number(salesPrice) : null,
 		description: String(description ?? ''),
 	};
 };
 
-const fieldLabels: Map<keyof SortableProduct & string, string> = new Map(
+const fieldLabels: Map<keyof TSortableProductSchema & string, string> = new Map(
 	[
 		['code', 'Code'],
-		['baseCodeId', 'BaseId'],
-		['sizeCodeId', 'SizeId'],
-		['variantCodeId', 'VariantId'],
+		['baseCode', 'BaseCode'],
+		['sizeCode', 'SizeCode'],
+		['variantCode', 'VariantCode'],
 		['quantityInStock', 'Quantity'],
 		['salesPrice', 'Price'],
 		['description', 'Description'],
 	]
 );
 
-const fieldSortTypes: Map<keyof SortableProduct & string, SortType> = new Map(
+const fieldSortTypes: Map<keyof TSortableProductSchema & string, SortType> = new Map(
 	[
 		['code', 'alphabetic'],
-		['baseCodeId', 'numeric'],
-		['sizeCodeId', 'numeric'],
-		['variantCodeId', 'numeric'],
+		['baseCode', 'numeric'],
+		['sizeCode', 'numeric'],
+		['variantCode', 'numeric'],
 		['quantityInStock', 'numeric'],
 		['salesPrice', 'numeric'],
 		['description', 'alphabetic'],
 	]
 );
 
-const formatter = (product: SortableProduct): Map<keyof SortableProduct & string, string> => {
-	const { code, baseCodeId, sizeCodeId, variantCodeId, quantityInStock, salesPrice, description } = product;
+const formatter = (product: TSortableProductSchema): Map<keyof TSortableProductSchema & string, string> => {
+	const { code, baseCode, sizeCode, variantCode, quantityInStock, salesPrice, description } = product;
 
 	return new Map(
 		[
 			['code', code],
-			['baseCodeId', String(baseCodeId)],
-			['sizeCodeId', String(sizeCodeId)],
-			['variantCodeId', variantCodeId === 0 ? 'N/A' : String(variantCodeId)],
+			['baseCode', String(baseCode)],
+			['sizeCode', String(sizeCode)],
+			['variantCode', variantCode === 0 ? 'N/A' : String(variantCode)],
 			['quantityInStock', String(quantityInStock)],
 			['salesPrice', salesPrice !== null ? Number.parseFloat(salesPrice.toString()).toFixed(2) : 'NA'],
 			['description', description],
@@ -80,8 +84,12 @@ const formatter = (product: SortableProduct): Map<keyof SortableProduct & string
 	);
 };
 
-const ProductsHome: NextPage = () => {
-	const products = api.products.getAll.useQuery();
+export const getServerSideProps: GetServerSideProps = async (context) => {
+	return authenticatedSSProps(context);
+};
+
+const ProductHome: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+	const products = api.product.getAll.useQuery({ factoryId: user.factoryId ?? '' }, { enabled: Boolean(user.factoryId) });
 
 	return (
 		<>
@@ -90,27 +98,33 @@ const ProductsHome: NextPage = () => {
 				<meta name="description" content="Products in the factory inventory." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<main className={pageStyles.main}>
-				<div className={pageStyles.container}>
-					<ProductPageTitle />
-					<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-						<ProductCount count={products.data?.length} />
-						<AddProductLink />
-					</div>
-					<SortableDataTable<SortableProduct>
-						items={(products.data ?? []).map(toSortable)}
-						itemLabel="Product"
-						fieldLabels={fieldLabels}
-						fieldSortTypes={fieldSortTypes}
-						formatter={formatter}
-					/>
+			<div className={pageStyles.container}>
+				<ProductPageTitle />
+				<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
+					<ProductCount count={products.data?.length} />
+					<AddProductLink />
 				</div>
-			</main>
+				<SortableDataTable<TSortableProductSchema>
+					items={(products.data ?? []).map(toSortable)}
+					itemLabel="Product"
+					fieldLabels={fieldLabels}
+					fieldSortTypes={fieldSortTypes}
+					formatter={formatter}
+				/>
+			</div>
 		</>
 	);
 };
 
-export default ProductsHome;
+ProductHome.getLayout = function getLayout(page) {
+	return (
+		<Layout>
+			{page}
+		</Layout>
+	);
+};
+
+export default ProductHome;
 
 const ProductPageTitle: React.FC = () => <h2 className={styles.pageHeader}>Products</h2>;
 

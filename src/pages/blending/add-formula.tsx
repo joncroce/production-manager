@@ -1,61 +1,68 @@
 import styles from './add-formula.module.css';
 import React, { useState, useRef, forwardRef } from 'react';
-import { useFieldArray } from 'react-hook-form';
-import { useZodForm } from '@/hooks/useZodForm';
-import { api } from '@/utils/api';
-import { buildProductCode } from '@/utils/product';
-import { addFormulaSchema } from '@/schemas/blending';
+import Layout from '@/components/Layout';
 import Head from 'next/head';
 import Form from '@/components/Form';
 import Modal from '@/components/Modal';
 import ChooseProductModalForm from '@/components/ChooseProductModalForm';
-import Layout from '@/components/Layout';
+import { authenticatedSSProps } from '@/server/auth';
+import { api } from '@/utils/api';
+import { useZodForm } from '@/hooks/useZodForm';
+import { useFieldArray } from 'react-hook-form';
+import { addFormulaSchema, type TAddFormulaSchema } from '@/schemas/formula';
+import { buildProductCode } from '@/utils/product';
+import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
 import type { MouseEventHandler, ComponentProps, PropsWithChildren } from 'react';
 import type { SubmitHandler, UseFormRegister } from 'react-hook-form';
-import type { z } from 'zod';
+import type { GetServerSideProps } from "next";
 import type {
 	Product as TProduct,
 	ProductCode as TProductCode,
-	ProductBaseCode as TProductBaseCode,
-	ProductSizeCode as TProductSizeCode,
-	ProductVariantCode as TProductVariantCode
+	ProductBase as TProductBase,
+	ProductSize as TProductSize,
+	ProductVariant as TProductVariant
 } from '@prisma/client';
 
 type TDetailedProductCode = TProductCode & {
-	BaseCode: TProductBaseCode;
-	SizeCode: TProductSizeCode;
-	VariantCode: TProductVariantCode;
+	ProductBase: TProductBase;
+	ProductSize: TProductSize;
+	ProductVariant: TProductVariant;
 };
 
 type TDetailedProduct = TProduct & {
 	Code: TDetailedProductCode;
 };
 
-type TAddFormulaSchema = z.infer<typeof addFormulaSchema>;
 
-const AddFormula: NextPageWithLayout = () => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
+	return authenticatedSSProps(context);
+};
+
+const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const [matchingProduct, setMatchingProduct] = useState<TDetailedProduct>();
 	const [matchingComponentProducts, setMatchingComponentProducts] = useState<(TDetailedProduct | undefined)[]>([]);
 	const [modalOpen, setModalOpen] = useState<boolean>(false);
 	const [modalOpenForComponentNumber, setModalOpenForComponentNumber] = useState<number | undefined>();
-	const products = api.products.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
+	const products = api.product.getAll.useQuery({ factoryId: user.factoryId ?? '' }, { refetchOnWindowFocus: false });
 	const containerRef = useRef(null);
 
 	const defaultNumberOfFormulaComponents = 2;
 
 	const defaultFormulaComponentFormValue = {
-		baseCodeId: '',
-		sizeCodeId: '',
-		variantCodeId: '',
+		factoryId: user.factoryId,
+		baseCode: '',
+		sizeCode: '',
+		variantCode: '',
 		proportion: '',
 		note: ''
 	};
 
 	const defaultFormValues = {
-		baseCodeId: '',
-		sizeCodeId: '',
-		variantCodeId: '',
+		factoryId: user.factoryId,
+		baseCode: '',
+		sizeCode: '',
+		variantCode: '',
 		formulaComponents: Array.from(
 			{ length: defaultNumberOfFormulaComponents },
 			() => defaultFormulaComponentFormValue
@@ -98,23 +105,23 @@ const AddFormula: NextPageWithLayout = () => {
 
 	const findMatchingProductByProductCode = (selectedProductCode: TDetailedProductCode) => {
 		return products.data?.find((product) =>
-			selectedProductCode.BaseCode.id === product.Code.BaseCode.id
-			&& selectedProductCode.SizeCode.id === product.Code.SizeCode.id
-			&& selectedProductCode.VariantCode.id === product.Code.VariantCode.id
+			selectedProductCode.ProductBase.code === product.Code.ProductBase.code
+			&& selectedProductCode.ProductSize.code === product.Code.ProductSize.code
+			&& selectedProductCode.ProductVariant.code === product.Code.ProductVariant.code
 		);
 	};
 
 	const updateMatchingProduct = (matchingProduct: TDetailedProduct) => {
-		form.setValue('baseCodeId', matchingProduct.Code.BaseCode.id);
-		form.setValue('sizeCodeId', matchingProduct.Code.SizeCode.id);
-		form.setValue('variantCodeId', matchingProduct.Code.VariantCode.id);
+		form.setValue('baseCode', matchingProduct.Code.ProductBase.code);
+		form.setValue('sizeCode', matchingProduct.Code.ProductSize.code);
+		form.setValue('variantCode', matchingProduct.Code.ProductVariant.code);
 		setMatchingProduct(matchingProduct);
 	};
 
 	const updateMatchingComponentProduct = (matchingProduct: TDetailedProduct, index: number) => {
-		form.setValue(`formulaComponents.${index}.baseCodeId`, matchingProduct.Code.BaseCode.id);
-		form.setValue(`formulaComponents.${index}.sizeCodeId`, matchingProduct.Code.SizeCode.id);
-		form.setValue(`formulaComponents.${index}.variantCodeId`, matchingProduct.Code.VariantCode.id);
+		form.setValue(`formulaComponents.${index}.baseCode`, matchingProduct.Code.ProductBase.code);
+		form.setValue(`formulaComponents.${index}.sizeCode`, matchingProduct.Code.ProductSize.code);
+		form.setValue(`formulaComponents.${index}.variantCode`, matchingProduct.Code.ProductVariant.code);
 		setMatchingComponentProducts(prevState =>
 			prevState
 				.slice(0, index)
@@ -134,18 +141,18 @@ const AddFormula: NextPageWithLayout = () => {
 			const nextState = prevState.slice(0, index).concat(prevState.slice(index + 1));
 			nextState.forEach((componentProduct, i) => {
 				if (componentProduct) {
-					form.setValue(`formulaComponents.${i}.baseCodeId`, componentProduct.Code.BaseCode.id);
-					form.setValue(`formulaComponents.${i}.sizeCodeId`, componentProduct.Code.SizeCode.id);
-					form.setValue(`formulaComponents.${i}.variantCodeId`, componentProduct.Code.VariantCode.id);
+					form.setValue(`formulaComponents.${i}.baseCode`, componentProduct.Code.ProductBase.code);
+					form.setValue(`formulaComponents.${i}.sizeCode`, componentProduct.Code.ProductSize.code);
+					form.setValue(`formulaComponents.${i}.variantCode`, componentProduct.Code.ProductVariant.code);
 				}
 			});
 			return nextState;
 		});
 	};
 
-	const addFormula = api.blending.addFormula.useMutation({
+	const addFormula = api.formula.addFormula.useMutation({
 		onSuccess(data) {
-			alert(`Successfully created new BlendFormula for ${buildProductCode(data.baseCodeId, data.sizeCodeId, data.variantCodeId)}`);
+			alert(`Successfully created new BlendFormula for ${buildProductCode(data.baseCode, data.sizeCode, data.variantCode)}`);
 			resetForm();
 		},
 		onError(error) {
@@ -213,8 +220,6 @@ const AddFormula: NextPageWithLayout = () => {
 	);
 };
 
-export default AddFormula;
-
 AddFormula.getLayout = function getLayout(page) {
 	return (
 		<Layout>
@@ -222,6 +227,8 @@ AddFormula.getLayout = function getLayout(page) {
 		</Layout>
 	);
 };
+
+export default AddFormula;
 
 const FormulaProduct: React.FC<
 	{
@@ -232,9 +239,9 @@ const FormulaProduct: React.FC<
 	const productSelected = Boolean(product);
 	const formattedProductCode = product?.Code
 		? buildProductCode(
-			product?.Code.baseCodeId,
-			product?.Code.sizeCodeId,
-			product?.Code.variantCodeId
+			product?.Code.baseCode,
+			product?.Code.sizeCode,
+			product?.Code.variantCode
 		)
 		: '';
 	const productDescription = product?.description ?? '';
@@ -282,7 +289,7 @@ const FormulaComponents: React.FC<
 						matchingComponentProducts.map((product, index) =>
 							<li
 								className={styles['formula-components__list-item']}
-								key={`${product ? buildProductCode(product.baseCodeId, product.sizeCodeId, product.variantCodeId) : 'undefined'}-${index}`}
+								key={`${product ? buildProductCode(product.baseCode, product.sizeCode, product.variantCode) : 'undefined'}-${index}`}
 							>
 								<RemoveComponent clickHandler={() => removeFormulaComponent(index)} />
 								<ComponentNumber number={index + 1} />
@@ -337,9 +344,9 @@ const ComponentProduct: React.FC<
 	const productSelected = Boolean(product);
 	const formattedProductCode = product?.Code
 		? buildProductCode(
-			product?.Code.baseCodeId,
-			product?.Code.sizeCodeId,
-			product?.Code.variantCodeId
+			product?.Code.baseCode,
+			product?.Code.sizeCode,
+			product?.Code.variantCode
 		)
 		: '';
 	const productDescription = product?.description ?? '';

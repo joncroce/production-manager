@@ -1,10 +1,15 @@
 import styles from './index.module.css';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
+import { authenticatedSSProps } from '@/server/auth';
+import type { GetServerSideProps } from "next";
 import type { NextPageWithLayout } from '../_app';
 
-const BlendingHome: NextPageWithLayout = () => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
+	return authenticatedSSProps(context);
+};
 
+const BlendingHome: NextPageWithLayout = () => {
 	return (
 		<>
 			<h1 className={styles['page-title']}>Blending</h1>
@@ -17,8 +22,6 @@ const BlendingHome: NextPageWithLayout = () => {
 	);
 };
 
-export default BlendingHome;
-
 BlendingHome.getLayout = function getLayout(page) {
 	return (
 		<Layout>
@@ -26,3 +29,5 @@ BlendingHome.getLayout = function getLayout(page) {
 		</Layout>
 	);
 };
+
+export default BlendingHome;

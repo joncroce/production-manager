@@ -1,49 +1,47 @@
 import styles from './add-blend.module.css';
 import React, { forwardRef, useRef, useState } from 'react';
+import Layout from '@/components/Layout';
 import Head from 'next/head';
 import Form from '@/components/Form';
 import Modal from '@/components/Modal';
 import ChooseProductModalForm from '@/components/ChooseProductModalForm';
 import IcBaselineChevronLeft from '@/components/Icons/IcBaselineChevronLeft';
 import IcBaselineChevronRight from '@/components/Icons/IcBaselineChevronRight';
+import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
 import { useZodForm } from '@/hooks/useZodForm';
-import { addBlendSchema } from '@/schemas/blending';
+import { addBlendSchema, type TAddBlendSchema } from '@/schemas/blend';
 import { buildProductCode } from '@/utils/product';
 import type { ComponentProps, PropsWithChildren, ChangeEvent } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import type {
-	BlendFormula as TBlendFormula,
-	BlendFormulaComponent as TBlendFormulaComponent,
+	Formula as TFormula,
+	FormulaComponent as TFormulaComponent,
 	Product as TProduct,
-	ProductBaseCode as TProductBaseCode,
 	ProductCode as TProductCode,
-	ProductSizeCode as TProductSizeCode,
-	ProductVariantCode as TProductVariantCode,
+	ProductBase as TProductBase,
+	ProductSize as TProductSize,
+	ProductVariant as TProductVariant,
 	Tank as TTank
 } from '@prisma/client';
 import type { Decimal } from '@prisma/client/runtime';
-import type { z } from 'zod';
-import { NextPageWithLayout } from '../_app';
-import Layout from '@/components/Layout';
+import type { NextPageWithLayout } from '../_app';
+import type { GetServerSideProps } from "next";
+import type { Session } from 'next-auth';
 
 type TDetailedProductCode = TProductCode & {
-	BaseCode: TProductBaseCode;
-	SizeCode: TProductSizeCode;
-	VariantCode: TProductVariantCode;
+	ProductBase: TProductBase;
+	ProductSize: TProductSize;
+	ProductVariant: TProductVariant;
 };
 
 type TDetailedProduct = TProduct & {
-	Code: TProductCode & {
-		BaseCode: TProductBaseCode;
-		SizeCode: TProductSizeCode;
-		VariantCode: TProductVariantCode;
-	};
-	BlendFormulas: TBlendFormula[];
+	Code: TDetailedProductCode;
+	Formulas: TFormula[];
 };
 
-type TDetailedFormula = TBlendFormula & {
-	Components: (TBlendFormulaComponent & {
+type TDetailedFormula = TFormula & {
+	Components: (TFormulaComponent & {
 		Product: TProduct & {
 			Code: TDetailedProductCode;
 			SourceTanks: TTank[];
@@ -51,14 +49,18 @@ type TDetailedFormula = TBlendFormula & {
 	})[];
 };
 
-type TDetailedFormulaComponent = TBlendFormulaComponent & {
+type TDetailedFormulaComponent = TFormulaComponent & {
 	Product: TProduct & {
 		Code: TDetailedProductCode;
 		SourceTanks: TTank[];
 	};
 };
 
-const AddBlend: NextPageWithLayout = () => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
+	return authenticatedSSProps(context);
+};
+
+const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TDetailedProduct>();
 	const [formulaComponents, setFormulaComponents] = useState<TDetailedFormulaComponent[]>([]);
 	const [selectedDestinationTank, setSelectedDestinationTank] = useState<TTank>();
@@ -66,15 +68,15 @@ const AddBlend: NextPageWithLayout = () => {
 	const [selectedComponentSourceTankIds, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
 	const [modalOpen, setModalOpen] = useState<boolean>(false);
 
-	const blendableProducts = api.blending.getAllBlendableProducts.useQuery(undefined, { refetchOnWindowFocus: false });
-	const selectedBlendableProduct = api.blending.getBlendableProduct.useQuery(
-		matchingBlendableProduct ?? { baseCodeId: undefined, sizeCodeId: undefined, variantCodeId: undefined },
+	const blendableProducts = api.product.getAllBlendableProducts.useQuery(undefined, { refetchOnWindowFocus: false });
+	const selectedBlendableProduct = api.product.getBlendableProduct.useQuery(
+		matchingBlendableProduct ?? { factoryId: user.factoryId ?? '', baseCode: undefined, sizeCode: undefined, variantCode: undefined },
 		{
 			refetchOnWindowFocus: false,
 			onSuccess: (data) => {
 				if (data) {
 					setSelectedDestinationTankToDefault(data.SourceTanks);
-					setSelectedFormulaToDefault(data.BlendFormulas);
+					setSelectedFormulaToDefault(data.Formulas);
 				}
 			}
 		}
@@ -84,13 +86,16 @@ const AddBlend: NextPageWithLayout = () => {
 
 	const form = useZodForm({
 		schema: addBlendSchema,
-		mode: 'onBlur'
+		mode: 'onBlur',
+		defaultValues: {
+			factoryId: user.factoryId ?? ''
+		}
 	});
 
 	form.watch(['targetQuantity', 'formulaId']);
 
-	const addBlend = api.blending.addBlend.useMutation({
-		onSuccess(data) {
+	const addBlend = api.blend.addBlend.useMutation({
+		onSuccess() {
 			alert(`Successfully created new Blend.`);
 			resetForm();
 		},
@@ -100,7 +105,7 @@ const AddBlend: NextPageWithLayout = () => {
 		}
 	});
 
-	const submitForm: SubmitHandler<z.infer<typeof addBlendSchema>> = (data) => {
+	const submitForm: SubmitHandler<TAddBlendSchema> = (data) => {
 		addBlend.mutate(data);
 	};
 
@@ -126,9 +131,9 @@ const AddBlend: NextPageWithLayout = () => {
 
 	const findMatchingBlendableProductByProductCode = (selectedProductCode: TDetailedProductCode) => {
 		return blendableProducts.data?.find((blendableProduct) =>
-			selectedProductCode.BaseCode.id === blendableProduct.Code.BaseCode.id
-			&& selectedProductCode.SizeCode.id === blendableProduct.Code.SizeCode.id
-			&& selectedProductCode.VariantCode.id === blendableProduct.Code.VariantCode.id
+			selectedProductCode.ProductBase.code === blendableProduct.Code.ProductBase.code
+			&& selectedProductCode.ProductSize.code === blendableProduct.Code.ProductSize.code
+			&& selectedProductCode.ProductVariant.code === blendableProduct.Code.ProductVariant.code
 		);
 	};
 
@@ -140,7 +145,7 @@ const AddBlend: NextPageWithLayout = () => {
 
 			if (defaultDestinationTank) {
 				setSelectedDestinationTank(defaultDestinationTank);
-				form.setValue('destinationTankId', defaultDestinationTank.id);
+				form.setValue('destinationTankName', defaultDestinationTank.name);
 			}
 		}
 	};
@@ -162,11 +167,11 @@ const AddBlend: NextPageWithLayout = () => {
 			const defaultComponentSourceTankIds = formulaComponents.map(
 				(component) => component.Product.SourceTanks.find(
 					(tank) => tank.isDefaultSource
-				)?.id ?? component.Product.SourceTanks[0]?.id
+				)?.name ?? component.Product.SourceTanks[0]?.name
 			);
 			setSelectedComponentSourceTankIds(defaultComponentSourceTankIds);
-			defaultComponentSourceTankIds.forEach((sourceTankId, componentIndex) => {
-				form.setValue(`components.${componentIndex}.sourceTankId`, sourceTankId ?? '');
+			defaultComponentSourceTankIds.forEach((sourceTankName, componentIndex) => {
+				form.setValue(`components.${componentIndex}.sourceTankName`, sourceTankName ?? '');
 			});
 
 			formulaComponents.forEach((component, componentIndex) => {
@@ -182,7 +187,7 @@ const AddBlend: NextPageWithLayout = () => {
 		if (selectedDestinationTank) {
 			const destinationTanks = selectedBlendableProduct.data?.SourceTanks;
 			if (destinationTanks && destinationTanks.length) {
-				const selectedTankIndex = destinationTanks.findIndex((tank) => tank.id === selectedDestinationTank.id);
+				const selectedTankIndex = destinationTanks.findIndex((tank) => tank.name === selectedDestinationTank.name);
 				const newIndex =
 					offset === -1
 						? selectedTankIndex - 1 < 0
@@ -192,14 +197,14 @@ const AddBlend: NextPageWithLayout = () => {
 							? 0
 							: selectedTankIndex + 1;
 				setSelectedDestinationTank(destinationTanks[newIndex]);
-				form.setValue('destinationTankId', destinationTanks[newIndex]?.id ?? '');
+				form.setValue('destinationTankName', destinationTanks[newIndex]?.name ?? '');
 			}
 		}
 	};
 
 	const updateSelectedFormula = (offset: -1 | 1) => {
 		if (selectedFormula) {
-			const formulas = selectedBlendableProduct.data?.BlendFormulas;
+			const formulas = selectedBlendableProduct.data?.Formulas;
 			if (formulas && formulas.length) {
 				const selectedFormulaIndex = formulas.findIndex((formula) => formula.id === selectedFormula.id);
 				const newIndex = offset === -1
@@ -226,7 +231,7 @@ const AddBlend: NextPageWithLayout = () => {
 			if (sourceTanks && sourceTanks.length) {
 				setSelectedComponentSourceTankIds((prev) => {
 					if (prev && prev[componentIndex]) {
-						const sourceTankIndex = sourceTanks.findIndex((sourceTank) => prev[componentIndex] === sourceTank.id);
+						const sourceTankIndex = sourceTanks.findIndex((sourceTank) => prev[componentIndex] === sourceTank.name);
 						if (sourceTankIndex === -1) {
 							return prev;
 						}
@@ -238,9 +243,9 @@ const AddBlend: NextPageWithLayout = () => {
 								: sourceTankIndex === 0
 									? sourceTanks.length - 1
 									: sourceTankIndex - 1;
-						const newId = sourceTanks[newIndex]?.id;
-						form.setValue(`components.${componentIndex}.sourceTankId`, newId ?? '');
-						return Array.from({ length: prev.length }, (_, k) => k === componentIndex ? newId : prev[k]);
+						const newTankName = sourceTanks[newIndex]?.name;
+						form.setValue(`components.${componentIndex}.sourceTankName`, newTankName ?? '');
+						return Array.from({ length: prev.length }, (_, k) => k === componentIndex ? newTankName : prev[k]);
 					} else {
 						return prev;
 					}
@@ -289,7 +294,7 @@ const AddBlend: NextPageWithLayout = () => {
 						<BlendDestinationTank>
 							<TankSelector
 								show={Boolean(selectedDestinationTank)}
-								selectedTankId={selectedDestinationTank ? selectedDestinationTank.id : undefined}
+								selectedTankId={selectedDestinationTank ? selectedDestinationTank.name : undefined}
 								selectPrevious={() => updateSelectedDestinationTank(-1)}
 								selectNext={() => updateSelectedDestinationTank(1)}
 								selectionDisabled={selectedBlendableProduct.data?.SourceTanks ? selectedBlendableProduct.data?.SourceTanks.length < 2 : true}
@@ -297,12 +302,12 @@ const AddBlend: NextPageWithLayout = () => {
 						</BlendDestinationTank>
 						<BlendFormula show={Boolean(selectedBlendableProduct.data)}>
 							<FormulaSelector
-								show={Boolean(selectedBlendableProduct.data && selectedBlendableProduct.data?.BlendFormulas && selectedFormula)}
-								numberOfFormulas={selectedBlendableProduct.data?.BlendFormulas?.length ?? 0}
-								selectedFormulaIndex={selectedBlendableProduct.data?.BlendFormulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
+								show={Boolean(selectedBlendableProduct.data && selectedBlendableProduct.data?.Formulas && selectedFormula)}
+								numberOfFormulas={selectedBlendableProduct.data?.Formulas?.length ?? 0}
+								selectedFormulaIndex={selectedBlendableProduct.data?.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
 								selectPrevious={() => updateSelectedFormula(-1)}
 								selectNext={() => updateSelectedFormula(1)}
-								selectionDisabled={selectedBlendableProduct.data?.BlendFormulas ? selectedBlendableProduct.data?.BlendFormulas.length < 2 : true}
+								selectionDisabled={selectedBlendableProduct.data?.Formulas ? selectedBlendableProduct.data?.Formulas.length < 2 : true}
 							/>
 							<FormulaComponents
 								show={Boolean(formulaComponents.length)}
@@ -353,9 +358,9 @@ const BlendProduct: React.FC<
 	const productSelected = Boolean(product);
 	const formattedProductCode = product?.Code
 		? buildProductCode(
-			product?.Code.baseCodeId,
-			product?.Code.sizeCodeId,
-			product?.Code.variantCodeId
+			product?.Code.baseCode,
+			product?.Code.sizeCode,
+			product?.Code.variantCode
 		)
 		: '';
 	const productDescription = product?.description ?? '';
@@ -500,7 +505,7 @@ const FormulaComponents: React.FC<{
 		<ol className={styles['formula-components__list']}>
 			{
 				formulaComponents.map((component, index) =>
-					<li className={styles['formula-components__list-item']} key={`${component.formulaId}-${component.baseCodeId}`}>
+					<li className={styles['formula-components__list-item']} key={`${component.formulaId}-${component.baseCode}`}>
 						<ComponentNumber number={index + 1} />
 						<ComponentProduct
 							productCode={component.Product.Code}
@@ -547,15 +552,15 @@ const ComponentNumber: React.FC<
 const ComponentProduct: React.FC<
 	{
 		productCode: {
-			BaseCode: TProductBaseCode;
-			SizeCode: TProductSizeCode;
-			VariantCode: TProductVariantCode;
+			ProductBase: TProductBase;
+			ProductSize: TProductSize;
+			ProductVariant: TProductVariant;
 		};
 		productDescription: string | null;
 	}
 > = ({ productCode, productDescription }) => {
-	const { BaseCode, SizeCode, VariantCode } = productCode;
-	const formattedProductCode = buildProductCode(BaseCode.id, SizeCode.id, VariantCode.id);
+	const { ProductBase, ProductSize, ProductVariant } = productCode;
+	const formattedProductCode = buildProductCode(ProductBase.code, ProductSize.code, ProductVariant.code);
 
 	return (
 		<section className={styles['component-product']}>
