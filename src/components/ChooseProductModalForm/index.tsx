@@ -1,5 +1,5 @@
 import styles from './index.module.css';
-import React, { MouseEventHandler } from 'react';
+import React from 'react';
 import Form from '@/components/Form';
 import { z } from 'zod';
 import { useState } from 'react';
@@ -7,27 +7,26 @@ import { useZodForm } from '@/hooks/useZodForm';
 import type { SubmitHandler } from 'react-hook-form';
 import type {
 	ProductCode as TProductCode,
-	ProductBaseCode as TProductBaseCode,
-	ProductSizeCode as TProductSizeCode,
-	ProductVariantCode as TProductVariantCode
+	ProductBase as TProductBase,
+	ProductSize as TProductSize,
+	ProductVariant as TProductVariant
 } from '@prisma/client';
-import { buildProductCode } from '@/utils/product';
 
 type TDetailedProductCode = TProductCode & {
-	BaseCode: TProductBaseCode;
-	SizeCode: TProductSizeCode;
-	VariantCode: TProductVariantCode;
+	ProductBase: TProductBase;
+	ProductSize: TProductSize;
+	ProductVariant: TProductVariant;
 };
 
 type TSearchFormInput = z.infer<typeof searchFormSchema>;
 
 const searchFormSchema = z.object({
-	baseCodeSearchTerm: z.string(),
-	baseCodeSearchField: z.enum(['id', 'name']),
-	sizeCodeSearchTerm: z.string(),
-	sizeCodeSearchField: z.enum(['id', 'name']),
-	variantCodeSearchTerm: z.string(),
-	variantCodeSearchField: z.enum(['id', 'name']),
+	baseSearchTerm: z.string(),
+	baseSearchField: z.enum(['code', 'name']),
+	sizeSearchTerm: z.string(),
+	sizeSearchField: z.enum(['code', 'name']),
+	variantSearchTerm: z.string(),
+	variantSearchField: z.enum(['code', 'name']),
 });
 
 const ChooseProductModalForm: React.FC<
@@ -42,12 +41,12 @@ const ChooseProductModalForm: React.FC<
 	const form = useZodForm({
 		schema: searchFormSchema,
 		defaultValues: {
-			baseCodeSearchTerm: '',
-			baseCodeSearchField: 'id',
-			sizeCodeSearchTerm: '1',
-			sizeCodeSearchField: 'id',
-			variantCodeSearchTerm: '0',
-			variantCodeSearchField: 'id',
+			baseSearchTerm: '',
+			baseSearchField: 'code',
+			sizeSearchTerm: '1',
+			sizeSearchField: 'code',
+			variantSearchTerm: '0',
+			variantSearchField: 'code',
 		}
 	});
 
@@ -64,25 +63,25 @@ const ChooseProductModalForm: React.FC<
 
 	const searchProducts = (input: TSearchFormInput) => {
 		if (productCodes && productCodes.length) {
-			const baseCodeSearchTerm = input.baseCodeSearchTerm.trim().toLowerCase();
-			const sizeCodeSearchTerm = input.sizeCodeSearchTerm.trim().toLowerCase();
-			const variantCodeSearchTerm = input.variantCodeSearchTerm.trim().toLowerCase();
+			const baseSearchTerm = input.baseSearchTerm.trim().toLowerCase();
+			const sizeSearchTerm = input.sizeSearchTerm.trim().toLowerCase();
+			const variantSearchTerm = input.variantSearchTerm.trim().toLowerCase();
 
 			return productCodes.filter((productCode) => (
 				(
-					!baseCodeSearchTerm.length
-					|| (input.baseCodeSearchField === 'id' && String(productCode.BaseCode.id).includes(baseCodeSearchTerm))
-					|| (input.baseCodeSearchField === 'name' && productCode.BaseCode.name.toLowerCase().includes(baseCodeSearchTerm))
+					!baseSearchTerm.length
+					|| (input.baseSearchField === 'code' && String(productCode.ProductBase.code).includes(baseSearchTerm))
+					|| (input.baseSearchField === 'name' && productCode.ProductBase.name.toLowerCase().includes(baseSearchTerm))
 				)
 				&& (
-					!sizeCodeSearchTerm.length
-					|| (input.sizeCodeSearchField === 'id' && String(productCode.SizeCode.id).includes(sizeCodeSearchTerm))
-					|| (input.sizeCodeSearchField === 'name' && productCode.SizeCode.name.toLowerCase().includes(sizeCodeSearchTerm))
+					!sizeSearchTerm.length
+					|| (input.sizeSearchField === 'code' && String(productCode.ProductSize.code).includes(sizeSearchTerm))
+					|| (input.sizeSearchField === 'name' && productCode.ProductSize.name.toLowerCase().includes(sizeSearchTerm))
 				)
 				&& (
-					!variantCodeSearchTerm.length
-					|| (input.variantCodeSearchField === 'id' && String(productCode.VariantCode.id).includes(variantCodeSearchTerm))
-					|| (input.variantCodeSearchField === 'name' && productCode.VariantCode.name.toLowerCase().includes(variantCodeSearchTerm))
+					!variantSearchTerm.length
+					|| (input.variantSearchField === 'code' && String(productCode.ProductVariant.code).includes(variantSearchTerm))
+					|| (input.variantSearchField === 'name' && productCode.ProductVariant.name.toLowerCase().includes(variantSearchTerm))
 				)
 			));
 		}
@@ -92,57 +91,57 @@ const ChooseProductModalForm: React.FC<
 		<>
 			<Form className={styles['search-form']} form={form} onSubmit={submitSearchForm}>
 				<fieldset className={styles['search-form__fieldset']}>
-					<label className={styles['search-form__label']} htmlFor="baseCodeSearchTerm">
-						Base Code
+					<label className={styles['search-form__label']} htmlFor="baseSearchTerm">
+						Product Base
 					</label>
-					<label className={styles['search-form__label']} htmlFor="baseCodeSearchField-id">
+					<label className={styles['search-form__label']} htmlFor="baseSearchField-code">
 						<input
 							className={styles['search-form__input']}
-							type="radio" value="id" id="baseCodeSearchField-id" {...form.register('baseCodeSearchField')}
+							type="radio" value="code" id="baseSearchField-code" {...form.register('baseSearchField')}
 						/>
-						ID
+						Code
 					</label>
-					<label className={styles['search-form__label']} htmlFor="baseCodeSearchField-name">
-						<input className={styles['search-form__input']} type="radio" value="name" id="baseCodeSearchField-name" {...form.register('baseCodeSearchField')} />
+					<label className={styles['search-form__label']} htmlFor="baseSearchField-name">
+						<input className={styles['search-form__input']} type="radio" value="name" id="baseSearchField-name" {...form.register('baseSearchField')} />
 						Name
 					</label>
-					<input className={styles['search-form__input']} type="text" id="baseCodeSearchTerm" {...form.register('baseCodeSearchTerm')} />
+					<input className={styles['search-form__input']} type="text" id="baseSearchTerm" {...form.register('baseSearchTerm')} />
 				</fieldset>
 				<details>
 					<summary>Advanced Search</summary>
 					<fieldset className={styles['search-form__fieldset']}>
-						<label className={styles['search-form__label']} htmlFor="sizeCodeSearchTerm">
-							Size Code
+						<label className={styles['search-form__label']} htmlFor="sizeSearchTerm">
+							Product Size
 						</label>
-						<label className={styles['search-form__label']} htmlFor="sizeCodeSearchField-id">
+						<label className={styles['search-form__label']} htmlFor="sizeSearchField-code">
 							<input
 								className={styles['search-form__input']}
-								type="radio" value="id" id="sizeCodeSearchField-id" {...form.register('sizeCodeSearchField')}
+								type="radio" value="code" id="sizeSearchField-code" {...form.register('sizeSearchField')}
 							/>
-							ID
+							Code
 						</label>
-						<label className={styles['search-form__label']} htmlFor="sizeCodeSearchField-name">
-							<input className={styles['search-form__input']} type="radio" value="name" id="sizeCodeSearchField-name" {...form.register('sizeCodeSearchField')} />
+						<label className={styles['search-form__label']} htmlFor="sizeSearchField-name">
+							<input className={styles['search-form__input']} type="radio" value="name" id="sizeSearchField-name" {...form.register('sizeSearchField')} />
 							Name
 						</label>
-						<input className={styles['search-form__input']} type="text" id="sizeCodeSearchTerm" {...form.register('sizeCodeSearchTerm')} />
+						<input className={styles['search-form__input']} type="text" id="sizeSearchTerm" {...form.register('sizeSearchTerm')} />
 					</fieldset>
 					<fieldset className={styles['search-form__fieldset']}>
-						<label className={styles['search-form__label']} htmlFor="variantCodeSearchTerm">
-							Variant Code
+						<label className={styles['search-form__label']} htmlFor="variantSearchTerm">
+							Product Variant
 						</label>
-						<label className={styles['search-form__label']} htmlFor="variantCodeSearchField-id">
+						<label className={styles['search-form__label']} htmlFor="variantSearchField-code">
 							<input
 								className={styles['search-form__input']}
-								type="radio" value="id" id="variantCodeSearchField-id" {...form.register('variantCodeSearchField')}
+								type="radio" value="code" id="variantSearchField-code" {...form.register('variantSearchField')}
 							/>
-							ID
+							Code
 						</label>
-						<label className={styles['search-form__label']} htmlFor="variantCodeSearchField-name">
-							<input className={styles['search-form__input']} type="radio" value="name" id="variantCodeSearchField-name" {...form.register('variantCodeSearchField')} />
+						<label className={styles['search-form__label']} htmlFor="variantSearchField-name">
+							<input className={styles['search-form__input']} type="radio" value="name" id="variantSearchField-name" {...form.register('variantSearchField')} />
 							Name
 						</label>
-						<input className={styles['search-form__input']} type="text" id="variantCodeSearchTerm" {...form.register('variantCodeSearchTerm')} />
+						<input className={styles['search-form__input']} type="text" id="variantSearchTerm" {...form.register('variantSearchTerm')} />
 					</fieldset>
 				</details>
 				<div className={styles['search-form__controls']}>
@@ -168,27 +167,27 @@ const ChooseProductModalForm: React.FC<
 													styles['search-results__list-item'],
 													styles['search-result'],
 													selectedProductCode
-														&& selectedProductCode.BaseCode.id === productCode.BaseCode.id
-														&& selectedProductCode.SizeCode.id === productCode.SizeCode.id
-														&& selectedProductCode.VariantCode.id === productCode.VariantCode.id
+														&& selectedProductCode.ProductBase.code === productCode.ProductBase.code
+														&& selectedProductCode.ProductSize.code === productCode.ProductSize.code
+														&& selectedProductCode.ProductVariant.code === productCode.ProductVariant.code
 														? styles['search-results__list-item--selected']
 														: '',
 												].join(' ')
 											}
-											key={`${productCode.BaseCode.id}-${productCode.SizeCode.id}-${productCode.VariantCode.id}`}
+											key={`${productCode.ProductBase.code}-${productCode.ProductSize.code}-${productCode.ProductVariant.code}`}
 											onClick={() => setSelectedProductCode(productCode)}
 										>
 											<section className={styles['search-result__field']}>
-												<div className={styles['search-result__id']}>{productCode.BaseCode.id}</div>
-												<div className={styles['search-result__name']}>{productCode.BaseCode.name}</div>
+												<div className={styles['search-result__code']}>{productCode.ProductBase.code}</div>
+												<div className={styles['search-result__name']}>{productCode.ProductBase.name}</div>
 											</section>
 											<section className={styles['search-result__field']}>
-												<div className={styles['search-result__id']}>{productCode.SizeCode.id}</div>
-												<div className={styles['search-result__name']}>{productCode.SizeCode.name}</div>
+												<div className={styles['search-result__code']}>{productCode.ProductSize.code}</div>
+												<div className={styles['search-result__name']}>{productCode.ProductSize.name}</div>
 											</section>
 											<section className={styles['search-result__field']}>
-												<div className={styles['search-result__id']}>{productCode.VariantCode.id}</div>
-												<div className={styles['search-result__name']}>{productCode.VariantCode.name}</div>
+												<div className={styles['search-result__code']}>{productCode.ProductVariant.code}</div>
+												<div className={styles['search-result__name']}>{productCode.ProductVariant.name}</div>
 											</section>
 										</li>
 									)
@@ -206,16 +205,16 @@ const ChooseProductModalForm: React.FC<
 					? <section className={styles['selected-product']}>
 						<h3 className={styles['selected-product__header']}>Selected Product</h3>
 						<section className={styles['search-result__field']}>
-							<div className={styles['search-result__id']}>{selectedProductCode.BaseCode.id}</div>
-							<div className={styles['search-result__name']}>{selectedProductCode.BaseCode.name}</div>
+							<div className={styles['search-result__code']}>{selectedProductCode.ProductBase.code}</div>
+							<div className={styles['search-result__name']}>{selectedProductCode.ProductBase.name}</div>
 						</section>
 						<section className={styles['search-result__field']}>
-							<div className={styles['search-result__id']}>{selectedProductCode.SizeCode.id}</div>
-							<div className={styles['search-result__name']}>{selectedProductCode.SizeCode.name}</div>
+							<div className={styles['search-result__code']}>{selectedProductCode.ProductSize.code}</div>
+							<div className={styles['search-result__name']}>{selectedProductCode.ProductSize.name}</div>
 						</section>
 						<section className={styles['search-result__field']}>
-							<div className={styles['search-result__id']}>{selectedProductCode.VariantCode.id}</div>
-							<div className={styles['search-result__name']}>{selectedProductCode.VariantCode.name}</div>
+							<div className={styles['search-result__code']}>{selectedProductCode.ProductVariant.code}</div>
+							<div className={styles['search-result__name']}>{selectedProductCode.ProductVariant.name}</div>
 						</section>
 					</section>
 					: null
