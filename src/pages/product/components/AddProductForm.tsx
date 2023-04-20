@@ -1,36 +1,42 @@
 import styles from '../add.module.css';
 import formStyles from '@/components/Form/index.module.css';
-import { useState } from 'react';
-import { api } from '@/utils/api';
-import { useZodForm } from '@/hooks/useZodForm';
 import Form from '@/components/Form';
 import Input from '@/components/Form/Input';
 import Modal from '@/components/Modal';
 import SubmitButton from '@/components/Form/SubmitButton';
-import ControlledSelect from '@/components/Form/ControlledSelect';
-import AddCodeModalForm from './AddCodeModalForm';
-import type { MutableRefObject, PropsWithChildren, MouseEventHandler } from 'react';
-import type { ProductBaseCode, ProductSizeCode, ProductVariantCode } from '@prisma/client';
+import ProductCodePartSelect from '@/components/Form/ProductCodePartSelect';
+import AddProductCodePartModalForm from './AddProductCodePartModalForm';
+import { useState } from 'react';
+import { api } from '@/utils/api';
+import { addProductSchema, type TAddProductSchema } from '@/schemas/product';
+import { buildProductCode } from '@/utils/product';
+import { useZodForm } from '@/hooks/useZodForm';
 import type { SubmitHandler } from 'react-hook-form';
-import { addProductSchema, type AddProduct } from '@/schemas/product';
+import type { MutableRefObject, PropsWithChildren, MouseEventHandler } from 'react';
+import type {
+	ProductBase as TProductBase,
+	ProductSize as TProductSize,
+	ProductVariant as TProductVariant
+} from '@prisma/client';
 
-type ModalFormSuccessData = ProductBaseCode | ProductSizeCode | ProductVariantCode;
-type ModalFormCodeName = 'baseCode' | 'sizeCode' | 'variantCode';
+export type ModalFormSuccessData = TProductBase | TProductSize | TProductVariant;
+type ModalFormCodePart = 'productBase' | 'productSize' | 'productVariant';
 type FieldDataByCodeName = Record<
-	ModalFormCodeName,
+	ModalFormCodePart,
 	{
-		fieldName: 'baseCodeId' | 'sizeCodeId' | 'variantCodeId';
+		fieldName: 'baseCode' | 'sizeCode' | 'variantCode';
 		label: string;
-		queryData: ProductBaseCode[] | ProductSizeCode[] | ProductVariantCode[] | undefined;
+		queryData: TProductBase[] | TProductSize[] | TProductVariant[] | undefined;
 	}
 >;
 
 interface Props {
+	factoryId: string;
 	containerRef: MutableRefObject<HTMLElement | null>;
 }
-const AddProductForm: React.FC<Props> = ({ containerRef }) => {
+const AddProductForm: React.FC<Props> = ({ factoryId, containerRef }) => {
 	const [modalOpen, setModalOpen] = useState(false);
-	const [modalFormCodeName, setModalFormCodeName] = useState<ModalFormCodeName | undefined>(undefined);
+	const [modalFormCodePart, setModalFormCodePart] = useState<ModalFormCodePart | undefined>(undefined);
 	const [modalFormTitle, setModalFormTitle] = useState<string>('');
 
 	/** Needed to revert select fields to show placeholder on form reset 
@@ -38,48 +44,60 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 	**/
 	const [keyForReset, setKeyForReset] = useState<number>(0);
 
-	const form = useZodForm({ schema: addProductSchema });
+	const form = useZodForm({
+		schema: addProductSchema,
+		defaultValues: {
+			baseCode: undefined,
+			sizeCode: undefined,
+			variantCode: undefined,
+			factoryId: factoryId,
+			description: ''
+		},
+		resetOptions: {
+			keepDefaultValues: true
+		}
+	});
 
-	const availableBaseCodes = api.baseCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
-	const availableSizeCodes = api.sizeCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
-	const availableVariantCodes = api.variantCode.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
+	const availableProductBases = api.productBase.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
+	const availableProductSizes = api.productSize.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
+	const availableProductVariants = api.productVariant.getAll.useQuery(undefined, { refetchOnWindowFocus: false });
 
-	type ModalFormQueryResult = typeof availableBaseCodes | typeof availableSizeCodes | typeof availableVariantCodes;
+	type ModalFormQueryResult = typeof availableProductBases | typeof availableProductSizes | typeof availableProductVariants;
 
 	const fieldDataByCodeName: FieldDataByCodeName = {
-		'baseCode': {
-			fieldName: 'baseCodeId',
+		'productBase': {
+			fieldName: 'baseCode',
 			label: 'Base Code',
-			queryData: availableBaseCodes.data,
+			queryData: availableProductBases.data,
 		},
-		'sizeCode': {
-			fieldName: 'sizeCodeId',
+		'productSize': {
+			fieldName: 'sizeCode',
 			label: 'Size Code',
-			queryData: availableSizeCodes.data,
+			queryData: availableProductSizes.data,
 		},
-		'variantCode': {
-			fieldName: 'variantCodeId',
+		'productVariant': {
+			fieldName: 'variantCode',
 			label: 'Variant Code',
-			queryData: availableVariantCodes.data
+			queryData: availableProductVariants.data
 		}
 	};
 
-	const getQueryResultByCodeName = (codeName: ModalFormCodeName) => {
-		switch (codeName) {
-			case 'baseCode': return availableBaseCodes;
-			case 'sizeCode': return availableSizeCodes;
-			case 'variantCode': return availableVariantCodes;
+	const getQueryResultByCodePart = (codePart: ModalFormCodePart) => {
+		switch (codePart) {
+			case 'productBase': return availableProductBases;
+			case 'productSize': return availableProductSizes;
+			case 'productVariant': return availableProductVariants;
 			default: throw new Error('Invalid Code Name');
 		}
 	};
 
-	const openModal = (name: ModalFormCodeName) => {
-		setModalFormCodeName(name);
+	const openModal = (codePart: ModalFormCodePart) => {
+		setModalFormCodePart(codePart);
 		setModalFormTitle(() => {
-			switch (name) {
-				case 'baseCode': return 'Add Base Code';
-				case 'sizeCode': return 'Add Size Code';
-				case 'variantCode': return 'Add Variant Code';
+			switch (codePart) {
+				case 'productBase': return 'Add Product Base';
+				case 'productSize': return 'Add Product Size';
+				case 'productVariant': return 'Add Product Variant';
 				default: return '';
 			}
 		});
@@ -90,26 +108,28 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 		setModalOpen(false);
 	};
 
-	const setFieldValueByCodeName = (codeName: ModalFormCodeName, value: number) => {
-		form.setValue(fieldDataByCodeName[codeName].fieldName, value);
+	const setFieldValueByCodePart = (codePart: ModalFormCodePart, value: number) => {
+		form.setValue(fieldDataByCodeName[codePart].fieldName, value);
 	};
 
 	const modalFormMutationSuccessHandler =
 		(queryResult: ModalFormQueryResult) =>
 			async (data: ModalFormSuccessData) => {
+				console.log('in success handler');
+				console.log(queryResult);
 				if (queryResult) {
 					await queryResult.refetch();
-					if (modalFormCodeName) {
-						setFieldValueByCodeName(modalFormCodeName, data.id);
+					if (modalFormCodePart) {
+						setFieldValueByCodePart(modalFormCodePart, data.code);
 					}
 					closeModal();
 				}
 			};
 
-	const addProduct = api.products.add.useMutation({
+	const addProduct = api.product.add.useMutation({
 		onSuccess(data) {
 			console.log(data);
-			alert(`Successfully created new product ${String(data.baseCodeId).padStart(3, '0')}-${String(data.sizeCodeId).padStart(2, '0')}-${String(data.variantCodeId).padStart(2, '0')}`);
+			alert(`Successfully created new product ${buildProductCode(data.baseCode, data.sizeCode, data.variantCode)}`);
 			resetForm();
 		},
 		onError(error) {
@@ -118,14 +138,17 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 		},
 	});
 
-	const submitForm: SubmitHandler<AddProduct> = (data) => { addProduct.mutate(data); };
+	const submitForm: SubmitHandler<TAddProductSchema> = (data) => {
+		addProduct.mutate(data);
+	};
+
 	const resetForm = () => {
 		form.reset();
 		setKeyForReset((n) => n + 1);
 	};
 
 	return (
-		<div className={styles.formWrapper}>
+		<div className={styles['add-product__form']}>
 			<Form form={form} onSubmit={submitForm}>
 				<CodeFields fieldDataByCodeName={fieldDataByCodeName} openModal={openModal} keyForReset={String(keyForReset)} />
 				<Input type="string" label="Description" autoComplete="off"  {...form.register('description')} />
@@ -143,15 +166,16 @@ const AddProductForm: React.FC<Props> = ({ containerRef }) => {
 				title={modalFormTitle}
 			>
 				{
-					modalFormCodeName &&
-					<AddCodeModalForm
-						codeName={modalFormCodeName}
+					modalFormCodePart &&
+					<AddProductCodePartModalForm
+						factoryId={factoryId}
+						codePart={modalFormCodePart}
 						closeModal={closeModal}
-						onMutationSuccess={modalFormMutationSuccessHandler(getQueryResultByCodeName(modalFormCodeName))}
+						onMutationSuccess={modalFormMutationSuccessHandler(getQueryResultByCodePart(modalFormCodePart))}
 					/>
 				}
 			</Modal>
-		</div >
+		</div>
 	);
 };
 
@@ -163,7 +187,7 @@ const FieldRow: React.FC<PropsWithChildren> = ({ children }) => (
 
 const CodeFields: React.FC<{
 	fieldDataByCodeName: FieldDataByCodeName;
-	openModal: (codeName: ModalFormCodeName) => void;
+	openModal: (codeName: ModalFormCodePart) => void;
 	keyForReset: string;
 }> = ({
 	fieldDataByCodeName,
@@ -172,19 +196,19 @@ const CodeFields: React.FC<{
 }) =>
 		<>
 			{
-				(Object.keys(fieldDataByCodeName) as ModalFormCodeName[])
+				(Object.keys(fieldDataByCodeName) as ModalFormCodePart[])
 					.map(
 						(codeName) => {
 							const { fieldName, label, queryData } = fieldDataByCodeName[codeName];
 
 							return (
 								<FieldRow key={`${codeName}-${keyForReset}`}>
-									<ControlledSelect
+									<ProductCodePartSelect
 										labelText={label}
 										fieldName={fieldName}
 										required
 										disabled={!queryData?.length}
-										items={queryData ?? []}
+										items={(queryData ?? []).sort((a, b) => a.code - b.code)}
 									/>
 									<AddCodeButton clickHandler={() => openModal(codeName)} />
 								</FieldRow>
