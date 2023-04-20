@@ -8,6 +8,7 @@ import { api } from "../utils/api";
 
 import "../styles/globals.css";
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -18,13 +19,13 @@ type AppPropsWithLayout = AppProps & {
 
 const MyApp: AppType<{ session: Session | null; }> = ({
   Component,
-  pageProps: { session, ...pageProps },
+  pageProps: { session, ...pageProps }
 }: AppPropsWithLayout) => {
   const getLayout = Component.getLayout ?? ((page) => page);
   const layout = getLayout(<Component {...pageProps} />);
 
   return (
-    <SessionProvider session={session}>
+    <SessionProvider session={session as Session | null}>
       {layout}
     </SessionProvider>
   );
