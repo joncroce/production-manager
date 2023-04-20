@@ -12,7 +12,7 @@ interface Props {
 	disabled?: boolean;
 	required?: boolean;
 	items: {
-		id: number | string;
+		code: number | string;
 		name: string;
 	}[];
 }
@@ -51,9 +51,9 @@ const ControlledSelect: React.FC<Props & PropsWithChildren> = ({ labelText, fiel
 								</Select.ScrollUpButton>
 								<Select.Viewport className={styles.selectViewport}>
 									{
-										items.map(({ id, name }) =>
-											<Select.Item key={id} value={String(id)} className={styles.selectItem}>
-												<Select.ItemText>{`${id}: ${name}`}</Select.ItemText>
+										items.map(({ code, name }) =>
+											<Select.Item key={code} value={String(code)} className={styles.selectItem}>
+												<Select.ItemText>{`${code}: ${name}`}</Select.ItemText>
 											</Select.Item>
 										)
 									}
