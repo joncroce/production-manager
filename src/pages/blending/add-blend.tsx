@@ -314,7 +314,13 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 						</BlendFormula>
 						<section className={styles['form-controls']}>
 							<button className={styles['form-controls__button']} type="button" onClick={resetForm}>Reset</button>
-							<button className={styles['form-controls__button']} type="submit">Submit</button>
+							<button
+								className={styles['form-controls__button']}
+								type="submit"
+								disabled={!selectedBlendableProduct.data || !form.getValues('targetQuantity')}
+							>
+								Submit
+							</button>
 						</section>
 					</Form>
 				</article>
