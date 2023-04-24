@@ -4,6 +4,19 @@ import { z } from 'zod';
 import type { Formula } from '@prisma/client';
 
 export const formulaRouter = createTRPCRouter({
+	getAll: publicProcedure
+		.input(z.object({ factoryId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			const formulas = await ctx.prisma.formula.findMany({
+				where: {
+					factoryId: input.factoryId
+				},
+				include: {
+					Components: true
+				}
+			});
+			return formulas ?? [];
+		}),
 	addFormula: publicProcedure
 		.input(addFormulaSchema)
 		.mutation(async ({ ctx, input }) => {
