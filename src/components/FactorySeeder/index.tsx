@@ -1,4 +1,5 @@
 import styles from './index.module.css';
+import Link from 'next/link';
 import { useState } from 'react';
 import { api } from '@/utils/api';
 import productBases, { BaseOilCategorizer } from './seedData/productBases';
@@ -9,15 +10,16 @@ import { generateTanksForProduct } from './seedData/tanks';
 import { generateRandomBlendFormula } from './seedData/blendFormulas';
 import type { TAddTankSchema } from '@/schemas/tank';
 import type { TAddFormulaSchema } from '@/schemas/formula';
+import type { TAddBlendSchema } from '@/schemas/blend';
 import type {
-	Formula as TFormula,
+	Blend as TBlend,
 	Product as TProduct,
 	ProductBase as TProductBase,
 	ProductSize as TProductSize,
 	ProductVariant as TProductVariant,
 	Tank as TTank
 } from '@prisma/client';
-import Link from 'next/link';
+import type { TFormulaWithComponents } from '@/server/api/routers/formula';
 
 const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 	const [seedLog, setSeedLog] = useState<{ type: 'success' | 'error'; message: string; }[]>([]);
@@ -129,7 +131,7 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 
 	const addFormulasForBulkProducts = api.formula.addFormulas.useMutation();
 	const seedFormulasForBulkProducts = (products: TBulkProduct[]) =>
-		new Promise<TFormula[]>((resolve, reject) => {
+		new Promise<TFormulaWithComponents[]>((resolve, reject) => {
 			let formulasToAdd: TAddFormulaSchema[] = [];
 
 			for (const {
@@ -171,6 +173,69 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 			});
 		});
 
+	const addBlends = api.blend.addMany.useMutation();
+	const seedBlends = (formulas: void | TFormulaWithComponents[], tanks: void | TTank[]) => {
+		return new Promise<void | TBlend[]>((resolve, reject) => {
+
+			const findTankByProductCode = (tanks: TTank[], productCode: { baseCode: number; sizeCode: number; variantCode: number; }) =>
+				tanks.find((tank) =>
+					tank.baseCode === productCode.baseCode
+					&& tank.sizeCode === productCode.sizeCode
+					&& tank.variantCode === productCode.variantCode
+				);
+
+			const blendsToAdd: TAddBlendSchema[] = [];
+
+			if (formulas && tanks) {
+				for (const {
+					factoryId,
+					id,
+					baseCode,
+					sizeCode,
+					variantCode,
+					Components
+				} of formulas) {
+					const destinationTankName = findTankByProductCode(tanks, { baseCode, sizeCode, variantCode })?.name;
+					const targetQuantity = Math.ceil(Math.random() * 50) * 100;
+					const components = Components.map((component) => ({
+						formulaComponentId: component.id,
+						sourceTankName: findTankByProductCode(
+							tanks,
+							{ baseCode: component.baseCode, sizeCode: component.sizeCode, variantCode: component.variantCode }
+						)?.name,
+						targetQuantity: targetQuantity * Number(component.proportion)
+					}));
+
+					if (destinationTankName && components.every((component) => typeof component.sourceTankName === 'string')) {
+						const generatedBlend: TAddBlendSchema = {
+							factoryId,
+							formulaId: id,
+							targetQuantity,
+							status: "CREATED",
+							destinationTankName,
+							// @ts-expect-error sourceTankName type already ensured to be string
+							components
+						};
+
+						blendsToAdd.push(generatedBlend);
+					}
+				}
+			}
+
+			return addBlends.mutate(blendsToAdd, {
+				onSuccess(data) {
+					setSeedLog((prev) => [...prev, { type: 'success', message: `Added ${data?.length ?? 0} Blends.` }]);
+					resolve(data);
+				},
+				onError(error) {
+					setSeedLog((prev) => [...prev, { type: 'error', message: error.message }]);
+					reject(error);
+				}
+			});
+
+		});
+	};
+
 	const seedFactory = async () => {
 		await seedBaseCodes(factoryId)
 			.then((data) => data)
@@ -192,14 +257,17 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 			? products.filter((product) => product.sizeCode === 1 && product.variantCode === 0) as TBulkProduct[]
 			: [];
 
-		await seedTanksForBulkProducts(bulkProducts)
+		const tanks = await seedTanksForBulkProducts(bulkProducts)
 			.then((data) => data)
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Tanks'); });
 
-		await seedFormulasForBulkProducts(bulkProducts)
+		const formulas = await seedFormulasForBulkProducts(bulkProducts)
 			.then((data) => data)
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Formulas'); });
 
+		await seedBlends(formulas, tanks)
+			.then((data) => data)
+			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Blends'); });
 	};
 
 	const startSeeding = async () => {
