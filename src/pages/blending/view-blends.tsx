@@ -1,12 +1,15 @@
 import styles from './view-blends.module.css';
-import React from 'react';
+import React, { type ComponentProps, forwardRef } from 'react';
 import Form from '@/components/Form';
 import Layout from '@/components/Layout';
+import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
 import { useZodForm } from '@/hooks/useZodForm';
-import { getBlendsByStatusSchema, type TGetBlendsByStatusSchema } from '@/schemas/blend';
-import type { SubmitHandler } from 'react-hook-form';
-import { authenticatedSSProps } from '@/server/auth';
+import {
+	blendStatusSchema, getBlendsByStatusSchema,
+	type TBlendStatusSchema, type TGetBlendsByStatusSchema
+} from '@/schemas/blend';
+import type { SubmitHandler, UseFormReturn } from 'react-hook-form';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
@@ -16,7 +19,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const form = useZodForm({
+	const filterForm = useZodForm({
 		schema: getBlendsByStatusSchema,
 		mode: 'onBlur',
 		defaultValues: {
@@ -28,69 +31,22 @@ const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 		}
 	});
 
-	form.watch('status');
+	filterForm.watch('status');
 
-	const submitForm: SubmitHandler<TGetBlendsByStatusSchema> = () => null;
+	const submitFilterForm: SubmitHandler<TGetBlendsByStatusSchema> = () => null;
 
-	const blends = api.blend.getBlendsByStatus.useQuery(form.getValues(), { refetchOnWindowFocus: false });
+	const blends = api.blend.getBlendsByStatus.useQuery(filterForm.getValues(), { refetchOnWindowFocus: false });
 
 	return (
 		<main>
-			<FormValues values={form.getValues()} />
+			<FormValues values={filterForm.getValues()} />
 			<details>
 				<summary>Blends</summary>
 				<pre>{JSON.stringify(blends.data, undefined, 2)}</pre>
 			</details>
 			<article className={styles['view-blends']}>
 				<h1 className={styles['view-blends__header']}>View Blends</h1>
-				<section className={styles['filter-blends']}>
-					<h2 className={styles['filter-blends__header']}>Filter</h2>
-					<Form className={styles['filter-blends__form']} form={form} onSubmit={submitForm}>
-						<h3 className={styles['filter-blends__field-name']}>Status</h3>
-						<fieldset className={styles['filter-blends__fieldset']}>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="CREATED" />
-								Created
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="QUEUED" />
-								Queued
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="ASSEMBLING" />
-								Assembling
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="BLENDING" />
-								Blending
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="TESTING" />
-								Testing
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="ADJUSTING" />
-								Adjusting
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="PASSED" />
-								Passed
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="PUSHED" />
-								Pushed
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="FLAGGED" />
-								Flagged
-							</label>
-							<label className={styles['filter-blends__label']}>
-								<input className={styles['filter-blends__input']} {...form.register('status')} type="checkbox" value="COMPLETE" />
-								Complete
-							</label>
-						</fieldset>
-					</Form>
-				</section>
+				<FilterBlends form={filterForm} submitForm={submitFilterForm} />
 			</article>
 		</main>
 	);
@@ -105,6 +61,33 @@ ViewBlends.getLayout = function getLayout(page) {
 };
 
 export default ViewBlends;
+
+const FilterBlends: React.FC<{
+	form: UseFormReturn<TGetBlendsByStatusSchema>;
+	submitForm: SubmitHandler<TGetBlendsByStatusSchema>;
+}> = ({ form, submitForm }) => (
+	<section className={styles['filter-blends']}>
+		<h2 className={styles['filter-blends__header']}>Filter</h2>
+		<Form className={styles['filter-blends__form']} form={form} onSubmit={submitForm}>
+			<h3 className={styles['filter-blends__field-name']}>Status</h3>
+			<fieldset className={styles['filter-blends__fieldset']}>
+				{
+					Object.values(blendStatusSchema.Values).map((status) => (
+						<FilterFormField {...form.register('status')} key={status} status={status} />
+					))
+				}
+			</fieldset>
+		</Form>
+	</section>
+);
+
+const FilterFormField = forwardRef<HTMLInputElement, { status: TBlendStatusSchema; } & ComponentProps<'input'>>(({ status, ...props }, ref) => (
+	<label className={styles['filter-blends__label']} htmlFor={status}>
+		<input className={styles['filter-blends__input']} type="checkbox" id={status} {...props} ref={ref} value={status} />
+		{status.charAt(0).concat(status.slice(1).toLowerCase())}
+	</label>
+));
+FilterFormField.displayName = 'FilterFormField';
 
 const FormValues: React.FC<{ values: TGetBlendsByStatusSchema; }> = ({ values }) =>
 
