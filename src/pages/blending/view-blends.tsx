@@ -1,10 +1,13 @@
 import styles from './view-blends.module.css';
 import React, { type ComponentProps, forwardRef } from 'react';
-import Form from '@/components/Form';
 import Layout from '@/components/Layout';
+import Form from '@/components/Form';
+import SortableDataTable, { type SortType } from '@/components/SortableDataTable';
 import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
 import { useZodForm } from '@/hooks/useZodForm';
+import { z } from 'zod';
+import { buildProductCode } from '@/utils/product';
 import {
 	blendStatusSchema, getBlendsByStatusSchema,
 	type TBlendStatusSchema, type TGetBlendsByStatusSchema
@@ -13,6 +16,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
+import type { Blend as TBlend } from '@prisma/client';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	return authenticatedSSProps(context);
@@ -37,14 +41,10 @@ const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 
 	return (
 		<main>
-			<FormValues values={filterForm.getValues()} />
-			<details>
-				<summary>Blends</summary>
-				<pre>{JSON.stringify(blends.data, undefined, 2)}</pre>
-			</details>
 			<article className={styles['view-blends']}>
 				<h1 className={styles['view-blends__header']}>View Blends</h1>
 				<FilterBlends form={filterForm} />
+				<BlendList blends={blends.data ?? []} />
 			</article>
 		</main>
 	);
@@ -86,9 +86,82 @@ const FilterFormField = forwardRef<HTMLInputElement, { status: TBlendStatusSchem
 ));
 FilterFormField.displayName = 'FilterFormField';
 
-const FormValues: React.FC<{ values: TGetBlendsByStatusSchema; }> = ({ values }) =>
+const BlendList: React.FC<{
+	blends: TBlend[];
+}> = ({ blends }) => {
+	const sortableBlendSchema = z.object({
+		productCode: z.string(),
+		targetQuantity: z.coerce.number(),
+		actualQuantity: z.coerce.number().optional(),
+		blendTankName: z.string().optional(),
+		destinationTankName: z.string().optional(),
+		note: z.string().optional(),
+		status: z.string()
+	});
+	type TSortableBlendSchema = z.infer<typeof sortableBlendSchema>;
 
-	<details>
-		<summary>Form Values</summary>
-		<pre>{JSON.stringify(values, undefined, 2)}</pre>
-	</details>;
+	const toSortable = (blend: TBlend): TSortableBlendSchema => {
+		const { baseCode, sizeCode, variantCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
+
+		return {
+			productCode: buildProductCode(baseCode, sizeCode, variantCode),
+			targetQuantity: Number(targetQuantity),
+			actualQuantity: actualQuantity !== null ? Number(actualQuantity) : undefined,
+			blendTankName: blendTankName !== null ? blendTankName : undefined,
+			destinationTankName: destinationTankName !== null ? destinationTankName : undefined,
+			note: note ?? '',
+			status
+		};
+	};
+
+	const fieldLabels: Map<keyof TSortableBlendSchema & string, string> = new Map(
+		[
+			['productCode', 'Product Code'],
+			['targetQuantity', 'Qty (Target)'],
+			['actualQuantity', 'Qty (Actual)'],
+			['blendTankName', 'Tank (Blending)'],
+			['destinationTankName', 'Tank (Destination)'],
+			['note', 'Note'],
+			['status', 'Status']
+		]
+	);
+
+	const fieldSortTypes: Map<keyof TSortableBlendSchema & string, SortType> = new Map(
+		[
+			['productCode', 'alphabetic'],
+			['targetQuantity', 'numeric'],
+			['actualQuantity', 'numeric'],
+			['blendTankName', 'alphabetic'],
+			['destinationTankName', 'alphabetic'],
+			['note', 'alphabetic'],
+			['status', 'alphabetic'] // TODO: Custom sort type
+		]
+	);
+
+	const formatter = (blend: TSortableBlendSchema): Map<keyof TSortableBlendSchema & string, string> => {
+		const { productCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
+		const defaultUndefinedPlaceholder = '---';
+
+		return new Map(
+			[
+				['productCode', productCode],
+				['targetQuantity', targetQuantity.toString()],
+				['actualQuantity', actualQuantity !== undefined ? actualQuantity.toString() : defaultUndefinedPlaceholder],
+				['blendTankName', blendTankName !== undefined ? blendTankName : defaultUndefinedPlaceholder],
+				['destinationTankName', destinationTankName !== undefined ? destinationTankName : defaultUndefinedPlaceholder],
+				['note', note ?? ''],
+				['status', status]
+			]
+		);
+	};
+
+	return (
+		<SortableDataTable<TSortableBlendSchema>
+			items={blends.map(toSortable)}
+			itemLabel="Blend"
+			fieldLabels={fieldLabels}
+			fieldSortTypes={fieldSortTypes}
+			formatter={formatter}
+		/>
+	);
+};
