@@ -9,7 +9,7 @@ import {
 	blendStatusSchema, getBlendsByStatusSchema,
 	type TBlendStatusSchema, type TGetBlendsByStatusSchema
 } from '@/schemas/blend';
-import type { SubmitHandler, UseFormReturn } from 'react-hook-form';
+import type { UseFormReturn } from 'react-hook-form';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
@@ -33,8 +33,6 @@ const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 
 	filterForm.watch('status');
 
-	const submitFilterForm: SubmitHandler<TGetBlendsByStatusSchema> = () => null;
-
 	const blends = api.blend.getBlendsByStatus.useQuery(filterForm.getValues(), { refetchOnWindowFocus: false });
 
 	return (
@@ -46,7 +44,7 @@ const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 			</details>
 			<article className={styles['view-blends']}>
 				<h1 className={styles['view-blends__header']}>View Blends</h1>
-				<FilterBlends form={filterForm} submitForm={submitFilterForm} />
+				<FilterBlends form={filterForm} />
 			</article>
 		</main>
 	);
@@ -64,11 +62,10 @@ export default ViewBlends;
 
 const FilterBlends: React.FC<{
 	form: UseFormReturn<TGetBlendsByStatusSchema>;
-	submitForm: SubmitHandler<TGetBlendsByStatusSchema>;
-}> = ({ form, submitForm }) => (
+}> = ({ form }) => (
 	<section className={styles['filter-blends']}>
 		<h2 className={styles['filter-blends__header']}>Filter</h2>
-		<Form className={styles['filter-blends__form']} form={form} onSubmit={submitForm}>
+		<Form className={styles['filter-blends__form']} form={form} onSubmit={() => null}>
 			<h3 className={styles['filter-blends__field-name']}>Status</h3>
 			<fieldset className={styles['filter-blends__fieldset']}>
 				{
