@@ -131,12 +131,14 @@ model Product {
     description       String             @default("")
     quantityInStock   Decimal            @default(0)
     salesPrice        Decimal?
-    Formulas          Formula[]
-    FormulaComponents FormulaComponent[]
     Code              ProductCode        @relation(fields: [factoryId, baseCode, sizeCode, variantCode], references: [factoryId, baseCode, sizeCode, variantCode], onDelete: Cascade)
     Factory           Factory            @relation(fields: [factoryId], references: [id], onDelete: Cascade)
     SalesOrderItems   SalesOrderItem[]
     SourceTanks       Tank[]
+    Formulas          Formula[]
+    FormulaComponents FormulaComponent[]
+    Blends            Blend[]
+    BlendComponents   BlendComponent[]
 
     @@id([factoryId, baseCode, sizeCode, variantCode])
 }
@@ -168,6 +170,9 @@ model Blend {
     id                  String           @id @default(cuid())
     factoryId           String
     formulaId           String
+    baseCode            Int
+    sizeCode            Int
+    variantCode         Int
     targetQuantity      Decimal
     actualQuantity      Decimal?
     blendTankName       String?
@@ -175,6 +180,7 @@ model Blend {
     note                String?
     /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHED, FLAGGED, COMPLETE
     status              String           @default("CREATED")
+    Product             Product          @relation(fields: [baseCode, sizeCode, variantCode, factoryId], references: [baseCode, sizeCode, variantCode, factoryId])
     DestinationTank     Tank?            @relation("Destination Tank", fields: [destinationTankName, factoryId], references: [name, factoryId])
     BlendTank           Tank?            @relation("Blend Tank", fields: [blendTankName, factoryId], references: [name, factoryId])
     Formula             Formula          @relation(fields: [formulaId], references: [id])
@@ -183,19 +189,20 @@ model Blend {
 }
 
 model BlendComponent {
-    factoryId          String
-    blendId            String
-    formulaComponentId String
-    sourceTankName     String
-    targetQuantity     Decimal
-    actualQuantity     Decimal?
-    note               String?
-    SourceTank         Tank             @relation(fields: [sourceTankName, factoryId], references: [name, factoryId])
-    FormulaComponent   FormulaComponent @relation(fields: [formulaComponentId], references: [id])
-    Blend              Blend            @relation(fields: [blendId], references: [id], onDelete: Cascade)
-    Factory            Factory          @relation(fields: [factoryId], references: [id], onDelete: Cascade)
-
-    @@unique([formulaComponentId, blendId])
+    id             String   @id @default(cuid())
+    factoryId      String
+    blendId        String
+    baseCode       Int
+    sizeCode       Int
+    variantCode    Int
+    sourceTankName String
+    targetQuantity Decimal
+    actualQuantity Decimal?
+    note           String?
+    Blend          Blend    @relation(fields: [blendId], references: [id], onDelete: Cascade)
+    Product        Product  @relation(fields: [baseCode, sizeCode, variantCode, factoryId], references: [baseCode, sizeCode, variantCode, factoryId])
+    SourceTank     Tank     @relation(fields: [sourceTankName, factoryId], references: [name, factoryId])
+    Factory        Factory  @relation(fields: [factoryId], references: [id], onDelete: Cascade)
 }
 
 model Formula {
@@ -211,18 +218,17 @@ model Formula {
 }
 
 model FormulaComponent {
-    id              String           @id @default(cuid())
-    factoryId       String
-    formulaId       String
-    baseCode        Int
-    sizeCode        Int              @default(1)
-    variantCode     Int              @default(0)
-    proportion      Decimal
-    note            String?
-    BlendComponents BlendComponent[]
-    Product         Product          @relation(fields: [baseCode, sizeCode, variantCode, factoryId], references: [baseCode, sizeCode, variantCode, factoryId])
-    Formula         Formula          @relation(fields: [formulaId], references: [id], onDelete: Cascade)
-    Factory         Factory          @relation(fields: [factoryId], references: [id], onDelete: Cascade)
+    id          String  @id @default(cuid())
+    factoryId   String
+    formulaId   String
+    baseCode    Int
+    sizeCode    Int     @default(1)
+    variantCode Int     @default(0)
+    proportion  Decimal
+    note        String?
+    Product     Product @relation(fields: [baseCode, sizeCode, variantCode, factoryId], references: [baseCode, sizeCode, variantCode, factoryId])
+    Formula     Formula @relation(fields: [formulaId], references: [id], onDelete: Cascade)
+    Factory     Factory @relation(fields: [factoryId], references: [id], onDelete: Cascade)
 }
 
 model Customer {

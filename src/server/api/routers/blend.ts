@@ -18,7 +18,7 @@ export const blendRouter = createTRPCRouter({
 	add: publicProcedure
 		.input(addBlendSchema)
 		.mutation(async ({ ctx, input }) => {
-			const { factoryId, formulaId, destinationTankName, targetQuantity, note } = input;
+			const { factoryId, formulaId, baseCode, sizeCode, variantCode, destinationTankName, targetQuantity, status, note } = input;
 
 			return await ctx.prisma.$transaction(async (tx) => {
 				const blend = await tx.blend.create({
@@ -33,6 +33,13 @@ export const blendRouter = createTRPCRouter({
 								id: formulaId
 							}
 						},
+						Product: {
+							connect: {
+								factoryId_baseCode_sizeCode_variantCode: {
+									factoryId, baseCode, sizeCode, variantCode
+								}
+							}
+						},
 						DestinationTank: {
 							connect: {
 								name_factoryId: {
@@ -41,12 +48,13 @@ export const blendRouter = createTRPCRouter({
 							}
 						},
 						targetQuantity,
+						status,
 						note
 					}
 				});
 
 				for await (const {
-					formulaComponentId, sourceTankName, targetQuantity, note
+					baseCode, sizeCode, variantCode, sourceTankName, targetQuantity, note
 				} of input.components) {
 					await tx.blendComponent.create({
 						data: {
@@ -60,9 +68,11 @@ export const blendRouter = createTRPCRouter({
 									id: blend.id
 								}
 							},
-							FormulaComponent: {
+							Product: {
 								connect: {
-									id: formulaComponentId
+									factoryId_baseCode_sizeCode_variantCode: {
+										factoryId, baseCode, sizeCode, variantCode
+									}
 								}
 							},
 							SourceTank: {
@@ -89,13 +99,16 @@ export const blendRouter = createTRPCRouter({
 			for await (const {
 				factoryId,
 				formulaId,
+				baseCode,
+				sizeCode,
+				variantCode,
 				targetQuantity,
 				destinationTankName,
 				status,
 				note,
 				components
 			} of input) {
-				return await ctx.prisma.$transaction(async (tx) => {
+				await ctx.prisma.$transaction(async (tx) => {
 					const blend = await tx.blend.create({
 						data: {
 							Factory: {
@@ -108,6 +121,13 @@ export const blendRouter = createTRPCRouter({
 									id: formulaId
 								}
 							},
+							Product: {
+								connect: {
+									factoryId_baseCode_sizeCode_variantCode: {
+										factoryId, baseCode, sizeCode, variantCode
+									}
+								}
+							},
 							DestinationTank: {
 								connect: {
 									name_factoryId: {
@@ -116,12 +136,13 @@ export const blendRouter = createTRPCRouter({
 								}
 							},
 							targetQuantity,
+							status,
 							note
 						}
 					});
 
 					for await (const {
-						formulaComponentId, sourceTankName, targetQuantity, note
+						baseCode, sizeCode, variantCode, sourceTankName, targetQuantity, note
 					} of components) {
 						await tx.blendComponent.create({
 							data: {
@@ -135,9 +156,11 @@ export const blendRouter = createTRPCRouter({
 										id: blend.id
 									}
 								},
-								FormulaComponent: {
+								Product: {
 									connect: {
-										id: formulaComponentId
+										factoryId_baseCode_sizeCode_variantCode: {
+											factoryId, baseCode, sizeCode, variantCode
+										}
 									}
 								},
 								SourceTank: {

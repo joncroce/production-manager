@@ -197,22 +197,24 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 				} of formulas) {
 					const destinationTankName = findTankByProductCode(tanks, { baseCode, sizeCode, variantCode })?.name;
 					const targetQuantity = Math.ceil(Math.random() * 50) * 100;
-					const components = Components.map((component) => ({
-						formulaComponentId: component.id,
-						sourceTankName: findTankByProductCode(
-							tanks,
-							{ baseCode: component.baseCode, sizeCode: component.sizeCode, variantCode: component.variantCode }
-						)?.name,
-						targetQuantity: targetQuantity * Number(component.proportion)
+					const components = Components.map(({ baseCode, sizeCode, variantCode, proportion }) => ({
+						baseCode,
+						sizeCode,
+						variantCode,
+						sourceTankName: findTankByProductCode(tanks, { baseCode, sizeCode, variantCode })?.name,
+						targetQuantity: targetQuantity * Number(proportion)
 					}));
 
 					if (destinationTankName && components.every((component) => typeof component.sourceTankName === 'string')) {
 						const generatedBlend: TAddBlendSchema = {
 							factoryId,
 							formulaId: id,
+							baseCode,
+							sizeCode,
+							variantCode,
 							targetQuantity,
-							status: "CREATED",
 							destinationTankName,
+							status: "CREATED",
 							// @ts-expect-error sourceTankName type already ensured to be string
 							components
 						};

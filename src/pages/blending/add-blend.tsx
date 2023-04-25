@@ -89,7 +89,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 
 	form.watch(['targetQuantity', 'formulaId']);
 
-	const addBlend = api.blend.addBlend.useMutation({
+	const addBlend = api.blend.add.useMutation({
 		onSuccess() {
 			alert(`Successfully created new Blend.`);
 			resetForm();
@@ -120,6 +120,9 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const closeModal = (selectedProductCode?: TDetailedProductCode) => {
 		if (selectedProductCode) {
 			setMatchingBlendableProduct(findMatchingBlendableProductByProductCode(selectedProductCode));
+			form.setValue('baseCode', selectedProductCode.baseCode);
+			form.setValue('sizeCode', selectedProductCode.sizeCode);
+			form.setValue('variantCode', selectedProductCode.variantCode);
 		}
 		setModalOpen(false);
 	};
@@ -170,7 +173,9 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 			});
 
 			formulaComponents.forEach((component, componentIndex) => {
-				form.setValue(`components.${componentIndex}.formulaComponentId`, component.id);
+				form.setValue(`components.${componentIndex}.baseCode`, component.baseCode);
+				form.setValue(`components.${componentIndex}.sizeCode`, component.sizeCode);
+				form.setValue(`components.${componentIndex}.variantCode`, component.variantCode);
 				form.setValue(`components.${componentIndex}.note`, component.note ?? '');
 			});
 
