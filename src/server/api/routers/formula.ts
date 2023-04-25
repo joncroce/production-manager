@@ -1,7 +1,11 @@
 import { addFormulaSchema } from '@/schemas/formula';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { z } from 'zod';
-import type { Formula } from '@prisma/client';
+import type { Formula, FormulaComponent } from '@prisma/client';
+
+export type TFormulaWithComponents = Formula & {
+	Components: FormulaComponent[];
+};
 
 export const formulaRouter = createTRPCRouter({
 	getAll: publicProcedure
@@ -59,12 +63,21 @@ export const formulaRouter = createTRPCRouter({
 				}
 			});
 
-			return formula;
+			const formulaWithComponents = await ctx.prisma.formula.findUniqueOrThrow({
+				where: {
+					id: formula.id
+				},
+				include: {
+					Components: true
+				}
+			});
+
+			return formulaWithComponents;
 		}),
 	addFormulas: publicProcedure
 		.input(z.array(addFormulaSchema))
 		.mutation(async ({ ctx, input }) => {
-			const formulas: Formula[] = [];
+			const formulas: TFormulaWithComponents[] = [];
 
 			for await (const {
 				factoryId,
@@ -110,7 +123,16 @@ export const formulaRouter = createTRPCRouter({
 					}
 				});
 
-				formulas.push(formula);
+				const formulaWithComponents = await ctx.prisma.formula.findUniqueOrThrow({
+					where: {
+						id: formula.id
+					},
+					include: {
+						Components: true
+					}
+				});
+
+				formulas.push(formulaWithComponents);
 			}
 
 			return formulas;
