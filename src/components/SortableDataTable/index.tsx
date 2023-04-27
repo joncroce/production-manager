@@ -3,7 +3,7 @@ import DescendingAlphabeticicIcon from '@/components/Icons/DescendingAlphabeticI
 import AscendingAlphabeticIcon from '@/components/Icons/AscendingAlphabeticIcon';
 import DescendingNumericIcon from '@/components/Icons/DescendingNumericIcon';
 import AscendingNumericIcon from '@/components/Icons/AscendingNumericIcon';
-import type { MouseEventHandler, PropsWithChildren } from 'react';
+import type { MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import { nanoid } from 'nanoid';
 import useSorter from '@/hooks/useSorter';
 import Sorter from '../Sorter';
@@ -13,9 +13,9 @@ export type SortType = 'alphabetic' | 'numeric';
 interface SortableTableProps<T> {
 	items: T[];
 	itemLabel: string;
-	fieldLabels: Map<keyof T & string, string>;
+	fieldLabels: Map<keyof T & string, string | null>;
 	fieldSortTypes: Map<keyof T & string, SortType>;
-	formatter: (item: T) => Map<keyof T & string, string>;
+	formatter: (item: T) => Map<keyof T & string, string | ReactNode>;
 }
 
 function SortableDataTable<T>({
@@ -47,41 +47,47 @@ function SortableDataTable<T>({
 						{
 							[...fieldLabels.entries()].map(([fieldName, labelText]) => (
 								<th key={String(fieldName)} className={styles.th}>
-									<ToggleSortFieldButton
-										key={String(fieldName)}
-										sortingBy={Boolean(sorts.find(sort => sort.field === fieldName))}
-										handleClick={
-											(() => {
-												const index = sorts.findIndex(sort => sort.field === fieldName);
-												return index !== -1
-													? () => removeSort(index)
-													: () => addSort({ field: fieldName, direction: 'asc' });
-											})()
-										}
-									>
-										{labelText}
-									</ToggleSortFieldButton>
-									<button
-										className={styles.toggleDirection}
-										onClick={() => reverseSortDirection(sorts.findIndex(sort => sort.field === fieldName))}
-									>
-										{
-											(() => {
-												const sortBy = sorts.find(sort => sort.field === fieldName);
-												if (!Boolean(sortBy)) return <></>;
-												const sortType = fieldSortTypes.get(fieldName) ?? 'alphabetic';
-												if (sortType === 'numeric') {
-													return sortBy?.direction === 'desc'
-														? <DescendingNumericIcon />
-														: <AscendingNumericIcon />;
-												} else {
-													return sortBy?.direction === 'desc'
-														? <DescendingAlphabeticicIcon />
-														: <AscendingAlphabeticIcon />;
-												}
-											})()
-										}
-									</button>
+									{
+										labelText !== null
+											? <>
+												<ToggleSortFieldButton
+													key={String(fieldName)}
+													sortingBy={Boolean(sorts.find(sort => sort.field === fieldName))}
+													handleClick={
+														(() => {
+															const index = sorts.findIndex(sort => sort.field === fieldName);
+															return index !== -1
+																? () => removeSort(index)
+																: () => addSort({ field: fieldName, direction: 'asc' });
+														})()
+													}
+												>
+													{labelText}
+												</ToggleSortFieldButton>
+												<button
+													className={styles.toggleDirection}
+													onClick={() => reverseSortDirection(sorts.findIndex(sort => sort.field === fieldName))}
+												>
+													{
+														(() => {
+															const sortBy = sorts.find(sort => sort.field === fieldName);
+															if (!Boolean(sortBy)) return <></>;
+															const sortType = fieldSortTypes.get(fieldName) ?? 'alphabetic';
+															if (sortType === 'numeric') {
+																return sortBy?.direction === 'desc'
+																	? <DescendingNumericIcon />
+																	: <AscendingNumericIcon />;
+															} else {
+																return sortBy?.direction === 'desc'
+																	? <DescendingAlphabeticicIcon />
+																	: <AscendingAlphabeticIcon />;
+															}
+														})()
+													}
+												</button>
+											</>
+											: null
+									}
 								</th>
 							))
 						}

@@ -7,7 +7,7 @@ import type { DragEventHandler, MouseEventHandler } from 'react';
 
 interface SorterProps<T> {
 	sorts: SortStateItem<T>[];
-	labels: Map<keyof T, string>;
+	labels: Map<keyof T, string | null>;
 	moveSort: (fromIndex: number, toIndex: number) => void;
 	resetSorts: () => void;
 }

@@ -1,7 +1,8 @@
 import styles from './view-blends.module.css';
-import React, { type ComponentProps, forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 import Layout from '@/components/Layout';
 import Form from '@/components/Form';
+import Link from 'next/link';
 import SortableDataTable, { type SortType } from '@/components/SortableDataTable';
 import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
@@ -12,6 +13,7 @@ import {
 	blendStatusSchema, getBlendsByStatusSchema,
 	type TBlendStatusSchema, type TGetBlendsByStatusSchema
 } from '@/schemas/blend';
+import type { ReactNode, ComponentProps } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
@@ -90,6 +92,7 @@ const BlendList: React.FC<{
 	blends: TBlend[];
 }> = ({ blends }) => {
 	const sortableBlendSchema = z.object({
+		id: z.string(),
 		productCode: z.string(),
 		targetQuantity: z.coerce.number(),
 		actualQuantity: z.coerce.number().optional(),
@@ -101,7 +104,7 @@ const BlendList: React.FC<{
 	type TSortableBlendSchema = z.infer<typeof sortableBlendSchema>;
 
 	const toSortable = (blend: TBlend): TSortableBlendSchema => {
-		const { baseCode, sizeCode, variantCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
+		const { id, baseCode, sizeCode, variantCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
 
 		return {
 			productCode: buildProductCode(baseCode, sizeCode, variantCode),
@@ -110,11 +113,12 @@ const BlendList: React.FC<{
 			blendTankName: blendTankName !== null ? blendTankName : undefined,
 			destinationTankName: destinationTankName !== null ? destinationTankName : undefined,
 			note: note ?? '',
-			status
+			status,
+			id
 		};
 	};
 
-	const fieldLabels: Map<keyof TSortableBlendSchema & string, string> = new Map(
+	const fieldLabels: Map<keyof TSortableBlendSchema & string, string | null> = new Map(
 		[
 			['productCode', 'Product Code'],
 			['targetQuantity', 'Qty (Target)'],
@@ -122,7 +126,8 @@ const BlendList: React.FC<{
 			['blendTankName', 'Tank (Blending)'],
 			['destinationTankName', 'Tank (Destination)'],
 			['note', 'Note'],
-			['status', 'Status']
+			['status', 'Status'],
+			['id', null]
 		]
 	);
 
@@ -138,8 +143,8 @@ const BlendList: React.FC<{
 		]
 	);
 
-	const formatter = (blend: TSortableBlendSchema): Map<keyof TSortableBlendSchema & string, string> => {
-		const { productCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
+	const formatter = (blend: TSortableBlendSchema): Map<keyof TSortableBlendSchema & string, string | ReactNode> => {
+		const { id, productCode, targetQuantity, actualQuantity, blendTankName, destinationTankName, note, status } = blend;
 		const defaultUndefinedPlaceholder = '---';
 
 		return new Map(
@@ -150,7 +155,8 @@ const BlendList: React.FC<{
 				['blendTankName', blendTankName !== undefined ? blendTankName : defaultUndefinedPlaceholder],
 				['destinationTankName', destinationTankName !== undefined ? destinationTankName : defaultUndefinedPlaceholder],
 				['note', note ?? ''],
-				['status', status]
+				['status', status],
+				['id', (<Link key={id} href={`/blend/blend?id=${id}`}>View</Link>) as ReactNode]
 			]
 		);
 	};
