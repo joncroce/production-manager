@@ -1,4 +1,3 @@
-import pageStyles from '@/pages/index.module.css';
 import styles from './index.module.css';
 import Head from 'next/head';
 import Layout from '@/components/Layout';
@@ -9,6 +8,7 @@ import { z } from 'zod';
 import { authenticatedSSProps } from '@/server/auth';
 import { api } from '@/utils/api';
 import { buildProductCode } from '@/utils/product';
+import type { PropsWithChildren } from 'react';
 import type { GetServerSideProps } from 'next';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { ProductRouter } from '@/server/api/routers/product';
@@ -98,20 +98,22 @@ const ProductHome: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =
 				<meta name="description" content="Products in the factory inventory." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<div className={pageStyles.container}>
-				<ProductPageTitle />
-				<div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-					<ProductCount count={products.data?.length} />
-					<AddProductLink />
-				</div>
-				<SortableDataTable<TSortableProductSchema>
-					items={(products.data ?? []).map(toSortable)}
-					itemLabel="Product"
-					fieldLabels={fieldLabels}
-					fieldSortTypes={fieldSortTypes}
-					formatter={formatter}
-				/>
-			</div>
+			<main>
+				<article className={styles['products']}>
+					<h1 className={styles['products__header']}>Products</h1>
+					<ProductsControls isReady={products.isSuccess}>
+						<ProductCount count={products.data?.length} />
+						<AddProductLink />
+					</ProductsControls>
+					<SortableDataTable<TSortableProductSchema>
+						items={(products.data ?? []).map(toSortable)}
+						itemLabel="Product"
+						fieldLabels={fieldLabels}
+						fieldSortTypes={fieldSortTypes}
+						formatter={formatter}
+					/>
+				</article>
+			</main>
 		</>
 	);
 };
@@ -126,7 +128,15 @@ ProductHome.getLayout = function getLayout(page) {
 
 export default ProductHome;
 
-const ProductPageTitle: React.FC = () => <h2 className={styles.pageHeader}>Products</h2>;
+const ProductsControls: React.FC<{
+	isReady: boolean;
+} & PropsWithChildren> = ({ children, isReady = false, ...props }) => {
+	return isReady
+		? <div {...props} className={styles['products__controls']}>
+			{children}
+		</div>
+		: null;
+};
 
 const ProductCount: React.FC<{ count?: number; }> = ({ count }) =>
 	count && count > 0
