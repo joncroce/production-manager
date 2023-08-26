@@ -1,0 +1,7 @@
+.dashboard {
+  composes: article from "@/styles/article.module.css";
+
+  &__header {
+    composes: article__header from "@/styles/article.module.css";
+  }
+}

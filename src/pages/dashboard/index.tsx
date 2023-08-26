@@ -15,13 +15,13 @@ const Dashboard: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => 
 	return (
 		<>
 			<Head>
-				<title>Production Manager</title>
+				<title>Production Manager | Dashboard</title>
 				<meta name="description" content="Manage your factory's production demands with this state-of-the-art web app." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<section className={styles.container}>
-				<h2>Dashboard</h2>
-			</section>
+			<article className={styles['dashboard']}>
+				<h2 className={styles['dashboard__header']}>Dashboard</h2>
+			</article>
 		</>
 	);
 };
