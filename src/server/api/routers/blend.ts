@@ -15,6 +15,27 @@ export const blendRouter = createTRPCRouter({
 				}
 			});
 		}),
+	get: publicProcedure
+		.input(z.object({ id: z.string() }))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.blend.findUniqueOrThrow({
+				where: {
+					id: input.id
+				},
+				include: {
+					BlendTank: true,
+					Components: {
+						include: {
+							SourceTank: true,
+							Product: true,
+						}
+					},
+					DestinationTank: true,
+					Product: true,
+					Formula: true
+				}
+			});
+		}),
 	add: publicProcedure
 		.input(addBlendSchema)
 		.mutation(async ({ ctx, input }) => {
