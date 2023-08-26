@@ -1,4 +1,4 @@
-import styles from './view-blends.module.css';
+import styles from './list-blends.module.css';
 import React, { forwardRef } from 'react';
 import Layout from '@/components/Layout';
 import Form from '@/components/Form';
@@ -24,13 +24,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	return authenticatedSSProps(context);
 };
 
-const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+const ListBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const filterForm = useZodForm({
 		schema: getBlendsByStatusSchema,
 		mode: 'onBlur',
 		defaultValues: {
 			factoryId: user.factoryId,
-			status: ['CREATED']
+			status: ['CREATED', 'QUEUED', 'ASSEMBLING', 'BLENDING', 'TESTING', 'ADJUSTING', 'PASSED', 'PUSHED', 'FLAGGED', 'COMPLETE']
 		},
 		resetOptions: {
 			keepDefaultValues: true
@@ -44,15 +44,17 @@ const ViewBlends: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 	return (
 		<main>
 			<article className={styles['view-blends']}>
-				<h1 className={styles['view-blends__header']}>View Blends</h1>
+				<h1 className={styles['view-blends__header']}>List of Blends</h1>
 				<FilterBlends form={filterForm} />
-				<BlendList blends={blends.data ?? []} />
+				{blends.isFetched && blends.data
+					? <BlendList blends={blends.data} />
+					: null}
 			</article>
 		</main>
 	);
 };
 
-ViewBlends.getLayout = function getLayout(page) {
+ListBlends.getLayout = function getLayout(page) {
 	return (
 		<Layout>
 			{page}
@@ -60,7 +62,7 @@ ViewBlends.getLayout = function getLayout(page) {
 	);
 };
 
-export default ViewBlends;
+export default ListBlends;
 
 const FilterBlends: React.FC<{
 	form: UseFormReturn<TGetBlendsByStatusSchema>;
@@ -156,7 +158,7 @@ const BlendList: React.FC<{
 				['destinationTankName', destinationTankName !== undefined ? destinationTankName : defaultUndefinedPlaceholder],
 				['note', note ?? ''],
 				['status', status],
-				['id', (<Link key={id} href={`/blend/blend?id=${id}`}>View</Link>) as ReactNode]
+				['id', (<Link key={id} href={`/blend/${id}`}>View</Link>) as ReactNode]
 			]
 		);
 	};

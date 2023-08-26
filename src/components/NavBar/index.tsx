@@ -22,10 +22,10 @@ const NavBar: React.FC = () => {
 			</Link>
 			{router.pathname.startsWith('/blending')
 				? <div className={styles['nav__subtree']}>
-					<Link className={styles['nav__sublink']} href="/blending/view-blends" data-current-route={router.pathname.startsWith('/blending/view-blends')}>
+					<Link className={styles['nav__sublink']} href="/blending/list-blends" data-current-route={router.pathname.startsWith('/blending/list-blends')}>
 						<MaterialSymbolsViewList className={styles['nav__icon']} />
 						<span className={styles['nav__link-text']}>
-							View Blends
+							List Blends
 						</span>
 					</Link>
 					<Link className={styles['nav__sublink']} href="/blending/add-blend" data-current-route={router.pathname.startsWith('/blending/add-blend')}>
@@ -121,6 +121,15 @@ export function UilFlaskPotion(props: SVGProps<SVGSVGElement>) {
 	return (
 		<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
 			<path fill="currentColor" fillOpacity="0.5" d="M18.93 11.67a.42.42 0 0 0 0-.1A7.4 7.4 0 0 0 15 7.62V4h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v3.62a7.4 7.4 0 0 0-3.89 4a.42.42 0 0 0 0 .1a7.5 7.5 0 1 0 13.86 0Zm-8.62-2.41a1 1 0 0 0 .69-.95V4h2v4.31a1 1 0 0 0 .69.95A5.43 5.43 0 0 1 16.23 11H7.77a5.43 5.43 0 0 1 2.54-1.74ZM12 20a5.51 5.51 0 0 1-5.5-5.5a5.34 5.34 0 0 1 .22-1.5h10.56a5.34 5.34 0 0 1 .22 1.5A5.51 5.51 0 0 1 12 20Zm2-4a1 1 0 1 0 1 1a1 1 0 0 0-1-1Zm-4-1a1 1 0 1 0 1 1a1 1 0 0 0-1-1Z">
+			</path>
+		</svg>
+	);
+}
+
+export function MingcuteDropFill(props: SVGProps<SVGSVGElement>) {
+	return (
+		<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
+			<path fill="currentColor" fillOpacity="0.5" d="M11.249 2.321a1.18 1.18 0 0 1 1.502 0A28.635 28.635 0 0 1 16.682 6.3C18.322 8.339 20 11.106 20 14a8 8 0 0 1-16 0c0-2.894 1.678-5.661 3.318-7.701a28.636 28.636 0 0 1 3.93-3.978Z">
 			</path>
 		</svg>
 	);
