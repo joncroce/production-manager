@@ -11,14 +11,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 const BlendingHome: NextPageWithLayout = () => {
 	return (
-		<>
-			<h1 className={styles['page-title']}>Blending</h1>
-			<nav className={styles['nav']} aria-label="Blending Menu">
-				<Link className={styles['nav__item']} href="/blending/add-blend">Add Blend</Link>
-				<Link className={styles['nav__item']} href="/blending/view-blends">View Status of Blends</Link>
-				<Link className={styles['nav__item']} href="/blending/add-formula">Add Formula</Link>
-			</nav>
-		</>
+		<main>
+			<article className={styles['blending']}>
+				<h1 className={styles['blending__header']}>Blending</h1>
+			</article>
+		</main>
 	);
 };
 
