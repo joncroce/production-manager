@@ -1,0 +1,128 @@
+.tanks {
+  composes: article from "@/styles/article.module.css";
+
+  &__header {
+    composes: article__header from "@/styles/article.module.css";
+  }
+
+  &__controls {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.tabs {
+  &__root {
+  }
+  &__list {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  &__trigger {
+    padding-inline: 0.25em;
+    border-width: 1px;
+    border-style: solid;
+    border-color: black;
+    /* transform: rotate(-30deg); */
+
+    &[data-state="active"] {
+      border-color: red;
+    }
+
+    &--accent {
+      composes: tabs__trigger;
+    }
+
+    &-inner {
+      display: grid;
+      grid-auto-flow: column;
+      place-items: center;
+      gap: 0.25em;
+    }
+  }
+}
+
+.table {
+  display: grid;
+  /* grid-template-columns: SET AS INLINE STYLE */
+  width: 100%;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--amber12);
+}
+
+.thead,
+.tbody,
+.tr {
+  display: contents;
+}
+
+.th,
+.td {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.td {
+  font-family: monospace;
+}
+
+thead > tr > .th {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25em;
+  padding-block: 0.5em;
+  background-color: var(--amber6);
+  border-width: 0px 0px 2px 0px;
+  border-style: solid;
+  border-color: var(--amber12);
+}
+
+tbody > tr:nth-child(even) > .td {
+  background-color: var(--amber6);
+}
+
+tbody > tr:nth-child(odd) > .td {
+  background-color: var(--amber4);
+}
+
+.toggleSortFieldButton {
+  padding-block: 0.15em;
+  padding-inline: 0.35em;
+  border-width: 2px;
+  border-radius: 4px;
+  border-color: var(--lime12);
+
+  &[data-sorting-by="true"] {
+    background-color: var(--lime8);
+  }
+
+  &[data-sorting-by="false"] {
+    background-color: var(--lime4);
+  }
+
+  &:hover {
+    border-color: var(--orange11);
+  }
+}
+
+.fieldLabel {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.25em;
+}
+
+.toggleDirection {
+  font-size: 1.5rem;
+  background-color: transparent;
+  border: none;
+  color: var(--olive12);
+
+  &:hover {
+    color: var(--orange11);
+  }
+}

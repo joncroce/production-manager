@@ -49,6 +49,23 @@ const NavBar: React.FC = () => {
 					Products
 				</span>
 			</Link>
+			<Link className={styles['nav__link']} href="/tank/manage" data-current-route={router.pathname.startsWith('/tank')}>
+				<MingcuteDropFill className={styles['nav__icon']} />
+				<span className={styles['nav__link-text']}>
+					Tanks
+				</span>
+			</Link>
+			{router.pathname.startsWith('/tank')
+				? <div className={styles['nav__subtree']}>
+					<Link className={styles['nav__sublink']} href="/tank/manage" data-current-route={router.pathname.startsWith('/tank/manage')}>
+						<MaterialSymbolsViewList className={styles['nav__icon']} />
+						<span className={styles['nav__link-text']}>
+							Manage
+						</span>
+					</Link>
+				</div>
+				: null
+			}
 			<Link className={styles['nav__link']} href="/settings" data-current-route={router.pathname.startsWith('/settings')}>
 				<MingcuteSettings5Line className={styles['nav__icon']} />
 				<span className={styles['nav__link-text']}>

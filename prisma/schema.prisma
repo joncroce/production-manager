@@ -34,15 +34,26 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
+    id            String         @id @default(cuid())
     name          String?
-    email         String?   @unique
+    email         String?        @unique
     emailVerified DateTime?
     image         String?
-    factoryId     String?   @unique
+    factoryId     String?        @unique
+    ViewingTanks  UsersOnTanks[]
     Accounts      Account[]
     Sessions      Session[]
-    Factory       Factory?  @relation(fields: [factoryId], references: [id], onDelete: SetNull)
+    Factory       Factory?       @relation(fields: [factoryId], references: [id], onDelete: SetNull)
+}
+
+model UsersOnTanks {
+    User      User   @relation(fields: [userId], references: [id])
+    userId    String
+    Tank      Tank   @relation(fields: [factoryId, tankName], references: [factoryId, name])
+    factoryId String
+    tankName  String
+
+    @@id([userId, factoryId, tankName])
 }
 
 model VerificationToken {
@@ -157,11 +168,13 @@ model Tank {
     capacity               Decimal
     heel                   Decimal
     isDefaultSource        Boolean          @default(false)
+    isBlendTank            Boolean          @default(false)
     BlendsDestined         Blend[]          @relation("Destination Tank")
     BlendsBlended          Blend[]          @relation("Blend Tank")
     BlendComponentsSourced BlendComponent[]
     Product                Product          @relation(fields: [factoryId, baseCode, sizeCode, variantCode], references: [factoryId, baseCode, sizeCode, variantCode])
     Factory                Factory          @relation(fields: [factoryId], references: [id], onDelete: Cascade)
+    UsersViewing           UsersOnTanks[]
 
     @@id([name, factoryId])
 }
