@@ -1,11 +1,14 @@
 {
 	"plugins": [
-		"postcss-nested",
+		"postcss-import",
+		"tailwindcss/nesting",
 		[
 			"postcss-preset-env",
 			{
 				"stage": 2
 			}
-		]
+		],
+		"tailwindcss",
+		"autoprefixer"
 	]
 }
