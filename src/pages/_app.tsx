@@ -1,12 +1,10 @@
+import "@/styles/globals.css";
 import { SessionProvider } from "next-auth/react";
+import { api } from "@/utils/api";
 import type { ReactElement, ReactNode } from 'react';
 import type { NextPage } from 'next';
 import type { AppType, AppProps } from "next/app";
 import type { Session } from "next-auth";
-
-import { api } from "../utils/api";
-
-import "../styles/globals.css";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
