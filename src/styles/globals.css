@@ -27,11 +27,6 @@
   --color-brown-dark: oklch(34.68% 0.015 67.44);
 }
 
-body {
-  background: url("/background.svg");
-}
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
