@@ -158,7 +158,7 @@ model Tank {
     factoryId              String
     /// Matches pattern /[A-Z]{1,2}\-\d{2}/ e.g., A-01 for Storage Tank or BL-01 for Blend Tank
     name                   String
-    baseCode               Int
+    baseCode               Int?
     /// Defaults to sizeCode for Bulk products
     sizeCode               Int              @default(1)
     /// Defaults to variantCode for Unbranded products
@@ -169,10 +169,12 @@ model Tank {
     heel                   Decimal
     isDefaultSource        Boolean          @default(false)
     isBlendTank            Boolean          @default(false)
+    createdAt              DateTime         @default(now())
+    updatedAt              DateTime         @default(now())
     BlendsDestined         Blend[]          @relation("Destination Tank")
     BlendsBlended          Blend[]          @relation("Blend Tank")
     BlendComponentsSourced BlendComponent[]
-    Product                Product          @relation(fields: [factoryId, baseCode, sizeCode, variantCode], references: [factoryId, baseCode, sizeCode, variantCode])
+    Product                Product?         @relation(fields: [factoryId, baseCode, sizeCode, variantCode], references: [factoryId, baseCode, sizeCode, variantCode])
     Factory                Factory          @relation(fields: [factoryId], references: [id], onDelete: Cascade)
     UsersViewing           UsersOnTanks[]
 
@@ -193,6 +195,8 @@ model Blend {
     note                String?
     /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHED, FLAGGED, COMPLETE
     status              String           @default("CREATED")
+    createdAt           DateTime         @default(now())
+    updatedAt           DateTime         @default(now())
     Product             Product          @relation(fields: [baseCode, sizeCode, variantCode, factoryId], references: [baseCode, sizeCode, variantCode, factoryId])
     DestinationTank     Tank?            @relation("Destination Tank", fields: [destinationTankName, factoryId], references: [name, factoryId])
     BlendTank           Tank?            @relation("Blend Tank", fields: [blendTankName, factoryId], references: [name, factoryId])
