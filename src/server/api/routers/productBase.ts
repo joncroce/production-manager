@@ -2,11 +2,15 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { addProductCodePartSchema } from '@/schemas/product';
 import type { ProductBase } from '@prisma/client';
+import type { inferRouterOutputs } from '@trpc/server';
 
 export const productBaseRouter = createTRPCRouter({
-	getAll: publicProcedure.query(({ ctx }) => {
-		return ctx.prisma.productBase.findMany();
-	}),
+	getAll: publicProcedure
+		.input(z.object({ factoryId: z.string() }))
+		.query(({ ctx, input }) => {
+			if (input.factoryId)
+				return ctx.prisma.productBase.findMany({ where: { factoryId: input.factoryId } });
+		}),
 	add: publicProcedure
 		.input(addProductCodePartSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -40,3 +44,6 @@ export const productBaseRouter = createTRPCRouter({
 			return baseCodes;
 		})
 });
+
+export type ProductBaseRouter = typeof productBaseRouter;
+export type ProductBaseRouterOutputs = inferRouterOutputs<ProductBaseRouter>;
