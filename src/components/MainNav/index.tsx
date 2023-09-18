@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import React, { SVGProps } from 'react';
+import React from 'react';
 
 export default function MainNav({
 	className, ...props
@@ -10,13 +10,13 @@ export default function MainNav({
 			<Link href="/dashboard" className="transition-colors hover:text-primary">
 				Dashboard
 			</Link>
-			<Link href="/blending" className="transition-colors hover:text-primary">
-				Blending
+			<Link href="/blends" className="transition-colors hover:text-primary">
+				Blends
 			</Link>
 			<Link href="/product" className="transition-colors hover:text-primary">
 				Products
 			</Link>
-			<Link href="/tank/manage" className="transition-colors hover:text-primary">
+			<Link href="/tanks" className="transition-colors hover:text-primary">
 				Tanks
 			</Link>
 			<Link href="/settings" className="transition-colors hover:text-primary">
