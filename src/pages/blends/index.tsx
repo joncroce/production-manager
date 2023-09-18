@@ -56,22 +56,24 @@ const BlendsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 					<Link href="blends/add-formula"><Button>Add Formula</Button></Link>
 				</div>
 			</div>
-			<Tabs defaultValue='currentlyActive'>
-				<TabsList>
-					<TabsTrigger value="currentlyActive">Currently Active</TabsTrigger>
-					<TabsTrigger value="recentlyCreated">Recently Created</TabsTrigger>
-					<TabsTrigger value="viewAll">View All</TabsTrigger>
-				</TabsList>
-				<TabsContent value="currentlyActive">
-					<DataTable columns={columns} data={getCurrentlyActive(blends)} />
-				</TabsContent>
-				<TabsContent value="recentlyCreated">
-					<DataTable columns={columns} data={getRecentlyCreated(blends)} usePagination={true} />
-				</TabsContent>
-				<TabsContent value="viewAll">
-					<DataTable columns={sortableColumns} data={blends} usePagination={true} />
-				</TabsContent>
-			</Tabs>
+			<div className="p-4">
+				<Tabs defaultValue='currentlyActive'>
+					<TabsList>
+						<TabsTrigger value="currentlyActive">Currently Active</TabsTrigger>
+						<TabsTrigger value="recentlyCreated">Recently Created</TabsTrigger>
+						<TabsTrigger value="viewAll">View All</TabsTrigger>
+					</TabsList>
+					<TabsContent value="currentlyActive">
+						<DataTable columns={columns} data={getCurrentlyActive(blends)} />
+					</TabsContent>
+					<TabsContent value="recentlyCreated">
+						<DataTable columns={columns} data={getRecentlyCreated(blends)} usePagination={true} />
+					</TabsContent>
+					<TabsContent value="viewAll">
+						<DataTable columns={sortableColumns} data={blends} usePagination={true} />
+					</TabsContent>
+				</Tabs>
+			</div>
 		</>
 	);
 };

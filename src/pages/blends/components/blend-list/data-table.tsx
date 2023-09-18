@@ -92,7 +92,7 @@ export function DataTable<TData, TValue>({
 									onClick={() => handleRowClick(row.original)}
 								>
 									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="text-center">
+										<TableCell key={cell.id}>
 											{flexRender(cell.column.columnDef.cell, cell.getContext())}
 										</TableCell>
 									))}
