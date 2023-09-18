@@ -24,7 +24,6 @@ import type {
 	ProductVariant as TProductVariant,
 	Tank as TTank
 } from '@prisma/client';
-import type { Decimal } from '@prisma/client/runtime';
 import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
@@ -526,9 +525,9 @@ const FormulaComponents: React.FC<{
 								selectionDisabled={component.Product?.SourceTanks.length < 2}
 							/>
 						</ComponentSource>
-						<ComponentProportion proportion={component.proportion} />
+						<ComponentProportion proportion={Number(component.proportion)} />
 						<ComponentQuantity
-							proportion={component.proportion}
+							proportion={Number(component.proportion)}
 							blendTargetQuantity={blendTargetQuantity}
 						/>
 					</li>
@@ -587,7 +586,7 @@ const ComponentProduct: React.FC<
 
 const ComponentProportion: React.FC<
 	{
-		proportion: Decimal;
+		proportion: number;
 	}
 > = ({ proportion }) => {
 	const formattedProportion = Number(proportion).toFixed(3);
@@ -608,7 +607,7 @@ const ComponentSource: React.FC<PropsWithChildren> = ({ children }) => (
 );
 
 const ComponentQuantity: React.FC<{
-	proportion: Decimal;
+	proportion: number;
 	blendTargetQuantity: number;
 }> = ({ proportion, blendTargetQuantity }) => {
 	const quantity = (blendTargetQuantity ? (Number(proportion) * blendTargetQuantity) : 0).toFixed(2);
