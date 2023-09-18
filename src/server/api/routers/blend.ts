@@ -1,9 +1,34 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { addBlendSchema, getBlendsByStatusSchema } from '@/schemas/blend';
+import { addBlendSchema, blendStatusSchema, getBlendsByStatusSchema } from '@/schemas/blend';
 import type { Blend } from '@prisma/client';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export const blendRouter = createTRPCRouter({
+	findAll: publicProcedure
+		.input(z.object({
+			factoryId: z.string()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.blend.findMany({
+				where: {
+					factoryId: input.factoryId
+				},
+				select: {
+					id: true,
+					baseCode: true,
+					sizeCode: true,
+					variantCode: true,
+					targetQuantity: true,
+					actualQuantity: true,
+					blendTankName: true,
+					destinationTankName: true,
+					status: true,
+					createdAt: true,
+					updatedAt: true
+				}
+			});
+		}),
 	getBlendsByStatus: publicProcedure
 		.input(getBlendsByStatusSchema)
 		.query(({ ctx, input }) => {
@@ -16,10 +41,11 @@ export const blendRouter = createTRPCRouter({
 			});
 		}),
 	get: publicProcedure
-		.input(z.object({ id: z.string() }))
+		.input(z.object({ factoryId: z.string(), id: z.string() }))
 		.query(({ ctx, input }) => {
 			return ctx.prisma.blend.findUniqueOrThrow({
 				where: {
+					factoryId: input.factoryId,
 					id: input.id
 				},
 				include: {
@@ -202,7 +228,172 @@ export const blendRouter = createTRPCRouter({
 			}
 
 			return blends;
+		}),
+	updateBlendTank: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			id: z.string(),
+			blendTankName: z.string().optional()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+			const updatedBlend = ctx.prisma.blend.update({
+				where: {
+					factoryId: input.factoryId,
+					id: input.id
+				},
+				data: input.blendTankName ? {
+					BlendTank: {
+						connect: {
+							name_factoryId: {
+								name: input.blendTankName,
+								factoryId: input.factoryId
+							}
+						}
+					},
+					updatedAt: now
+				} : {
+					blendTankName: null,
+					updatedAt: now
+				}
+			});
+
+			return updatedBlend;
+		}),
+	updateDestinationTank: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			id: z.string(),
+			destinationTankName: z.string().optional()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+			const updatedBlend = ctx.prisma.blend.update({
+				where: {
+					factoryId: input.factoryId,
+					id: input.id
+				},
+				data: input.destinationTankName ? {
+					DestinationTank: {
+						connect: {
+							name_factoryId: {
+								name: input.destinationTankName,
+								factoryId: input.factoryId
+							}
+						}
+					},
+					updatedAt: now
+				} : {
+					destinationTankName: null,
+					updatedAt: now
+				}
+			});
+
+			return updatedBlend;
+		}),
+	updateBlendStatus: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			id: z.string(),
+			status: blendStatusSchema
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+			const updatedBlend = ctx.prisma.blend.update({
+				where: {
+					factoryId: input.factoryId,
+					id: input.id
+				},
+				data: {
+					status: input.status,
+					updatedAt: now
+				}
+			});
+
+			return updatedBlend;
+		}),
+	updateNote: publicProcedure
+		.input(z.object({
+			blendId: z.string(),
+			note: z.string().optional()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.blend.update({
+				where: {
+					id: input.blendId,
+				},
+				data: {
+					note: input.note ?? null,
+					updatedAt: now
+				},
+			});
+		}),
+	updateComponentActualQuantity: publicProcedure
+		.input(z.object({
+			blendId: z.string(),
+			componentId: z.string(),
+			actualQuantity: z.number().optional()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.blendComponent.update({
+				where: {
+					blendId: input.blendId,
+					id: input.componentId
+				},
+				data: {
+					actualQuantity: input.actualQuantity ?? null,
+					Blend: {
+						update: {
+							updatedAt: now
+						}
+					}
+				},
+				include: {
+					Product: {
+						select: {
+							description: true
+						}
+					}
+				}
+			});
+		}),
+	updateComponentNote: publicProcedure
+		.input(z.object({
+			blendId: z.string(),
+			componentId: z.string(),
+			note: z.string().optional()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.blendComponent.update({
+				where: {
+					blendId: input.blendId,
+					id: input.componentId
+				},
+				data: {
+					note: input.note ?? null,
+					Blend: {
+						update: {
+							updatedAt: now
+						}
+					}
+				},
+				include: {
+					Product: {
+						select: {
+							description: true
+						}
+					}
+				}
+			});
 		})
 });
 
 export type BlendRouter = typeof blendRouter;
+export type BlendRouterInputs = inferRouterInputs<BlendRouter>;
+export type BlendRouterOutputs = inferRouterOutputs<BlendRouter>;

@@ -7,7 +7,10 @@ export const blendStatusSchema = z.enum(
 		'PASSED', 'PUSHED', 'FLAGGED', 'COMPLETE'
 	]
 );
-export type TBlendStatusSchema = z.infer<typeof blendStatusSchema>;
+export type TBlendStatus = z.infer<typeof blendStatusSchema>;
+export const ACTIVE_BLEND_STATUSES: Array<z.infer<typeof blendStatusSchema>> = [
+	'ASSEMBLING', 'BLENDING', 'TESTING', 'ADJUSTING', 'PASSED', 'FLAGGED'
+];
 
 export const blendComponentSchema = z.object({
 	formulaComponentId: z.string(),
@@ -41,9 +44,21 @@ export const addBlendSchema = z.object({
 });
 export type TAddBlendSchema = z.infer<typeof addBlendSchema>;
 
-
 export const getBlendsByStatusSchema = z.object({
 	factoryId: z.string(),
 	status: z.array(blendStatusSchema).default(['CREATED'])
 });
 export type TGetBlendsByStatusSchema = z.infer<typeof getBlendsByStatusSchema>;
+
+export const blendSummarySchema = z.object({
+	id: z.string(),
+	baseCode: z.string(),
+	targetQuantity: z.number(),
+	actualQuantity: z.number().optional(),
+	blendTankName: z.string().optional(),
+	destinationTankName: z.string().optional(),
+	status: z.string(),
+	createdAt: z.number(),
+	updatedAt: z.number(),
+});
+export type TBlendSummary = z.infer<typeof blendSummarySchema>;
