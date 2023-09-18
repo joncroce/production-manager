@@ -1,43 +1,34 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { addTankSchema } from '@/schemas/tank';
+import { addTankSchema, updateTankSchema } from '@/schemas/tank';
 import type { Tank } from '@prisma/client';
+import type { inferRouterOutputs } from '@trpc/server';
 
 export const tankRouter = createTRPCRouter({
 	getAll: publicProcedure
 		.input(z.object({
-			userId: z.string(),
 			factoryId: z.string(),
-			orderBy: z.array(z.object({
-				name: z.enum(['asc', 'desc']).optional(),
-				baseCode: z.enum(['asc', 'desc']).optional(),
-				quantity: z.enum(['asc', 'desc']).optional(),
-				capacity: z.enum(['asc', 'desc']).optional(),
-				heel: z.enum(['asc', 'desc']).optional(),
-				isBlendTank: z.enum(['asc', 'desc']).optional()
-			})).optional(),
-			where: z.object({
-				name: z.string().optional(),
-				isBlendTank: z.boolean().optional(),
-
-			}).optional()
 		}))
 		.query(({ ctx, input }) => {
 			const where = {
 				factoryId: input.factoryId,
-				name: input.where?.name !== undefined ? {
-					contains: input.where.name
-				} : undefined,
-				isBlendTank: input.where?.isBlendTank !== undefined ? {
-					equals: true
-				} : undefined,
 			};
-			return ctx.prisma.tank.findMany({
-				where: Object.fromEntries(Object.entries(where).filter(([, value]) => value !== undefined)),
-				include: {
-					UsersViewing: true
-				},
-				orderBy: input.orderBy
+
+			return ctx.prisma.tank.findMany({ where });
+		}),
+	getTankByName: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			name: z.string()
+		}))
+		.query(({ ctx, input }) => {
+			const where = {
+				factoryId: input.factoryId,
+				name: input.name
+			};
+
+			return ctx.prisma.tank.findFirst({
+				where,
 			});
 		}),
 	getTanksByBaseCodes: publicProcedure
@@ -78,6 +69,78 @@ export const tankRouter = createTRPCRouter({
 				}
 			});
 		}),
+	getDestinationTanks: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			baseCode: z.coerce.number()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.tank.findMany({
+				where: {
+					factoryId: input.factoryId,
+					baseCode: input.baseCode
+				}
+			});
+		}),
+	updateTank: publicProcedure
+		.input(updateTankSchema)
+		.mutation(async ({ ctx, input }) => {
+			const updatedTank = await ctx.prisma.tank.update({
+				where: {
+					name_factoryId: {
+						name: input.name,
+						factoryId: input.factoryId
+					},
+				},
+				data: {
+					...input,
+					name: input.updatedName,
+				}
+			});
+
+			return updatedTank;
+		}),
+	addTank: publicProcedure
+		.input(addTankSchema)
+		.mutation(async ({ ctx, input }) => {
+			const {
+				factoryId,
+				baseCode,
+				sizeCode,
+				variantCode,
+				name,
+				quantity,
+				capacity,
+				heel,
+				isDefaultSource,
+				isBlendTank
+			} = input;
+
+			const tank = await ctx.prisma.tank.create({
+				data: {
+					Factory: {
+						connect: {
+							id: factoryId
+						}
+					},
+					Product: baseCode !== undefined ? {
+						connect: {
+							factoryId_baseCode_sizeCode_variantCode: {
+								factoryId, baseCode, sizeCode, variantCode
+							}
+						}
+					} : undefined,
+					name,
+					quantity,
+					capacity,
+					heel,
+					isDefaultSource,
+					isBlendTank
+				}
+			});
+
+			return tank;
+		}),
 	addTanks: publicProcedure
 		.input(z.array(addTankSchema))
 		.mutation(async ({ ctx, input }) => {
@@ -92,7 +155,8 @@ export const tankRouter = createTRPCRouter({
 				quantity,
 				capacity,
 				heel,
-				isDefaultSource
+				isDefaultSource,
+				isBlendTank
 			} of input) {
 				const tank = await ctx.prisma.tank.create({
 					data: {
@@ -101,18 +165,19 @@ export const tankRouter = createTRPCRouter({
 								id: factoryId
 							}
 						},
-						Product: {
+						Product: baseCode !== undefined ? {
 							connect: {
 								factoryId_baseCode_sizeCode_variantCode: {
 									factoryId, baseCode, sizeCode, variantCode
 								}
 							}
-						},
+						} : undefined,
 						name,
 						quantity,
 						capacity,
 						heel,
-						isDefaultSource
+						isDefaultSource,
+						isBlendTank
 					}
 				});
 
@@ -120,7 +185,8 @@ export const tankRouter = createTRPCRouter({
 			}
 
 			return tanks;
-		})
+		}),
 });
 
 export type TankRouter = typeof tankRouter;
+export type TankRouterOutputs = inferRouterOutputs<TankRouter>;
