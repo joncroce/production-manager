@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { addTankSchema, updateTankSchema } from '@/schemas/tank';
-import type { Tank } from '@prisma/client';
+import { Prisma, type Tank } from '@prisma/client';
 import type { inferRouterOutputs } from '@trpc/server';
+import { TRPCClientError } from '@trpc/client';
 
 export const tankRouter = createTRPCRouter({
 	getAll: publicProcedure
@@ -116,7 +117,7 @@ export const tankRouter = createTRPCRouter({
 				isBlendTank
 			} = input;
 
-			const tank = await ctx.prisma.tank.create({
+			return ctx.prisma.tank.create({
 				data: {
 					Factory: {
 						connect: {
@@ -137,9 +138,16 @@ export const tankRouter = createTRPCRouter({
 					isDefaultSource,
 					isBlendTank
 				}
+			}).catch((e) => {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2002') {
+						throw new TRPCClientError(`Tank with name ${input.name} already exists in your factory.`);
+					}
+				}
+
+				throw e;
 			});
 
-			return tank;
 		}),
 	addTanks: publicProcedure
 		.input(z.array(addTankSchema))
