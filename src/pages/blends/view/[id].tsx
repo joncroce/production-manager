@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertOctagonIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
+import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import BlendStatusSelector from '../components/blend-status-selector';
 import BlendTankSelector from '../components/blend-tank-selector';
 import DestinationTankSelector from '../components/destination-tank-selector';
@@ -18,7 +18,19 @@ import { getColumns, type TBlendComponent } from '../components/component-list/c
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { buildProductCode } from '@/utils/product';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+	AlertDialog,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle
+} from '@/components/ui/alert-dialog'; import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../../_app';
@@ -117,6 +129,7 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 					currentBlendTankName={blend.blendTankName}
 					blendTankQuantity={totalActualQuantity}
 					blendTankCapacity={blend.BlendTank ? blend.BlendTank.capacity.toNumber() : undefined}
+					blendTargetQuantity={blend.targetQuantity.toNumber()}
 				/>
 				<Product {...blend.Product} targetQuantity={blend.targetQuantity.toNumber()} />
 				<DestinationTank
@@ -127,6 +140,7 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 					currentDestinationTankName={blend.destinationTankName}
 					destinationTankQuantity={blend.DestinationTank ? blend.DestinationTank.quantity.toNumber() : undefined}
 					destinationTankCapacity={blend.DestinationTank ? blend.DestinationTank.capacity.toNumber() : undefined}
+					totalActualQuantity={totalActualQuantity}
 				/>
 			</div>
 
@@ -200,7 +214,8 @@ function BlendTank({
 	blendId,
 	currentBlendTankName,
 	blendTankQuantity,
-	blendTankCapacity
+	blendTankCapacity,
+	blendTargetQuantity
 }: {
 	inEditMode: boolean;
 	factoryId: string;
@@ -208,8 +223,13 @@ function BlendTank({
 	currentBlendTankName: string | null;
 	blendTankQuantity: number;
 	blendTankCapacity?: number;
+	blendTargetQuantity: number;
 }): React.JSX.Element {
 	const [open, setOpen] = useState(false);
+
+	const warning = blendTankCapacity && blendTankCapacity < blendTargetQuantity
+		? 'Blend Tank capacity is lower than the blend\'s target quantity!'
+		: null;
 
 	return (
 		<div className="p-4 flex flex-col justify-between">
@@ -226,13 +246,35 @@ function BlendTank({
 									<DialogHeader>
 										<DialogTitle>Select Blend Tank</DialogTitle>
 									</DialogHeader>
-									<BlendTankSelector factoryId={factoryId} blendId={blendId} currentBlendTankName={currentBlendTankName} closeDialog={() => setOpen(false)} />
+									<BlendTankSelector
+										factoryId={factoryId}
+										blendId={blendId}
+										currentBlendTankName={currentBlendTankName}
+										closeDialog={() => setOpen(false)}
+									/>
 								</DialogContent>
 							</Dialog>
 							: null
 					}
 				</div>
-				<span className="text-xl">{currentBlendTankName ?? '(No Tank)'}</span>
+				{
+					warning
+						? <TooltipProvider>
+							<Tooltip delayDuration={0}>
+								<TooltipTrigger>
+									<span className="flex justify-start items-stretch space-x-2 text-xl text-red-500">
+										{currentBlendTankName ?? '(No Tank)'}
+										<AlertTriangleIcon className="stroke-white text-red-500" />
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>{warning}</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+						: <span className="text-xl">{currentBlendTankName ?? '(No Tank)'}</span>
+				}
+
 			</div>
 			{
 				currentBlendTankName
@@ -283,7 +325,8 @@ function DestinationTank({
 	baseCode,
 	currentDestinationTankName,
 	destinationTankQuantity,
-	destinationTankCapacity
+	destinationTankCapacity,
+	totalActualQuantity
 }: {
 	inEditMode: boolean;
 	factoryId: string;
@@ -292,8 +335,15 @@ function DestinationTank({
 	currentDestinationTankName: string | null;
 	destinationTankQuantity?: number;
 	destinationTankCapacity?: number;
+	totalActualQuantity: number;
 }): React.JSX.Element {
 	const [open, setOpen] = useState(false);
+
+	const warning = destinationTankCapacity !== undefined &&
+		destinationTankQuantity !== undefined &&
+		destinationTankCapacity - destinationTankQuantity < totalActualQuantity
+		? 'Destination Tank remaining capacity is lower than the blend\'s actual quantity!'
+		: null;
 
 	return (
 		<div className="p-4 flex flex-col justify-between">
@@ -316,7 +366,23 @@ function DestinationTank({
 							: null
 					}
 				</div>
-				<span className="text-xl">{currentDestinationTankName ?? '(No Tank)'}</span>
+				{
+					warning
+						? <TooltipProvider>
+							<Tooltip delayDuration={0}>
+								<TooltipTrigger>
+									<span className="flex justify-start items-stretch space-x-2 text-xl text-red-500">
+										{currentDestinationTankName ?? '(No Tank)'}
+										<AlertTriangleIcon className="stroke-white text-red-500" />
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>{warning}</p>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+						: <span className="text-xl">{currentDestinationTankName ?? '(No Tank)'}</span>
+				}
 			</div>
 			{
 				destinationTankQuantity !== undefined
