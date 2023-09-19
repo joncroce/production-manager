@@ -33,7 +33,10 @@ export function DataTable<TData, TValue>({
 	data,
 	usePagination = false
 }: DataTableProps<TData, TValue>) {
-	const [sorting, setSorting] = React.useState<SortingState>([]);
+	const [sorting, setSorting] = React.useState<SortingState>([{
+		id: 'updatedAt',
+		desc: true
+	}]);
 
 	const table = useReactTable({
 		data,

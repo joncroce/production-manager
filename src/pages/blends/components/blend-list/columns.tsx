@@ -1,14 +1,16 @@
 "use client";
 
-import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
-import type { TBlendSummary } from '@/schemas/blend';
-import { ArrowUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import React from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { Button } from '@/components/ui/button';
+import { ArrowUpDown } from 'lucide-react';
+import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
+import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 
 dayjs.extend(relativeTime);
+
+export type TBlendSummary = BlendRouterOutputs['getAll'][number];
 
 function sortableHeader(
 	{ column }: HeaderContext<TBlendSummary, unknown>,
@@ -25,7 +27,7 @@ function sortableHeader(
 	);
 }
 
-export const sortableColumns: ColumnDef<TBlendSummary>[] = [
+export const columns: ColumnDef<TBlendSummary>[] = [
 	{
 		accessorKey: 'baseCode',
 		header: (ctx) => sortableHeader(ctx, 'Base Code')
@@ -53,56 +55,15 @@ export const sortableColumns: ColumnDef<TBlendSummary>[] = [
 	{
 		accessorKey: 'createdAt',
 		header: (ctx) => sortableHeader(ctx, 'Created'),
-		cell({ row }) {
-			return dayjs().to(row.getValue('createdAt'));
+		cell({ getValue }) {
+			return dayjs().to(getValue<Date>());
 		},
 	},
 	{
 		accessorKey: 'updatedAt',
 		header: (ctx) => sortableHeader(ctx, 'Updated'),
-		cell({ row }) {
-			return dayjs().to(row.getValue('updatedAt'));
-		},
-	}
-];
-
-export const columns: ColumnDef<TBlendSummary>[] = [
-	{
-		accessorKey: 'baseCode',
-		header: 'Base Code'
-	},
-	{
-		accessorKey: 'targetQuantity',
-		header: 'Qty (Target)'
-	},
-	{
-		accessorKey: 'actualQuantity',
-		header: 'Qty (Actual)'
-	},
-	{
-		accessorKey: 'blendTankName',
-		header: 'Tank (Blending)'
-	},
-	{
-		accessorKey: 'destinationTankName',
-		header: 'Tank (Destination)'
-	},
-	{
-		accessorKey: 'status',
-		header: 'Status'
-	},
-	{
-		accessorKey: 'createdAt',
-		header: 'Created',
-		cell({ row }) {
-			return dayjs().to(row.getValue('createdAt'));
-		},
-	},
-	{
-		accessorKey: 'updatedAt',
-		header: 'Updated',
-		cell({ row }) {
-			return dayjs().to(row.getValue('updatedAt'));
+		cell({ getValue }) {
+			return dayjs().to(getValue<Date>());
 		},
 	}
 ];

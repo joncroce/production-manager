@@ -1,50 +1,65 @@
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { authenticatedSSProps, getServerAuthSession } from '@/server/auth';
+import { createInnerTRPCContext } from '@/server/api/trpc';
+import { appRouter } from '@/server/api/root';
+import { api } from '@/utils/api';
+import superjson from '@/utils/superjson';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from './components/blend-list/data-table';
-import { columns, sortableColumns } from './components/blend-list/columns';
-import { useState } from 'react';
-import { authenticatedSSProps } from '@/server/auth';
-import { api } from '@/utils/api';
-import { toBlendSummary } from '@/utils/blend';
-import { ACTIVE_BLEND_STATUSES, type TBlendSummary } from '@/schemas/blend';
+import { type TBlendSummary, columns } from './components/blend-list/columns';
+import { ACTIVE_BLEND_STATUSES } from '@/schemas/blend';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-	return authenticatedSSProps(context);
+	const session = await getServerAuthSession(context);
+
+	return authenticatedSSProps(context)
+		.then(async ({ props, redirect }) => {
+			if (redirect) {
+				return { props, redirect };
+			}
+
+			const helpers = createServerSideHelpers({
+				router: appRouter,
+				ctx: createInnerTRPCContext({ session }),
+				transformer: superjson
+			});
+
+			await helpers.blend.getAll.prefetch({ factoryId: props.user?.factoryId ?? '' });
+
+			return {
+				props: {
+					...props,
+					trpcState: helpers.dehydrate()
+				},
+				redirect
+			};
+		});
 };
 
-function sortByRecentlyCreated(a: TBlendSummary, b: TBlendSummary): number {
-	return a.createdAt - b.createdAt;
-}
-
-function sortByUpdatedAt(a: TBlendSummary, b: TBlendSummary): number {
-	return a.updatedAt - b.updatedAt;
-}
-
-function getRecentlyCreated(blends: Array<TBlendSummary>): Array<TBlendSummary> {
-	return Array.from(blends).sort(sortByRecentlyCreated);
-}
-
 function getCurrentlyActive(blends: Array<TBlendSummary>): Array<TBlendSummary> {
-	return blends.filter(({ status }) => ACTIVE_BLEND_STATUSES.includes(status)).sort(sortByUpdatedAt);
+	return blends.filter(({ status }) => ACTIVE_BLEND_STATUSES.includes(status));
 }
 
 const BlendsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const [blends, setBlends] = useState<Array<TBlendSummary>>([]);
-	api.blend.findAll.useQuery(
+	const blendsQuery = api.blend.getAll.useQuery(
 		{ factoryId: user?.factoryId ?? '' },
 		{
 			enabled: user.factoryId !== undefined,
 			refetchOnWindowFocus: false,
-			onSuccess(data) {
-				setBlends(data.map(toBlendSummary));
-			},
 		}
 	);
+
+	const { data: blends } = blendsQuery;
+
+	if (!blends) {
+		throw new Error('Error retrieving blends data.');
+	}
 
 	return (
 		<>
@@ -57,20 +72,16 @@ const BlendsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 				</div>
 			</div>
 			<div className="p-4">
-				<Tabs defaultValue='currentlyActive'>
+				<Tabs defaultValue='viewAll'>
 					<TabsList>
-						<TabsTrigger value="currentlyActive">Currently Active</TabsTrigger>
-						<TabsTrigger value="recentlyCreated">Recently Created</TabsTrigger>
 						<TabsTrigger value="viewAll">View All</TabsTrigger>
+						<TabsTrigger value="currentlyActive">Currently Active</TabsTrigger>
 					</TabsList>
+					<TabsContent value="viewAll">
+						<DataTable columns={columns} data={blends} usePagination={true} />
+					</TabsContent>
 					<TabsContent value="currentlyActive">
 						<DataTable columns={columns} data={getCurrentlyActive(blends)} />
-					</TabsContent>
-					<TabsContent value="recentlyCreated">
-						<DataTable columns={columns} data={getRecentlyCreated(blends)} usePagination={true} />
-					</TabsContent>
-					<TabsContent value="viewAll">
-						<DataTable columns={sortableColumns} data={blends} usePagination={true} />
 					</TabsContent>
 				</Tabs>
 			</div>
