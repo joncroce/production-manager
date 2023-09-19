@@ -5,7 +5,7 @@ import type { Blend } from '@prisma/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export const blendRouter = createTRPCRouter({
-	findAll: publicProcedure
+	getAll: publicProcedure
 		.input(z.object({
 			factoryId: z.string()
 		}))
@@ -14,19 +14,6 @@ export const blendRouter = createTRPCRouter({
 				where: {
 					factoryId: input.factoryId
 				},
-				select: {
-					id: true,
-					baseCode: true,
-					sizeCode: true,
-					variantCode: true,
-					targetQuantity: true,
-					actualQuantity: true,
-					blendTankName: true,
-					destinationTankName: true,
-					status: true,
-					createdAt: true,
-					updatedAt: true
-				}
 			});
 		}),
 	getBlendsByStatus: publicProcedure
