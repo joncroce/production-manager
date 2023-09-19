@@ -37,57 +37,62 @@ function sortableHeader(
 	);
 }
 
-export const columns: ColumnDef<TBlendComponent>[] = [
-	{
-		accessorKey: 'productCode',
-		header: (ctx) => sortableHeader(ctx, 'Code')
-	},
-	{
-		accessorKey: 'productDescription',
-		header: 'Description'
-	},
-	{
-		accessorKey: 'sourceTankName',
-		header: (ctx) => sortableHeader(ctx, 'Tank')
-	},
-	{
-		accessorKey: 'targetQuantity',
-		header: (ctx) => sortableHeader(ctx, 'Qty (Target)'),
-		cell({ getValue }) {
-			const targetQuantity = getValue<number>();
-			const formatted = targetQuantity.toFixed(2);
-
-			return <div>{formatted}</div>;
+export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<TBlendComponent>[] {
+	return [
+		{
+			accessorKey: 'productCode',
+			header: (ctx) => sortableHeader(ctx, 'Code')
 		},
-	},
-	{
-		accessorKey: 'actualQuantity',
-		header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
-		cell({ row, getValue }) {
-			const { blendId, id: componentId } = row.original;
-			const actualQuantity = getValue<number | undefined>();
+		{
+			accessorKey: 'productDescription',
+			header: 'Description'
+		},
+		{
+			accessorKey: 'sourceTankName',
+			header: (ctx) => sortableHeader(ctx, 'Tank')
+		},
+		{
+			accessorKey: 'targetQuantity',
+			header: (ctx) => sortableHeader(ctx, 'Qty (Target)'),
+			cell({ getValue }) {
+				const targetQuantity = getValue<number>();
+				const formatted = targetQuantity.toFixed(2);
 
-			return <EditableActualQuantityCell actualQuantity={actualQuantity ?? undefined} blendId={blendId} componentId={componentId} />;
-		}
-	},
-	{
-		accessorKey: 'note',
-		header: 'Note',
-		cell({ row, getValue }) {
-			const { blendId, id: componentId, productCode, productDescription, targetQuantity } = row.original;
-			const note = getValue<string | undefined>();
+				return <div>{formatted}</div>;
+			},
+		},
+		{
+			accessorKey: 'actualQuantity',
+			header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
+			cell({ row, getValue }) {
+				const { blendId, id: componentId } = row.original;
+				const actualQuantity = getValue<number | undefined>();
 
-			return <NoteCell
-				note={note}
-				blendId={blendId}
-				componentId={componentId}
-				productCode={productCode}
-				productDescription={productDescription}
-				targetQuantity={targetQuantity}
-			/>;
-		}
-	},
-];
+				return inEditMode
+					? <EditableActualQuantityCell actualQuantity={actualQuantity ?? undefined} blendId={blendId} componentId={componentId} />
+					: <span>{actualQuantity}</span>;
+			}
+		},
+		{
+			accessorKey: 'note',
+			header: 'Note',
+			cell({ row, getValue }) {
+				const { blendId, id: componentId, productCode, productDescription, targetQuantity } = row.original;
+				const note = getValue<string | undefined>();
+
+				return <NoteCell
+					inEditMode={inEditMode}
+					note={note}
+					blendId={blendId}
+					componentId={componentId}
+					productCode={productCode}
+					productDescription={productDescription}
+					targetQuantity={targetQuantity}
+				/>;
+			}
+		},
+	];
+}
 
 function EditableActualQuantityCell({
 	actualQuantity,
@@ -170,15 +175,22 @@ function EditableActualQuantityCell({
 }
 
 function NoteCell({
-	note, blendId, componentId, productCode, productDescription, targetQuantity
+	inEditMode,
+	note,
+	blendId,
+	componentId,
+	productCode,
+	productDescription,
+	targetQuantity
 }: {
+	inEditMode: boolean;
 	note?: string;
 	blendId: string;
 	componentId: string;
 	productCode: string;
 	productDescription: string;
 	targetQuantity: number;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
 	const [text, setText] = useState(note ?? '');
@@ -237,7 +249,7 @@ function NoteCell({
 		}
 	}
 
-	return (
+	return note?.length ?? inEditMode ? (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 
 			<Button variant={note?.length ? 'outline' : 'ghost'} onClick={() => setOpen(true)}>
@@ -290,13 +302,17 @@ function NoteCell({
 						</>
 						: <>
 							<p className="p-2">{note}</p>
-							<Button variant="outline" onClick={() => setEditing(true)}>
-								Edit <Edit2Icon className="ml-2 h-4 w-4" />
-							</Button>
+							{
+								inEditMode
+									? <Button variant="outline" onClick={() => setEditing(true)}>
+										Edit <Edit2Icon className="ml-2 h-4 w-4" />
+									</Button>
+									: null
+							}
 						</>
 				}
 
 			</DialogContent>
 		</Dialog>
-	);
+	) : null;
 }

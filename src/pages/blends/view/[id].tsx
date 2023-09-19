@@ -14,11 +14,11 @@ import BlendStatusSelector from '../components/blend-status-selector';
 import BlendTankSelector from '../components/blend-tank-selector';
 import DestinationTankSelector from '../components/destination-tank-selector';
 import { DataTable } from '../components/component-list/data-table';
-import { columns, type TBlendComponent } from '../components/component-list/columns';
+import { getColumns, type TBlendComponent } from '../components/component-list/columns';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { buildProductCode } from '@/utils/product';
-import { AlertDialog, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../../_app';
@@ -73,6 +73,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> = ({ user, id }) => {
+	const [inEditMode, setInEditMode] = useState(false);
 	const blendQuery = api.blend.get.useQuery(
 		{ factoryId: user.factoryId ?? '', id },
 		{ refetchOnWindowFocus: false }
@@ -95,8 +96,12 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 		<>
 			<div className="p-2 flex justify-between items-end space-x-2 border-b">
 				<h2 className="text-3xl font-bold">Blend Details</h2>
-				<BlendStatus factoryId={factoryId} blendId={blend.id} currentStatus={blend.status as TBlendStatus} />
-				<span className="text-sm text-gray-400 font-semibold">id: {id}</span>
+				<BlendStatus inEditMode={inEditMode} factoryId={factoryId} blendId={blend.id} currentStatus={blend.status as TBlendStatus} />
+				{
+					inEditMode
+						? <Button variant='default' onClick={() => setInEditMode(false)}>Switch to View Mode</Button>
+						: <Button variant='destructive' onClick={() => setInEditMode(true)}>Switch to Edit Mode</Button>
+				}
 			</div>
 
 			<div className="flex justify-center items-baseline space-x-4">
@@ -106,6 +111,7 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 
 			<div className="grid grid-cols-[1fr_2fr_1fr]">
 				<BlendTank
+					inEditMode={inEditMode}
 					factoryId={factoryId}
 					blendId={blend.id}
 					currentBlendTankName={blend.blendTankName}
@@ -114,6 +120,7 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 				/>
 				<Product {...blend.Product} targetQuantity={blend.targetQuantity.toNumber()} />
 				<DestinationTank
+					inEditMode={inEditMode}
 					factoryId={factoryId}
 					blendId={blend.id}
 					baseCode={blend.baseCode}
@@ -126,9 +133,16 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 			<div className="p-4 flex flex-col space-y-4 border-t">
 				<div className="flex justify-between items-baseline">
 					<h3 className="text-3xl font-semibold">Components</h3>
-					<BlendNote blendId={blend.id} productCode={productCode} productDescription={blend.Product.description} targetQuantity={blend.targetQuantity.toNumber()} note={blend.note ?? undefined} />
+					<BlendNote
+						inEditMode={inEditMode}
+						blendId={blend.id}
+						productCode={productCode}
+						productDescription={blend.Product.description}
+						targetQuantity={blend.targetQuantity.toNumber()}
+						note={blend.note ?? undefined}
+					/>
 				</div>
-				<DataTable columns={columns} data={parseComponents(blend.Components)} />
+				<DataTable columns={getColumns({ inEditMode })} data={parseComponents(blend.Components)} />
 			</div>
 		</>
 	);
@@ -145,8 +159,12 @@ ViewBlendPage.getLayout = function getLayout(page) {
 export default ViewBlendPage;
 
 function BlendStatus({
-	factoryId, blendId, currentStatus
+	inEditMode,
+	factoryId,
+	blendId,
+	currentStatus
 }: {
+	inEditMode: boolean;
 	factoryId: string;
 	blendId: string;
 	currentStatus: TBlendStatus;
@@ -157,28 +175,34 @@ function BlendStatus({
 		<div className="flex justify-center items-end space-x-1">
 			<span className="text-2xl font-semibold">Status: </span>
 			<span className="text-2xl font-bold">{currentStatus}</span>
-			<Dialog open={open} onOpenChange={(value) => setOpen(value)}>
-				<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
-					<Edit2Icon />
-				</Button>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Set Blend Status</DialogTitle>
-					</DialogHeader>
-					<BlendStatusSelector factoryId={factoryId} blendId={blendId} currentStatus={currentStatus} closeDialog={() => setOpen(false)} />
-				</DialogContent>
-			</Dialog>
+			{
+				inEditMode
+					? <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+						<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
+							<Edit2Icon />
+						</Button>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Set Blend Status</DialogTitle>
+							</DialogHeader>
+							<BlendStatusSelector factoryId={factoryId} blendId={blendId} currentStatus={currentStatus} closeDialog={() => setOpen(false)} />
+						</DialogContent>
+					</Dialog>
+					: null
+			}
 		</div>
 	);
 }
 
 function BlendTank({
+	inEditMode,
 	factoryId,
 	blendId,
 	currentBlendTankName,
 	blendTankQuantity,
 	blendTankCapacity
 }: {
+	inEditMode: boolean;
 	factoryId: string;
 	blendId: string;
 	currentBlendTankName: string | null;
@@ -192,17 +216,21 @@ function BlendTank({
 			<div className="flex flex-col items-center space-y-1">
 				<div className="flex justify-start items-stretch space-x-2">
 					<h3 className="text-2xl font-semibold">Blend Tank</h3>
-					<Dialog open={open} onOpenChange={(value) => setOpen(value)}>
-						<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
-							<Edit2Icon />
-						</Button>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Select Blend Tank</DialogTitle>
-							</DialogHeader>
-							<BlendTankSelector factoryId={factoryId} blendId={blendId} currentBlendTankName={currentBlendTankName} closeDialog={() => setOpen(false)} />
-						</DialogContent>
-					</Dialog>
+					{
+						inEditMode
+							? <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+								<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
+									<Edit2Icon />
+								</Button>
+								<DialogContent>
+									<DialogHeader>
+										<DialogTitle>Select Blend Tank</DialogTitle>
+									</DialogHeader>
+									<BlendTankSelector factoryId={factoryId} blendId={blendId} currentBlendTankName={currentBlendTankName} closeDialog={() => setOpen(false)} />
+								</DialogContent>
+							</Dialog>
+							: null
+					}
 				</div>
 				<span className="text-xl">{currentBlendTankName ?? '(No Tank)'}</span>
 			</div>
@@ -249,6 +277,7 @@ function Product({
 }
 
 function DestinationTank({
+	inEditMode,
 	factoryId,
 	blendId,
 	baseCode,
@@ -256,6 +285,7 @@ function DestinationTank({
 	destinationTankQuantity,
 	destinationTankCapacity
 }: {
+	inEditMode: boolean;
 	factoryId: string;
 	blendId: string;
 	baseCode: number;
@@ -270,17 +300,21 @@ function DestinationTank({
 			<div className="flex flex-col items-center space-y-1">
 				<div className="flex justify-start items-stretch space-x-2">
 					<span className="text-2xl font-semibold">Destination Tank</span>
-					<Dialog open={open} onOpenChange={(value) => setOpen(value)}>
-						<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
-							<Edit2Icon />
-						</Button>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Select Destination Tank</DialogTitle>
-							</DialogHeader>
-							<DestinationTankSelector factoryId={factoryId} blendId={blendId} baseCode={baseCode} currentDestinationTankName={currentDestinationTankName} closeDialog={() => setOpen(false)} />
-						</DialogContent>
-					</Dialog>
+					{
+						inEditMode
+							? <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
+								<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
+									<Edit2Icon />
+								</Button>
+								<DialogContent>
+									<DialogHeader>
+										<DialogTitle>Select Destination Tank</DialogTitle>
+									</DialogHeader>
+									<DestinationTankSelector factoryId={factoryId} blendId={blendId} baseCode={baseCode} currentDestinationTankName={currentDestinationTankName} closeDialog={() => setOpen(false)} />
+								</DialogContent>
+							</Dialog>
+							: null
+					}
 				</div>
 				<span className="text-xl">{currentDestinationTankName ?? '(No Tank)'}</span>
 			</div>
@@ -297,14 +331,20 @@ function DestinationTank({
 }
 
 function BlendNote({
-	note, blendId, productCode, productDescription, targetQuantity
+	inEditMode,
+	note,
+	blendId,
+	productCode,
+	productDescription,
+	targetQuantity
 }: {
+	inEditMode: boolean;
 	note?: string;
 	blendId: string;
 	productCode: string;
 	productDescription: string;
 	targetQuantity: number;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
 	const [text, setText] = useState(note ?? '');
@@ -362,7 +402,7 @@ function BlendNote({
 		}
 	}
 
-	return (
+	return note?.length ?? inEditMode ? (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 
 			<Button variant={note?.length ? 'outline' : 'ghost'} onClick={() => setOpen(true)}>
@@ -386,26 +426,28 @@ function BlendNote({
 
 				{showAlert
 					? <AlertDialog>
-						<AlertDialogHeader>
-							<AlertDialogTitle className="flex justify-start items-stretch space-x-2"><AlertOctagonIcon className="stroke-white text-red-500" /><span className="font-semibold">Note has unsaved changes!</span></AlertDialogTitle>
-							<AlertDialogDescription>
-								Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<Button variant='outline' onClick={() => setShowAlert(false)}>Cancel</Button>
-							<Button
-								variant='destructive'
-								onClick={() => {
-									setShowAlert(false);
-									setOpen(false);
-									setEditing(!note?.length);
-									setText(note ?? '');
-								}}
-							>
-								Confirm
-							</Button>
-						</AlertDialogFooter>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle className="flex justify-start items-stretch space-x-2"><AlertOctagonIcon className="stroke-white text-red-500" /><span className="font-semibold">Note has unsaved changes!</span></AlertDialogTitle>
+								<AlertDialogDescription>
+									Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<Button variant='outline' onClick={() => setShowAlert(false)}>Cancel</Button>
+								<Button
+									variant='destructive'
+									onClick={() => {
+										setShowAlert(false);
+										setOpen(false);
+										setEditing(!note?.length);
+										setText(note ?? '');
+									}}
+								>
+									Confirm
+								</Button>
+							</AlertDialogFooter>
+						</AlertDialogContent>
 					</AlertDialog>
 					: editing
 						? <>
@@ -417,13 +459,17 @@ function BlendNote({
 						</>
 						: <>
 							<p className="p-2">{note}</p>
-							<Button variant="outline" onClick={() => setEditing(true)}>
-								Edit <Edit2Icon className="ml-2 h-4 w-4" />
-							</Button>
+							{
+								inEditMode
+									? <Button variant="outline" onClick={() => setEditing(true)}>
+										Edit <Edit2Icon className="ml-2 h-4 w-4" />
+									</Button>
+									: null
+							}
 						</>
 				}
 
 			</DialogContent>
 		</Dialog>
-	);
+	) : null;
 }
