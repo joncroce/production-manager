@@ -70,7 +70,7 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 
 				return inEditMode
 					? <EditableActualQuantityCell actualQuantity={actualQuantity ?? undefined} blendId={blendId} componentId={componentId} />
-					: <span>{actualQuantity}</span>;
+					: <span>{actualQuantity?.toFixed(2)}</span>;
 			}
 		},
 		{
