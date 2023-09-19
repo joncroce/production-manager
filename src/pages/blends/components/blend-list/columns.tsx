@@ -5,8 +5,10 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
+import { sortDecimal } from '@/utils/tableSorts';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
+
 
 dayjs.extend(relativeTime);
 
@@ -34,11 +36,19 @@ export const columns: ColumnDef<TBlendSummary>[] = [
 	},
 	{
 		accessorKey: 'targetQuantity',
-		header: (ctx) => sortableHeader(ctx, 'Qty (Target)')
+		header: (ctx) => sortableHeader(ctx, 'Qty (Target)'),
+		cell({ getValue }) {
+			return getValue<TBlendSummary['targetQuantity']>().toFixed(2);
+		},
+		sortingFn: sortDecimal,
 	},
 	{
 		accessorKey: 'actualQuantity',
-		header: (ctx) => sortableHeader(ctx, 'Qty (Actual)')
+		header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
+		cell({ getValue }) {
+			return getValue<TBlendSummary['actualQuantity']>()?.toFixed(2) ?? '';
+		},
+		sortingFn: sortDecimal,
 	},
 	{
 		accessorKey: 'blendTankName',

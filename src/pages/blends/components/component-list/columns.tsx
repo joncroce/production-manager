@@ -10,20 +10,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
+import type { BlendRouterOutputs } from '@/server/api/routers/blend';
+import type { Prisma } from '@prisma/client';
+import { sortDecimal } from '@/utils/tableSorts';
 
-export type TBlendComponent = {
-	id: string;
-	blendId: string;
-	productCode: string;
-	productDescription: string;
-	sourceTankName: string;
-	targetQuantity: number;
-	actualQuantity: number | null;
-	note: string | null;
-};
+export type TBlendComponentSummary =
+	Pick<
+		BlendRouterOutputs['get']['Components'][number],
+		'id' | 'blendId' | 'sourceTankName' | 'targetQuantity' | 'actualQuantity' | 'note'
+	>
+	& {
+		productCode: string;
+		productDescription: string;
+	};
 
 function sortableHeader(
-	{ column }: HeaderContext<TBlendComponent, unknown>,
+	{ column }: HeaderContext<TBlendComponentSummary, unknown>,
 	label: string
 ): React.JSX.Element {
 	return (
@@ -37,7 +39,7 @@ function sortableHeader(
 	);
 }
 
-export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<TBlendComponent>[] {
+export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<TBlendComponentSummary>[] {
 	return [
 		{
 			accessorKey: 'productCode',
@@ -55,23 +57,26 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 			accessorKey: 'targetQuantity',
 			header: (ctx) => sortableHeader(ctx, 'Qty (Target)'),
 			cell({ getValue }) {
-				const targetQuantity = getValue<number>();
+				const targetQuantity = getValue<TBlendComponentSummary['targetQuantity']>();
 				const formatted = targetQuantity.toFixed(2);
 
-				return <div>{formatted}</div>;
+				return <span>{formatted}</span>;
 			},
+			sortingFn: sortDecimal
 		},
 		{
 			accessorKey: 'actualQuantity',
 			header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
 			cell({ row, getValue }) {
 				const { blendId, id: componentId } = row.original;
-				const actualQuantity = getValue<number | undefined>();
+				const actualQuantity = getValue<TBlendComponentSummary['actualQuantity']>();
+				const formatted = actualQuantity?.toFixed(2) ?? '';
 
 				return inEditMode
-					? <EditableActualQuantityCell actualQuantity={actualQuantity ?? undefined} blendId={blendId} componentId={componentId} />
-					: <span>{actualQuantity?.toFixed(2)}</span>;
-			}
+					? <EditableActualQuantityCell actualQuantity={actualQuantity} blendId={blendId} componentId={componentId} />
+					: <span>{formatted}</span>;
+			},
+			sortingFn: sortDecimal
 		},
 		{
 			accessorKey: 'note',
@@ -99,17 +104,17 @@ function EditableActualQuantityCell({
 	blendId,
 	componentId,
 }: {
-	actualQuantity?: number;
+	actualQuantity: Prisma.Decimal | null;
 	blendId: string;
 	componentId: string;
 }): React.JSX.Element {
-	const initialValue = actualQuantity === undefined ? '' : actualQuantity.toFixed(2);
+	const initialValue = actualQuantity?.toFixed(2) ?? '';
 	const [value, setValue] = useState(initialValue);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const mutation = api.blend.updateComponentActualQuantity.useMutation({
 		onSuccess(data) {
-			const updatedValue = data.actualQuantity === null ? undefined : data.actualQuantity.toFixed(2);
-			setValue(updatedValue ?? '');
+			const updatedValue = data.actualQuantity?.toFixed(2) ?? '';
+			setValue(updatedValue);
 
 			toast({
 				title: `${data.actualQuantity === null ? 'Removed' : 'Updated'} Component Actual Quantity`,
@@ -189,7 +194,7 @@ function NoteCell({
 	componentId: string;
 	productCode: string;
 	productDescription: string;
-	targetQuantity: number;
+	targetQuantity: Prisma.Decimal | null;
 }): React.JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
@@ -266,7 +271,7 @@ function NoteCell({
 						</div>
 						<div className="flex flex-col">
 							<span className="border-b">Target Qty</span>
-							<span className="font-semibold">{targetQuantity.toFixed(2)}</span>
+							<span className="font-semibold">{targetQuantity?.toFixed(2) ?? ''}</span>
 						</div>
 					</div>
 				</DialogHeader>

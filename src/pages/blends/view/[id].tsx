@@ -14,7 +14,7 @@ import BlendStatusSelector from '../components/blend-status-selector';
 import BlendTankSelector from '../components/blend-tank-selector';
 import DestinationTankSelector from '../components/destination-tank-selector';
 import { DataTable } from '../components/component-list/data-table';
-import { getColumns, type TBlendComponent } from '../components/component-list/columns';
+import { getColumns, type TBlendComponentSummary } from '../components/component-list/columns';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { buildProductCode } from '@/utils/product';
@@ -37,7 +37,7 @@ import type { NextPageWithLayout } from '../../_app';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 import type { TBlendStatus } from '@/schemas/blend';
 
-function parseComponents(components: BlendRouterOutputs['get']['Components']): Array<TBlendComponent> {
+function extendBlendComponents(components: BlendRouterOutputs['get']['Components']): Array<TBlendComponentSummary> {
 	return components.map((component) => {
 		const { baseCode, sizeCode, variantCode } = component.Product;
 		const productCode = buildProductCode(baseCode, sizeCode, variantCode);
@@ -48,8 +48,8 @@ function parseComponents(components: BlendRouterOutputs['get']['Components']): A
 			productCode,
 			productDescription: component.Product.description,
 			sourceTankName: component.SourceTank.name,
-			targetQuantity: component.targetQuantity.toNumber(),
-			actualQuantity: component.actualQuantity !== null ? Number(component.actualQuantity) : null,
+			targetQuantity: component.targetQuantity,
+			actualQuantity: component.actualQuantity,
 			note: component.note
 		};
 	});
@@ -156,7 +156,7 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 						note={blend.note ?? undefined}
 					/>
 				</div>
-				<DataTable columns={getColumns({ inEditMode })} data={parseComponents(blend.Components)} />
+				<DataTable columns={getColumns({ inEditMode })} data={extendBlendComponents(blend.Components)} />
 			</div>
 		</>
 	);
