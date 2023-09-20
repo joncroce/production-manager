@@ -245,6 +245,28 @@ export const tankRouter = createTRPCRouter({
 					updatedAt: now
 				}
 			});
+		}),
+	updateTankCapacity: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			name: z.string(),
+			capacity: z.coerce.number().min(0)
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.tank.update({
+				where: {
+					name_factoryId: {
+						factoryId: input.factoryId,
+						name: input.name
+					}
+				},
+				data: {
+					capacity: input.capacity,
+					updatedAt: now
+				}
+			});
 		})
 });
 
