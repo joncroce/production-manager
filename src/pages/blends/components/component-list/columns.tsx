@@ -13,6 +13,7 @@ import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 import type { Prisma } from '@prisma/client';
 import { sortDecimal } from '@/utils/tableSorts';
+import { z } from 'zod';
 
 export type TBlendComponentSummary =
 	Pick<
@@ -110,6 +111,7 @@ function EditableActualQuantityCell({
 }): React.JSX.Element {
 	const initialValue = actualQuantity?.toFixed(2) ?? '';
 	const [value, setValue] = useState(initialValue);
+	const [inputValid, setInputValid] = useState(true);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const mutation = api.blend.updateComponentActualQuantity.useMutation({
 		onSuccess(data) {
@@ -150,12 +152,26 @@ function EditableActualQuantityCell({
 			const value = inputRef.current.value;
 			if (value !== initialValue) {
 				const updatedValue = !value.length ? undefined : parseFloat(value);
+				const schema = z.number().min(0).optional();
+				const parsed = schema.safeParse(updatedValue);
 
-				mutation.mutate({
-					blendId,
-					componentId,
-					actualQuantity: updatedValue
-				});
+				if (parsed.success) {
+					setInputValid(true);
+					mutation.mutate({
+						blendId,
+						componentId,
+						actualQuantity: updatedValue
+					});
+				} else {
+					setInputValid(false);
+					const error = parsed.error;
+					console.error(error);
+					toast({
+						title: 'You attempted to set an invalid quantity!',
+						description: error.issues.map((issue) => issue.message).join('\n')
+					});
+					inputRef.current.focus();
+				}
 			} else {
 				console.log('Value was unchanged.');
 			}
@@ -169,13 +185,23 @@ function EditableActualQuantityCell({
 			} else if (event.key === 'Escape') {
 				inputRef.current.value = initialValue;
 				setValue(initialValue);
+				setInputValid(true);
 				inputRef.current.blur();
 			}
 		}
 	};
 
 	return (
-		<Input ref={inputRef} size={10} value={value} onChange={(e) => setValue(e.target.value)} onBlur={handleBlur} onKeyDownCapture={handleKeyDown} />
+		<Input
+			className="data-[valid=false]:border-red-500 data-[valid=false]:bg-red-100"
+			ref={inputRef}
+			size={10}
+			value={value}
+			onChange={(e) => setValue(e.target.value)}
+			onBlur={handleBlur}
+			onKeyDownCapture={handleKeyDown}
+			data-valid={inputValid}
+		/>
 	);
 }
 

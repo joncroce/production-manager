@@ -321,7 +321,7 @@ export const blendRouter = createTRPCRouter({
 		.input(z.object({
 			blendId: z.string(),
 			componentId: z.string(),
-			actualQuantity: z.number().optional()
+			actualQuantity: z.number().min(0).optional()
 		}))
 		.mutation(async ({ ctx, input }) => {
 			const now = new Date();
