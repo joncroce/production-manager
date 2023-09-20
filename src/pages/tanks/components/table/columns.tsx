@@ -1,10 +1,14 @@
 "use client";
 
-import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import React from 'react';
-import { type TankRouterOutputs } from '@/server/api/routers/tank';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { Button } from '@/components/ui/button';
+import { ArrowUpDown } from 'lucide-react';
+import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
+import type { TankRouterOutputs } from '@/server/api/routers/tank';
+
+dayjs.extend(relativeTime);
 
 type TTankSummary = TankRouterOutputs['getAll'][number];
 
@@ -49,4 +53,11 @@ export const columns: ColumnDef<TTankSummary>[] = [
 			return <span>{isBlendTank ? 'Yes' : 'No'}</span>;
 		}
 	},
+	{
+		accessorKey: 'updatedAt',
+		header: (ctx) => sortableHeader(ctx, 'Updated'),
+		cell({ getValue }) {
+			return dayjs().to(getValue<Date>());
+		},
+	}
 ];
