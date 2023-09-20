@@ -6,14 +6,13 @@ import { api } from '@/utils/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertDialog, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
+import { sortDecimal } from '@/utils/tableSorts';
+import { z } from 'zod';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 import type { Prisma } from '@prisma/client';
-import { sortDecimal } from '@/utils/tableSorts';
-import { z } from 'zod';
 
 export type TBlendComponentSummary =
 	Pick<
@@ -225,7 +224,7 @@ function NoteCell({
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
 	const [text, setText] = useState(note ?? '');
-	const [showAlert, setShowAlert] = useState(false);
+	const [showWarning, setShowWarning] = useState(false);
 
 	const mutation = api.blend.updateComponentNote.useMutation({
 		onSuccess(data) {
@@ -272,7 +271,7 @@ function NoteCell({
 		if (open) {
 			setOpen(open);
 		} else if (editing && (note ?? '') !== text) {
-			setShowAlert(true);
+			setShowWarning(true);
 		} else {
 			setText(note ?? '');
 			setEditing(!note?.length);
@@ -302,27 +301,30 @@ function NoteCell({
 					</div>
 				</DialogHeader>
 
-				{showAlert
-					? <AlertDialog>
-						<AlertDialogHeader>
-							<AlertDialogTitle className="flex justify-start items-stretch space-x-2"><AlertOctagonIcon className="stroke-white text-red-500" /><span className="font-semibold">Note has unsaved changes!</span></AlertDialogTitle>
-							<AlertDialogDescription>
-								Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter>
-							<Button variant='outline' onClick={() => setShowAlert(false)}>Cancel</Button>
+				{showWarning
+					? <>
+						<div className="flex justify-start items-stretch space-x-2">
+							<AlertOctagonIcon className="stroke-white text-red-500" />
+							<span className="font-semibold">Note has unsaved changes!</span>
+						</div>
+						<p>
+							Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
+						</p>
+						<DialogFooter>
+							<Button variant='outline' onClick={() => setShowWarning(false)}>Cancel</Button>
 							<Button
 								variant='destructive'
 								onClick={() => {
-									setShowAlert(false);
+									setShowWarning(false);
 									setOpen(false);
 									setEditing(!note?.length);
 									setText(note ?? '');
 								}}
-							>Confirm</Button>
-						</AlertDialogFooter>
-					</AlertDialog>
+							>
+								Confirm
+							</Button>
+						</DialogFooter>
+					</>
 					: editing
 						? <>
 							<Textarea placeholder="Type your note here..." value={text} onChange={(e) => setText(e.target.value)} />

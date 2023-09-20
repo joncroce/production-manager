@@ -7,7 +7,7 @@ import Layout from '@/components/Layout';
 import Timestamp from '@/components/Timestamp';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import BlendStatusSelector from '../components/blend-status-selector';
@@ -19,13 +19,6 @@ import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { buildProductCode } from '@/utils/product';
 import {
-	AlertDialog,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle
-} from '@/components/ui/alert-dialog'; import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -274,7 +267,6 @@ function BlendTank({
 						</TooltipProvider>
 						: <span className="text-xl">{currentBlendTankName ?? '(No Tank)'}</span>
 				}
-
 			</div>
 			{
 				currentBlendTankName
@@ -414,7 +406,7 @@ function BlendNote({
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
 	const [text, setText] = useState(note ?? '');
-	const [showAlert, setShowAlert] = useState(false);
+	const [showWarning, setShowWarning] = useState(false);
 
 	const mutation = api.blend.updateNote.useMutation({
 		onSuccess(data) {
@@ -460,7 +452,7 @@ function BlendNote({
 		if (open) {
 			setOpen(open);
 		} else if (editing && (note ?? '') !== text) {
-			setShowAlert(true);
+			setShowWarning(true);
 		} else {
 			setText(note ?? '');
 			setEditing(!note?.length);
@@ -490,31 +482,30 @@ function BlendNote({
 					</div>
 				</DialogHeader>
 
-				{showAlert
-					? <AlertDialog>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle className="flex justify-start items-stretch space-x-2"><AlertOctagonIcon className="stroke-white text-red-500" /><span className="font-semibold">Note has unsaved changes!</span></AlertDialogTitle>
-								<AlertDialogDescription>
-									Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<Button variant='outline' onClick={() => setShowAlert(false)}>Cancel</Button>
-								<Button
-									variant='destructive'
-									onClick={() => {
-										setShowAlert(false);
-										setOpen(false);
-										setEditing(!note?.length);
-										setText(note ?? '');
-									}}
-								>
-									Confirm
-								</Button>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+				{showWarning
+					? <>
+						<div className="flex justify-start items-stretch space-x-2">
+							<AlertOctagonIcon className="stroke-white text-red-500" />
+							<span className="font-semibold">Note has unsaved changes!</span>
+						</div>
+						<p>
+							Press <span className="font-semibold">Cancel</span> to return to editing this note, or <span className="font-semibold">Confirm</span> to discard changes.
+						</p>
+						<DialogFooter>
+							<Button variant='outline' onClick={() => setShowWarning(false)}>Cancel</Button>
+							<Button
+								variant='destructive'
+								onClick={() => {
+									setShowWarning(false);
+									setOpen(false);
+									setEditing(!note?.length);
+									setText(note ?? '');
+								}}
+							>
+								Confirm
+							</Button>
+						</DialogFooter>
+					</>
 					: editing
 						? <>
 							<Textarea placeholder="Type your note here..." value={text} onChange={(e) => setText(e.target.value)} />
