@@ -194,6 +194,36 @@ export const tankRouter = createTRPCRouter({
 
 			return tanks;
 		}),
+	updateTankName: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			currentName: z.string(),
+			newName: z.string()
+		}))
+		.mutation(({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.tank.update({
+				where: {
+					name_factoryId: {
+						factoryId: input.factoryId,
+						name: input.currentName
+					}
+				},
+				data: {
+					name: input.newName,
+					updatedAt: now
+				}
+			}).catch((e) => {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2002') {
+						throw new TRPCClientError(`Tank with name ${input.newName} already exists in your factory.`);
+					}
+				}
+
+				throw e;
+			});
+		})
 });
 
 export type TankRouter = typeof tankRouter;
