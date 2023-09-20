@@ -31,20 +31,22 @@ export default function DestinationTankSelector(
 	const updateDestinationTank = api.blend.updateDestinationTank.useMutation({
 		onSuccess(data) {
 			toast({
-				title: 'Updated Destination Tank',
+				title: `${data.destinationTankName ? 'Updated' : 'Removed'} Destination Tank`,
 				description: data.destinationTankName
 			});
 
 			utils.blend.get
 				.invalidate({ id: blendId })
 				.then(() => { console.log('Invalidated blend query'); })
-				.catch((error) => { console.error(error); });
+				.catch((error) => { console.error(error); })
+				.finally(() => { closeDialog(); });
 		},
 		onError(error) {
 			toast({
 				title: 'Error Updating Destination Tank',
 				description: error.message
 			});
+
 			console.error(error);
 		}
 	});
@@ -57,16 +59,15 @@ export default function DestinationTankSelector(
 		defaultValues: {
 			factoryId,
 			id: blendId,
-			destinationTankName: currentDestinationTankName ?? undefined
+			destinationTankName: currentDestinationTankName ?? ''
 		}
 	});
 
 	function onSubmit(data: z.infer<typeof schema>): void {
-		if (data.destinationTankName !== currentDestinationTankName) {
-			updateDestinationTank.mutate({
-				...data,
-				destinationTankName: data.destinationTankName?.length ? data.destinationTankName : undefined
-			});
+		const current = currentDestinationTankName ?? undefined;
+		const updated = data.destinationTankName?.length ? data.destinationTankName : undefined;
+		if (updated !== current) {
+			updateDestinationTank.mutate(data);
 		} else {
 			closeDialog();
 		}

@@ -18,7 +18,7 @@ export default function BlendTankSelector(
 	{ factoryId, blendId, currentBlendTankName, closeDialog }: {
 		factoryId: string;
 		blendId: string;
-		currentBlendTankName: string | null;
+		currentBlendTankName?: string | null;
 		closeDialog: () => void;
 	}): React.JSX.Element {
 	const utils = api.useContext();
@@ -26,23 +26,22 @@ export default function BlendTankSelector(
 	const updateBlendTank = api.blend.updateBlendTank.useMutation({
 		onSuccess(data) {
 			toast({
-				title: 'Updated Blend Tank',
+				title: `${data.blendTankName ? 'Updated' : 'Removed'} Blend Tank`,
 				description: data.blendTankName
 			});
 
-			utils.blend.get.invalidate({ id: blendId }).then(() => {
-				console.log('Invalidated blend query.');
-			}).catch((error) => {
-				console.error(error);
-			});
-
-			closeDialog();
+			utils.blend.get
+				.invalidate({ id: blendId })
+				.then(() => { console.log('Invalidated blend query.'); })
+				.catch((error) => { console.error(error); })
+				.finally(() => { closeDialog(); });
 		},
 		onError(error) {
 			toast({
 				title: 'Error Updating Blend Tank',
 				description: error.message
 			});
+
 			console.error(error);
 		}
 	});
@@ -55,16 +54,15 @@ export default function BlendTankSelector(
 		defaultValues: {
 			factoryId,
 			id: blendId,
-			blendTankName: currentBlendTankName ?? undefined
+			blendTankName: currentBlendTankName ?? ''
 		}
 	});
 
 	function onSubmit(data: z.infer<typeof schema>): void {
-		if (data.blendTankName !== currentBlendTankName) {
-			updateBlendTank.mutate({
-				...data,
-				blendTankName: data.blendTankName?.length ? data.blendTankName : undefined
-			});
+		const current = currentBlendTankName ?? undefined;
+		const updated = data.blendTankName?.length ? data.blendTankName : undefined;
+		if (updated !== current) {
+			updateBlendTank.mutate(data);
 		} else {
 			closeDialog();
 		}
