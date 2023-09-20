@@ -94,6 +94,13 @@ const ViewTankPage: NextPageWithLayout<{ user: Session['user']; name: string; }>
 					tankQuantity={tank.quantity}
 					currentTankCapacity={tank.capacity}
 				/>
+				<TankHeel
+					inEditMode={inEditMode}
+					factoryId={factoryId}
+					tankName={tank.name}
+					tankCapacity={tank.capacity}
+					currentTankHeel={tank.heel}
+				/>
 			</div>
 		</>
 	);
@@ -533,7 +540,7 @@ function TankCapacity({
 		}
 	});
 
-	function saveQuantity() {
+	function saveCapacity() {
 		if (inputRef.current) {
 			const inputValue = inputRef.current.value;
 
@@ -571,7 +578,7 @@ function TankCapacity({
 	const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> | undefined = (event) => {
 		if (inputRef.current) {
 			if (event.key === 'Enter') {
-				saveQuantity();
+				saveCapacity();
 			} else if (event.key === 'Escape') {
 				inputRef.current.value = initialValue;
 				setValue(initialValue);
@@ -653,7 +660,194 @@ function TankCapacity({
 						/>
 						<DialogFooter className="flex justify-between">
 							<Button variant={parseFloat(value).toFixed(2) !== initialValue ? 'destructive' : 'outline'} onClick={() => setOpen(false)}>Cancel</Button>
-							<Button variant='default' onClick={saveQuantity}>Save</Button>
+							<Button variant='default' onClick={saveCapacity}>Save</Button>
+						</DialogFooter>
+					</>
+				}
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function TankHeel({
+	inEditMode,
+	factoryId,
+	tankName,
+	tankCapacity,
+	currentTankHeel
+}: {
+	inEditMode: boolean;
+	factoryId: string;
+	tankName: string;
+	tankCapacity: Prisma.Decimal;
+	currentTankHeel: Prisma.Decimal;
+}): React.JSX.Element {
+	const initialValue = currentTankHeel.toFixed(2);
+	const [open, setOpen] = useState(false);
+	const [value, setValue] = useState(initialValue);
+	const [inputValid, setInputValid] = useState(true);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [showWarning, setShowWarning] = useState(false);
+
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const utils = api.useContext();
+	const { toast } = useToast();
+
+	const mutation = api.tank.updateTankHeel.useMutation({
+		onSuccess(data) {
+			const updatedValue = data.heel.toFixed(2);
+			setValue(updatedValue);
+
+			toast({
+				title: 'Updated Tank Heel',
+				description: <span className="font-semibold">{updatedValue}</span>
+			});
+
+			utils.tank.getTankByName.invalidate({ factoryId, name: tankName })
+				.then(() => {
+					console.log('Invalidated tank query.');
+				}).catch((error) => {
+					console.error(error);
+				});
+
+			setInputValid(true);
+			setErrorMessage(null);
+			setOpen(false);
+		},
+		onError(error) {
+			toast({
+				title: 'You attempted to set an invalid tank heel!',
+				description: error.message
+			});
+			console.error(error);
+
+			setInputValid(false);
+			setErrorMessage(error.message);
+		}
+	});
+
+	function saveHeel() {
+		if (inputRef.current) {
+			const inputValue = inputRef.current.value;
+
+			if (inputValue !== initialValue) {
+				const updatedValue = parseFloat(inputValue);
+				const schema = z.number().min(0).max(tankCapacity.toNumber());
+				const parsed = schema.safeParse(updatedValue);
+
+				if (parsed.success) {
+					mutation.mutate({
+						factoryId,
+						name: tankName,
+						heel: updatedValue
+					});
+				} else {
+					setInputValid(false);
+					const error = parsed.error;
+					const message = error.issues.map((issue) => issue.message).join('\n');
+					setErrorMessage(message);
+					toast({
+						title: 'You attempted to set an invalid tank heel!',
+						description: message
+					});
+					inputRef.current.focus();
+				}
+			} else {
+				console.log('Tank heel was unchanged.');
+				setInputValid(true);
+				setErrorMessage(null);
+				setOpen(false);
+			}
+		}
+	}
+
+	const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> | undefined = (event) => {
+		if (inputRef.current) {
+			if (event.key === 'Enter') {
+				saveHeel();
+			} else if (event.key === 'Escape') {
+				inputRef.current.value = initialValue;
+				setValue(initialValue);
+				setInputValid(true);
+				setErrorMessage(null);
+			}
+		}
+	};
+
+	function onOpenChange(open: boolean) {
+		if (open) {
+			setOpen(open);
+		} else if (parseFloat(value).toFixed(2) !== initialValue) {
+			setShowWarning(true);
+		} else {
+			setValue(initialValue);
+			setOpen(false);
+		}
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<div className="flex justify-center items-end space-x-1">
+				<span className="text-2xl font-semibold">Heel: </span>
+				<span className="text-2xl font-bold">{initialValue}</span>
+				{
+					inEditMode
+						? <Button variant='ghost' onClick={() => setOpen(true)}>
+							<Edit2Icon />
+						</Button>
+						: null
+				}
+			</div>
+
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Change Tank Heel</DialogTitle>
+				</DialogHeader>
+
+				{showWarning
+					? <>
+						<div className="flex justify-start items-stretch space-x-2">
+							<AlertOctagonIcon className="stroke-white text-red-500" />
+							<span className="font-semibold">Tank Heel has unsaved changes!</span>
+						</div>
+						<p>
+							Press <span className="font-semibold">Cancel</span> to return to editing the Tank Heel, or <span className="font-semibold">Confirm</span> to discard changes.
+						</p>
+						<DialogFooter>
+							<Button variant='outline' onClick={() => setShowWarning(false)}>Cancel</Button>
+							<Button
+								variant='destructive'
+								onClick={() => {
+									setShowWarning(false);
+									setOpen(false);
+									setValue(initialValue);
+									setInputValid(true);
+								}}
+							>
+								Confirm
+							</Button>
+						</DialogFooter>
+					</>
+					: <>
+						{
+							errorMessage
+								? <span className="text-sm text-red-400">{errorMessage}</span>
+								: null
+						}
+						<Input
+							className="data-[valid=false]:border-red-500 data-[valid=false]:bg-red-100"
+							ref={inputRef}
+							size={10}
+							placeholder="Enter Tank Heel..."
+							value={value}
+							onChange={(e) => setValue(e.target.value)}
+							onKeyDownCapture={handleKeyDown}
+							data-valid={inputValid}
+						/>
+						<DialogFooter className="flex justify-between">
+							<Button variant={parseFloat(value).toFixed(2) !== initialValue ? 'destructive' : 'outline'} onClick={() => setOpen(false)}>Cancel</Button>
+							<Button variant='default' onClick={saveHeel}>Save</Button>
 						</DialogFooter>
 					</>
 				}
