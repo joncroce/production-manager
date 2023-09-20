@@ -193,7 +193,7 @@ model Blend {
     blendTankName       String?
     destinationTankName String?
     note                String?
-    /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHED, FLAGGED, COMPLETE
+    /// Valid values: CREATED, QUEUED, ASSEMBLING, BLENDING, TESTING, ADJUSTING, PASSED, PUSHING, FLAGGED, COMPLETE
     status              String           @default("CREATED")
     createdAt           DateTime         @default(now())
     updatedAt           DateTime         @default(now())

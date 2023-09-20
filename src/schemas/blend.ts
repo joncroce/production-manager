@@ -4,12 +4,12 @@ export const blendStatusSchema = z.enum(
 	[
 		'CREATED', 'QUEUED', 'ASSEMBLING',
 		'BLENDING', 'TESTING', 'ADJUSTING',
-		'PASSED', 'PUSHED', 'FLAGGED', 'COMPLETE'
+		'PASSED', 'PUSHING', 'FLAGGED', 'COMPLETE'
 	]
 );
 export type TBlendStatus = z.infer<typeof blendStatusSchema>;
 export const ACTIVE_BLEND_STATUSES: Array<z.infer<typeof blendStatusSchema>> = [
-	'ASSEMBLING', 'BLENDING', 'TESTING', 'ADJUSTING', 'PASSED', 'FLAGGED'
+	'ASSEMBLING', 'BLENDING', 'TESTING', 'ADJUSTING', 'PASSED', 'PUSHING', 'FLAGGED'
 ];
 
 export const blendComponentSchema = z.object({
