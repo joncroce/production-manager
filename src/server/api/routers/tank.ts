@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { addTankSchema, updateTankSchema } from '@/schemas/tank';
 import { Prisma, type Tank } from '@prisma/client';
-import type { inferRouterOutputs } from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { TRPCClientError } from '@trpc/client';
 
 export const tankRouter = createTRPCRouter({
@@ -200,7 +200,7 @@ export const tankRouter = createTRPCRouter({
 			currentName: z.string(),
 			newName: z.string()
 		}))
-		.mutation(({ ctx, input }) => {
+		.mutation(async ({ ctx, input }) => {
 			const now = new Date();
 
 			return ctx.prisma.tank.update({
@@ -223,8 +223,31 @@ export const tankRouter = createTRPCRouter({
 
 				throw e;
 			});
+		}),
+	updateTankQuantity: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			name: z.string(),
+			quantity: z.coerce.number().min(0)
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.tank.update({
+				where: {
+					name_factoryId: {
+						factoryId: input.factoryId,
+						name: input.name
+					}
+				},
+				data: {
+					quantity: input.quantity,
+					updatedAt: now
+				}
+			});
 		})
 });
 
 export type TankRouter = typeof tankRouter;
+export type TankRouterInputs = inferRouterInputs<TankRouter>;
 export type TankRouterOutputs = inferRouterOutputs<TankRouter>;
