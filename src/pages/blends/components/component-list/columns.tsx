@@ -115,8 +115,8 @@ function EditableActualQuantityCell({
 	const mutation = api.blend.updateComponentActualQuantity.useMutation({
 		onSuccess(data) {
 			const updatedValue = data.actualQuantity?.toFixed(2) ?? '';
+			setInputValid(true);
 			setValue(updatedValue);
-
 			toast({
 				title: `${data.actualQuantity === null ? 'Removed' : 'Updated'} Component Actual Quantity`,
 				description: (
@@ -140,6 +140,8 @@ function EditableActualQuantityCell({
 				description: error.message
 			});
 			console.error(error);
+			setInputValid(false);
+			inputRef.current?.focus();
 		}
 	});
 
