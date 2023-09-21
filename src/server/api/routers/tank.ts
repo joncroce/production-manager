@@ -31,7 +31,14 @@ export const tankRouter = createTRPCRouter({
 			return ctx.prisma.tank.findFirst({
 				where,
 				include: {
-					Product: true
+					Product: true,
+					BlendComponentsSourced: {
+						include: {
+							Blend: true
+						}
+					},
+					BlendsBlended: true,
+					BlendsDestined: true
 				}
 			});
 		}),

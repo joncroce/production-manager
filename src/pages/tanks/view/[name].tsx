@@ -21,6 +21,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon } from 'lucide-react';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
@@ -33,6 +34,9 @@ import type { Session } from 'next-auth';
 import type { Prisma } from '@prisma/client';
 import { ProductSelector, type TankableProduct } from '../components/product-selector';
 import { buildProductCode } from '@/utils/product';
+import { columns, type TBlendSummary } from '@/pages/blends/components/blend-list/columns';
+import { DataTable } from '@/pages/blends/components/blend-list/data-table';
+import { Separator } from '@/components/ui/separator';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -126,6 +130,13 @@ const ViewTankPage: NextPageWithLayout<{ user: Session['user']; name: string; }>
 					/>
 				</div>
 			</div>
+			<Separator />
+			<TankRelatedBlends
+				isBlendTank={tank.isBlendTank}
+				blendedIn={tank.BlendsBlended}
+				destinedFor={tank.BlendsDestined}
+				sourcedFrom={tank.BlendComponentsSourced.map((component) => component.Blend)}
+			/>
 		</>
 	);
 };
@@ -926,6 +937,39 @@ function TankHeel({
 				}
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function TankRelatedBlends({
+	isBlendTank,
+	blendedIn,
+	destinedFor,
+	sourcedFrom,
+}: {
+	isBlendTank: boolean;
+	blendedIn: Array<TBlendSummary>;
+	destinedFor: Array<TBlendSummary>;
+	sourcedFrom: Array<TBlendSummary>;
+}): React.JSX.Element {
+	return (
+		<div className="p-4 flex flex-col space-y-4">
+			<h3 className="text-2xl font-bold">Related Blends</h3>
+			{isBlendTank
+				? <DataTable columns={columns} data={blendedIn} />
+				: <Tabs defaultValue='destinedFor'>
+					< TabsList>
+						<TabsTrigger value="destinedFor">Destined For</TabsTrigger>
+						<TabsTrigger value="sourcedFrom">Sourced From</TabsTrigger>
+					</TabsList>
+					<TabsContent value="destinedFor">
+						<DataTable columns={columns} data={destinedFor} usePagination={true} />
+					</TabsContent>
+					<TabsContent value="sourcedFrom">
+						<DataTable columns={columns} data={sourcedFrom} usePagination={true} />
+					</TabsContent>
+				</Tabs>
+			}
+		</div>
 	);
 }
 
