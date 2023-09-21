@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { addTankSchema, updateTankSchema } from '@/schemas/tank';
+import { addTankSchema } from '@/schemas/tank';
 import { Prisma, type Tank } from '@prisma/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { TRPCClientError } from '@trpc/client';
@@ -92,24 +92,6 @@ export const tankRouter = createTRPCRouter({
 					baseCode: input.baseCode
 				}
 			});
-		}),
-	updateTank: publicProcedure
-		.input(updateTankSchema)
-		.mutation(async ({ ctx, input }) => {
-			const updatedTank = await ctx.prisma.tank.update({
-				where: {
-					name_factoryId: {
-						name: input.name,
-						factoryId: input.factoryId
-					},
-				},
-				data: {
-					...input,
-					name: input.updatedName,
-				}
-			});
-
-			return updatedTank;
 		}),
 	addTank: publicProcedure
 		.input(addTankSchema)
