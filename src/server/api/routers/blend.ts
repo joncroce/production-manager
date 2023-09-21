@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { addBlendSchema, blendStatusSchema, getBlendsByStatusSchema } from '@/schemas/blend';
-import type { Blend } from '@prisma/client';
+import { type Blend } from '@prisma/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export const blendRouter = createTRPCRouter({
@@ -321,7 +321,9 @@ export const blendRouter = createTRPCRouter({
 		.input(z.object({
 			blendId: z.string(),
 			componentId: z.string(),
-			actualQuantity: z.number().min(0).optional()
+			actualQuantity: z.number().min(0).optional(),
+			quantityAddedToBlend: z.number(),
+			blendTotalActualQuantity: z.number().min(0)
 		}))
 		.mutation(async ({ ctx, input }) => {
 			const now = new Date();
@@ -335,6 +337,15 @@ export const blendRouter = createTRPCRouter({
 					actualQuantity: input.actualQuantity ?? null,
 					Blend: {
 						update: {
+							actualQuantity: input.blendTotalActualQuantity,
+							updatedAt: now
+						}
+					},
+					SourceTank: {
+						update: {
+							quantity: {
+								decrement: input.quantityAddedToBlend
+							},
 							updatedAt: now
 						}
 					}
@@ -343,6 +354,11 @@ export const blendRouter = createTRPCRouter({
 					Product: {
 						select: {
 							description: true
+						}
+					},
+					SourceTank: {
+						select: {
+							name: true
 						}
 					}
 				}

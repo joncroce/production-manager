@@ -12,7 +12,7 @@ import { sortDecimal } from '@/utils/tableSorts';
 import { z } from 'zod';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 export type TBlendComponentSummary =
 	Pick<
@@ -22,6 +22,7 @@ export type TBlendComponentSummary =
 	& {
 		productCode: string;
 		productDescription: string;
+		blendTotalActualQuantity: Prisma.Decimal;
 	};
 
 function sortableHeader(
@@ -68,12 +69,17 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 			accessorKey: 'actualQuantity',
 			header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
 			cell({ row, getValue }) {
-				const { blendId, id: componentId } = row.original;
+				const { blendId, id: componentId, blendTotalActualQuantity } = row.original;
 				const actualQuantity = getValue<TBlendComponentSummary['actualQuantity']>();
 				const formatted = actualQuantity?.toFixed(2) ?? '';
 
 				return inEditMode
-					? <EditableActualQuantityCell actualQuantity={actualQuantity} blendId={blendId} componentId={componentId} />
+					? <EditableActualQuantityCell
+						actualQuantity={actualQuantity}
+						blendId={blendId}
+						componentId={componentId}
+						blendTotalActualQuantity={blendTotalActualQuantity}
+					/>
 					: <span>{formatted}</span>;
 			},
 			sortingFn: sortDecimal
@@ -103,10 +109,12 @@ function EditableActualQuantityCell({
 	actualQuantity,
 	blendId,
 	componentId,
+	blendTotalActualQuantity
 }: {
 	actualQuantity: Prisma.Decimal | null;
 	blendId: string;
 	componentId: string;
+	blendTotalActualQuantity: Prisma.Decimal;
 }): React.JSX.Element {
 	const initialValue = actualQuantity?.toFixed(2) ?? '';
 	const [value, setValue] = useState(initialValue);
@@ -133,6 +141,12 @@ function EditableActualQuantityCell({
 				}).catch((error) => {
 					console.error(error);
 				});
+			utils.tank.getTankByName.invalidate({ factoryId: data.factoryId, name: data.SourceTank.name })
+				.then(() => {
+					console.log('Invalidated tank query.');
+				}).catch((error) => {
+					console.error(error);
+				});
 		},
 		onError(error) {
 			toast({
@@ -152,16 +166,24 @@ function EditableActualQuantityCell({
 		if (inputRef.current) {
 			const value = inputRef.current.value;
 			if (value !== initialValue) {
-				const updatedValue = !value.length ? undefined : parseFloat(value);
+				const updatedActualQuantity = !value.length ? undefined : parseFloat(value);
 				const schema = z.number().min(0).optional();
-				const parsed = schema.safeParse(updatedValue);
+				const parsed = schema.safeParse(updatedActualQuantity);
 
 				if (parsed.success) {
 					setInputValid(true);
+
+					const quantityAddedToBlend = actualQuantity
+						? new Prisma.Decimal(updatedActualQuantity ?? 0).sub(actualQuantity)
+						: new Prisma.Decimal(updatedActualQuantity ?? 0);
+					const updatedBlendTotalActualQuantity = blendTotalActualQuantity.add(quantityAddedToBlend);
+
 					mutation.mutate({
 						blendId,
 						componentId,
-						actualQuantity: updatedValue
+						actualQuantity: updatedActualQuantity,
+						quantityAddedToBlend: quantityAddedToBlend.toNumber(),
+						blendTotalActualQuantity: updatedBlendTotalActualQuantity.toNumber()
 					});
 				} else {
 					setInputValid(false);
