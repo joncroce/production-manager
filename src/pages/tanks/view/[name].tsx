@@ -7,7 +7,20 @@ import Layout from '@/components/Layout';
 import Timestamp from '@/components/Timestamp';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from '@/components/ui/dialog';
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon } from 'lucide-react';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
@@ -18,6 +31,8 @@ import type { GetServerSideProps } from 'next';
 import type { NextPageWithLayout } from '../../_app';
 import type { Session } from 'next-auth';
 import type { Prisma } from '@prisma/client';
+import { ProductSelector, type TankableProduct } from '../components/product-selector';
+import { buildProductCode } from '@/utils/product';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -80,27 +95,36 @@ const ViewTankPage: NextPageWithLayout<{ user: Session['user']; name: string; }>
 			</div>
 
 			<div className="py-6 flex justify-evenly items-stretch">
-				<TankQuantity
+				<TankProduct
 					inEditMode={inEditMode}
 					factoryId={factoryId}
 					tankName={tank.name}
-					tankCapacity={tank.capacity}
-					currentTankQuantity={tank.quantity}
+					currentTankProduct={tank.Product}
 				/>
-				<TankCapacity
-					inEditMode={inEditMode}
-					factoryId={factoryId}
-					tankName={tank.name}
-					tankQuantity={tank.quantity}
-					currentTankCapacity={tank.capacity}
-				/>
-				<TankHeel
-					inEditMode={inEditMode}
-					factoryId={factoryId}
-					tankName={tank.name}
-					tankCapacity={tank.capacity}
-					currentTankHeel={tank.heel}
-				/>
+
+				<div className="flex flex-col justify-start items-end space-y-4">
+					<TankQuantity
+						inEditMode={inEditMode}
+						factoryId={factoryId}
+						tankName={tank.name}
+						tankCapacity={tank.capacity}
+						currentTankQuantity={tank.quantity}
+					/>
+					<TankCapacity
+						inEditMode={inEditMode}
+						factoryId={factoryId}
+						tankName={tank.name}
+						tankQuantity={tank.quantity}
+						currentTankCapacity={tank.capacity}
+					/>
+					<TankHeel
+						inEditMode={inEditMode}
+						factoryId={factoryId}
+						tankName={tank.name}
+						tankCapacity={tank.capacity}
+						currentTankHeel={tank.heel}
+					/>
+				</div>
 			</div>
 		</>
 	);
@@ -284,6 +308,57 @@ function TankName({
 				}
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+function TankProduct({
+	inEditMode,
+	factoryId,
+	tankName,
+	currentTankProduct
+}: {
+	inEditMode: boolean;
+	factoryId: string;
+	tankName: string;
+	currentTankProduct: TankableProduct | null;
+}): React.JSX.Element {
+	const productCode = currentTankProduct
+		? buildProductCode(
+			currentTankProduct.baseCode,
+			currentTankProduct.sizeCode,
+			currentTankProduct.variantCode
+		)
+		: null;
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					<div className="flex justify-between items-stretch space-x-4">
+						<h3 className="text-3xl font-bold">Product</h3>
+						{
+							inEditMode
+								? <ProductSelector
+									factoryId={factoryId}
+									tankName={tankName}
+									currentProduct={currentTankProduct}
+								/>
+								: null
+						}
+					</div>
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{
+					currentTankProduct
+						? <div className="space-y-2">
+							<span className="text-xl font-semibold">Code: <span className="font-mono">{productCode}</span></span>
+							<p className="text-xl">{currentTankProduct.description}</p>
+						</div>
+						: <span>There is no Product assigned to this Tank.</span>
+				}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -704,12 +779,10 @@ function TankHeel({
 				description: <span className="font-semibold">{updatedValue}</span>
 			});
 
-			utils.tank.getTankByName.invalidate({ factoryId, name: tankName })
-				.then(() => {
-					console.log('Invalidated tank query.');
-				}).catch((error) => {
-					console.error(error);
-				});
+			utils.tank.getTankByName
+				.invalidate({ factoryId, name: tankName })
+				.then(() => { console.log('Invalidated tank query.'); })
+				.catch((error) => { console.error(error); });
 
 			setInputValid(true);
 			setErrorMessage(null);

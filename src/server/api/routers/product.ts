@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { addProductSchema, getBlendableProductSchema } from '@/schemas/product';
 import type { Product } from '@prisma/client';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export const productRouter = createTRPCRouter({
 
@@ -89,6 +90,19 @@ export const productRouter = createTRPCRouter({
 						}
 					}
 				}
+			});
+		}),
+	getAllTankableProducts: publicProcedure
+		.input(z.object({
+			factoryId: z.string()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.product.findMany({
+				where: {
+					factoryId: input.factoryId,
+					sizeCode: 1,
+					variantCode: 0
+				},
 			});
 		}),
 	add: publicProcedure
@@ -202,3 +216,5 @@ export const productRouter = createTRPCRouter({
 });
 
 export type ProductRouter = typeof productRouter;
+export type ProductRouterInputs = inferRouterInputs<ProductRouter>;
+export type ProductRouterOutputs = inferRouterOutputs<ProductRouter>;

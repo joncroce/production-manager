@@ -30,6 +30,9 @@ export const tankRouter = createTRPCRouter({
 
 			return ctx.prisma.tank.findFirst({
 				where,
+				include: {
+					Product: true
+				}
 			});
 		}),
 	getTanksByBaseCodes: publicProcedure
@@ -287,6 +290,49 @@ export const tankRouter = createTRPCRouter({
 				data: {
 					heel: input.heel,
 					updatedAt: now
+				}
+			});
+		}),
+	updateTankProduct: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			name: z.string(),
+			productBaseCode: z.number().optional(),
+			makeDefaultTank: z.boolean().optional().default(false)
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			const productData = input.productBaseCode
+				? {
+					Product: {
+						connect: {
+							factoryId_baseCode_sizeCode_variantCode: {
+								factoryId: input.factoryId,
+								baseCode: input.productBaseCode,
+								sizeCode: 1,
+								variantCode: 0
+							}
+						}
+					}
+				}
+				: {
+					baseCode: null
+				};
+
+			return ctx.prisma.tank.update({
+				where: {
+					name_factoryId: {
+						factoryId: input.factoryId,
+						name: input.name
+					}
+				},
+				data: {
+					updatedAt: now,
+					...productData
+				},
+				include: {
+					Product: true
 				}
 			});
 		})
