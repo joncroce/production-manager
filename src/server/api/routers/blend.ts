@@ -317,6 +317,38 @@ export const blendRouter = createTRPCRouter({
 				},
 			});
 		}),
+	updateComponentSourceTank: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			blendId: z.string(),
+			componentId: z.string(),
+			sourceTankName: z.string()
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const now = new Date();
+
+			return ctx.prisma.blendComponent.update({
+				where: {
+					blendId: input.blendId,
+					id: input.componentId
+				},
+				data: {
+					SourceTank: {
+						connect: {
+							name_factoryId: {
+								factoryId: input.factoryId,
+								name: input.sourceTankName
+							}
+						}
+					},
+					Blend: {
+						update: {
+							updatedAt: now
+						}
+					}
+				}
+			});
+		}),
 	updateComponentActualQuantity: publicProcedure
 		.input(z.object({
 			blendId: z.string(),

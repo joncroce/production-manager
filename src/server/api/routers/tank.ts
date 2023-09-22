@@ -93,6 +93,20 @@ export const tankRouter = createTRPCRouter({
 				}
 			});
 		}),
+	getSourceTanks: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			baseCode: z.coerce.number()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.tank.findMany({
+				where: {
+					factoryId: input.factoryId,
+					baseCode: input.baseCode,
+					isBlendTank: false
+				}
+			});
+		}),
 	addTank: publicProcedure
 		.input(addTankSchema)
 		.mutation(async ({ ctx, input }) => {

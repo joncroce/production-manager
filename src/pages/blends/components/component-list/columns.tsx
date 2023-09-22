@@ -1,27 +1,39 @@
 "use client";
 
 import React, { useRef, useState } from 'react';
-import { AlertOctagonIcon, ArrowUpDown, Edit2Icon, ScrollTextIcon } from 'lucide-react';
+import { AlertOctagonIcon, AlertTriangleIcon, ArrowUpDown, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import { api } from '@/utils/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { sortDecimal } from '@/utils/tableSorts';
 import { z } from 'zod';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 import { Prisma } from '@prisma/client';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from 'next/link';
+import { parseProductCode } from '@/utils/product';
+import SourceTankSelector from '../source-tank-selector';
 
 export type TBlendComponentSummary =
 	Pick<
 		BlendRouterOutputs['get']['Components'][number],
-		'id' | 'blendId' | 'sourceTankName' | 'targetQuantity' | 'actualQuantity' | 'note'
+		'factoryId' | 'id' | 'blendId' | 'sourceTankName' | 'targetQuantity' | 'actualQuantity' | 'note'
 	>
 	& {
 		productCode: string;
 		productDescription: string;
+		hasBlendTank: boolean;
 		blendTotalActualQuantity: Prisma.Decimal;
 	};
 
@@ -52,7 +64,60 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 		},
 		{
 			accessorKey: 'sourceTankName',
-			header: (ctx) => sortableHeader(ctx, 'Tank')
+			header: (ctx) => sortableHeader(ctx, 'Tank'),
+			cell({ row, getValue }): React.JSX.Element {
+				// eslint-disable-next-line react-hooks/rules-of-hooks
+				const [dialogOpen, setDialogOpen] = useState(false);
+				const sourceTankName = getValue<TBlendComponentSummary['sourceTankName']>();
+				const { factoryId, id, blendId, productCode, actualQuantity } = row.original;
+				const { baseCode } = parseProductCode(productCode);
+
+				return inEditMode ? (
+					<DropdownMenu modal={false}>
+						<DropdownMenuTrigger asChild>
+							<Button variant='outline'>{sourceTankName}</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel>Source Tank</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem>
+								<Link href={`/tanks/view/${sourceTankName}`}>Go to Tank Details</Link>
+							</DropdownMenuItem>
+							<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+								<DialogTrigger>
+									<DropdownMenuItem onSelect={(e) => e.preventDefault()}>Change Tank...</DropdownMenuItem>
+								</DialogTrigger>
+								<DialogContent>
+									<DialogHeader>
+										<DialogTitle>Change Source Tank</DialogTitle>
+										<DialogDescription>
+											{
+												actualQuantity && actualQuantity.greaterThan(0)
+													? <div className="mt-3 flex flex-col justify-start space-y-2">
+														<span className="flex justify-start items-center space-x-1 text-lg">
+															<AlertTriangleIcon className="w-6 h-6 stroke-white fill-red-500" />
+															<span className="font-semibold text-gray-900">Warning</span>
+														</span>
+														<span>Product has already been taken from the current source tank. Are you sure you want to change it?</span>
+													</div>
+													: <span>Choose a new source tank for Product Code <span className="font-mono">{productCode}</span>.</span>
+											}
+										</DialogDescription>
+									</DialogHeader>
+									<SourceTankSelector
+										factoryId={factoryId}
+										componentId={id}
+										blendId={blendId}
+										baseCode={baseCode}
+										currentSourceTankName={sourceTankName}
+										closeDialog={() => setDialogOpen(false)}
+									/>
+								</DialogContent>
+							</Dialog>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : <span>{sourceTankName}</span>;
+			}
 		},
 		{
 			accessorKey: 'targetQuantity',
@@ -69,11 +134,11 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 			accessorKey: 'actualQuantity',
 			header: (ctx) => sortableHeader(ctx, 'Qty (Actual)'),
 			cell({ row, getValue }) {
-				const { blendId, id: componentId, blendTotalActualQuantity } = row.original;
+				const { blendId, id: componentId, hasBlendTank, blendTotalActualQuantity } = row.original;
 				const actualQuantity = getValue<TBlendComponentSummary['actualQuantity']>();
 				const formatted = actualQuantity?.toFixed(2) ?? '';
 
-				return inEditMode
+				return inEditMode && hasBlendTank
 					? <EditableActualQuantityCell
 						actualQuantity={actualQuantity}
 						blendId={blendId}

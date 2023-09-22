@@ -33,6 +33,7 @@ import { Prisma } from '@prisma/client';
 
 function extendBlendComponents(
 	components: BlendRouterOutputs['get']['Components'],
+	hasBlendTank: boolean,
 	blendTotalActualQuantity: Prisma.Decimal
 ): Array<TBlendComponentSummary> {
 	return components.map((component) => {
@@ -40,6 +41,7 @@ function extendBlendComponents(
 		const productCode = buildProductCode(baseCode, sizeCode, variantCode);
 
 		return {
+			factoryId: component.factoryId,
 			id: component.id,
 			blendId: component.blendId,
 			productCode,
@@ -48,6 +50,7 @@ function extendBlendComponents(
 			targetQuantity: component.targetQuantity,
 			actualQuantity: component.actualQuantity,
 			note: component.note,
+			hasBlendTank,
 			blendTotalActualQuantity
 		};
 	});
@@ -126,18 +129,19 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 					blendId={blend.id}
 					currentBlendTankName={blend.blendTankName}
 					blendTankQuantity={totalActualQuantity}
-					blendTankCapacity={blend.BlendTank ? blend.BlendTank.capacity.toNumber() : undefined}
-					blendTargetQuantity={blend.targetQuantity.toNumber()}
+					blendTankCapacity={blend.BlendTank?.capacity}
+					blendTargetQuantity={blend.targetQuantity}
+					blendStatus={blend.status as TBlendStatus}
 				/>
-				<Product {...blend.Product} targetQuantity={blend.targetQuantity.toNumber()} />
+				<Product {...blend.Product} targetQuantity={blend.targetQuantity} />
 				<DestinationTank
 					inEditMode={inEditMode}
 					factoryId={factoryId}
 					blendId={blend.id}
 					baseCode={blend.baseCode}
 					currentDestinationTankName={blend.destinationTankName}
-					destinationTankQuantity={blend.DestinationTank ? blend.DestinationTank.quantity.toNumber() : undefined}
-					destinationTankCapacity={blend.DestinationTank ? blend.DestinationTank.capacity.toNumber() : undefined}
+					destinationTankQuantity={blend.DestinationTank?.quantity}
+					destinationTankCapacity={blend.DestinationTank?.capacity}
 					totalActualQuantity={totalActualQuantity}
 				/>
 			</div>
@@ -150,11 +154,14 @@ const ViewBlendPage: NextPageWithLayout<{ user: Session['user']; id: string; }> 
 						blendId={blend.id}
 						productCode={productCode}
 						productDescription={blend.Product.description}
-						targetQuantity={blend.targetQuantity.toNumber()}
+						targetQuantity={blend.targetQuantity}
 						note={blend.note ?? undefined}
 					/>
 				</div>
-				<DataTable columns={getColumns({ inEditMode })} data={extendBlendComponents(blend.Components, totalActualQuantity)} />
+				<DataTable
+					columns={getColumns({ inEditMode })}
+					data={extendBlendComponents(blend.Components, Boolean(blend.BlendTank), totalActualQuantity)}
+				/>
 			</div>
 		</>
 	);
@@ -213,21 +220,25 @@ function BlendTank({
 	currentBlendTankName,
 	blendTankQuantity,
 	blendTankCapacity,
-	blendTargetQuantity
+	blendTargetQuantity,
+	blendStatus
 }: {
 	inEditMode: boolean;
 	factoryId: string;
 	blendId: string;
 	currentBlendTankName: string | null;
 	blendTankQuantity: Prisma.Decimal;
-	blendTankCapacity?: number;
-	blendTargetQuantity: number;
+	blendTankCapacity?: Prisma.Decimal;
+	blendTargetQuantity: Prisma.Decimal;
+	blendStatus: TBlendStatus;
 }): React.JSX.Element {
 	const [open, setOpen] = useState(false);
 
-	const warning = blendTankCapacity && blendTankCapacity < blendTargetQuantity
-		? 'Blend Tank capacity is lower than the blend\'s target quantity!'
-		: null;
+	const warning = !currentBlendTankName && !['CREATED', 'QUEUED'].includes(blendStatus)
+		? 'Must set a Blend Tank before assembling the blend!'
+		: blendTankCapacity && blendTankCapacity < blendTargetQuantity
+			? 'Blend Tank capacity is lower than the blend\'s target quantity!'
+			: null;
 
 	return (
 		<div className="p-4 flex flex-col justify-between">
@@ -277,7 +288,7 @@ function BlendTank({
 				currentBlendTankName
 					? <div className="text-2xl flex flex-col justify-end items-center">
 						<h3 className="font-semibold">Blend Tank Qty.</h3>
-						<span className="font-mono">{blendTankQuantity.toFixed(0)}/{blendTankCapacity}</span>
+						<span className="font-mono">{blendTankQuantity.toFixed(0)}/{blendTankCapacity?.toFixed(0)}</span>
 					</div>
 					: null
 			}
@@ -296,7 +307,7 @@ function Product({
 	sizeCode: number;
 	variantCode: number;
 	description: string;
-	targetQuantity: number;
+	targetQuantity: Prisma.Decimal;
 }): React.JSX.Element {
 	const productCode = buildProductCode(baseCode, sizeCode, variantCode);
 	return (
@@ -309,7 +320,7 @@ function Product({
 
 			<div className="text-2xl flex flex-col items-center space-y-1">
 				<h3 className="font-semibold">Target Quantity</h3>
-				<span className="font-mono">{targetQuantity}</span>
+				<span className="font-mono">{targetQuantity.toFixed(0)}</span>
 			</div>
 		</div>
 	);
@@ -330,15 +341,15 @@ function DestinationTank({
 	blendId: string;
 	baseCode: number;
 	currentDestinationTankName: string | null;
-	destinationTankQuantity?: number;
-	destinationTankCapacity?: number;
+	destinationTankQuantity?: Prisma.Decimal;
+	destinationTankCapacity?: Prisma.Decimal;
 	totalActualQuantity: Prisma.Decimal;
 }): React.JSX.Element {
 	const [open, setOpen] = useState(false);
 
 	const warning = destinationTankCapacity !== undefined &&
 		destinationTankQuantity !== undefined &&
-		totalActualQuantity.lessThan(destinationTankCapacity - destinationTankQuantity)
+		totalActualQuantity.lessThan(destinationTankCapacity.sub(destinationTankQuantity))
 		? 'Destination Tank remaining capacity is lower than the blend\'s actual quantity!'
 		: null;
 
@@ -382,10 +393,10 @@ function DestinationTank({
 				}
 			</div>
 			{
-				destinationTankQuantity !== undefined
+				destinationTankQuantity && destinationTankCapacity
 					? <div className="text-2xl flex flex-col justify-end items-center">
 						<h3 className="font-semibold">Destination Tank Qty.</h3>
-						<span className="font-mono">{destinationTankQuantity}/{destinationTankCapacity}</span>
+						<span className="font-mono">{destinationTankQuantity.toFixed(0)}/{destinationTankCapacity?.toFixed(0)}</span>
 					</div>
 					: null
 			}
@@ -406,7 +417,7 @@ function BlendNote({
 	blendId: string;
 	productCode: string;
 	productDescription: string;
-	targetQuantity: number;
+	targetQuantity: Prisma.Decimal;
 }): React.JSX.Element | null {
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState(!note?.length);
