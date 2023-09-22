@@ -7,7 +7,7 @@ import Layout from '@/components/Layout';
 import Timestamp from '@/components/Timestamp';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import BlendStatusSelector from '../components/blend-status-selector';
@@ -30,6 +30,8 @@ import type { NextPageWithLayout } from '../../_app';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 import type { TBlendStatus } from '@/schemas/blend';
 import { Prisma } from '@prisma/client';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 function extendBlendComponents(
 	components: BlendRouterOutputs['get']['Components'],
@@ -39,6 +41,12 @@ function extendBlendComponents(
 	return components.map((component) => {
 		const { baseCode, sizeCode, variantCode } = component.Product;
 		const productCode = buildProductCode(baseCode, sizeCode, variantCode);
+
+		const sourceTankAvailableQuantity =
+			component.SourceTank.quantity.greaterThan(component.SourceTank.heel)
+				? component.SourceTank.quantity.sub(component.SourceTank.heel)
+				: new Prisma.Decimal(0);
+
 
 		return {
 			factoryId: component.factoryId,
@@ -51,6 +59,7 @@ function extendBlendComponents(
 			actualQuantity: component.actualQuantity,
 			note: component.note,
 			hasBlendTank,
+			sourceTankAvailableQuantity,
 			blendTotalActualQuantity
 		};
 	});
@@ -232,57 +241,81 @@ function BlendTank({
 	blendTargetQuantity: Prisma.Decimal;
 	blendStatus: TBlendStatus;
 }): React.JSX.Element {
-	const [open, setOpen] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
 
 	const warning = !currentBlendTankName && !['CREATED', 'QUEUED'].includes(blendStatus)
 		? 'Must set a Blend Tank before assembling the blend!'
-		: blendTankCapacity && blendTankCapacity < blendTargetQuantity
+		: blendTankCapacity && blendTankCapacity.lessThan(blendTargetQuantity)
 			? 'Blend Tank capacity is lower than the blend\'s target quantity!'
 			: null;
 
 	return (
-		<div className="p-4 flex flex-col justify-between">
-			<div className="flex flex-col items-center space-y-1">
-				<div className="flex justify-start items-stretch space-x-2">
-					<h3 className="text-2xl font-semibold">Blend Tank</h3>
-					{
-						inEditMode
-							? <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
-								<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
-									<Edit2Icon />
+		<div className="p-4 flex flex-col justify-between items-center">
+			<div className="flex flex-col items-center space-y-3">
+				<h3 className="text-2xl font-semibold">Blend Tank</h3>
+				<div className="flex justify-center items-center space-x-1">
+					{inEditMode
+						? <DropdownMenu modal={false}>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant='outline'
+									className="data-[has-warning=true]:border-red-500 data-[has-warning=true]:bg-red-100"
+									data-has-warning={Boolean(warning)}
+								>
+									{currentBlendTankName ?? '(None)'}
 								</Button>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Select Blend Tank</DialogTitle>
-									</DialogHeader>
-									<BlendTankSelector
-										factoryId={factoryId}
-										blendId={blendId}
-										currentBlendTankName={currentBlendTankName}
-										closeDialog={() => setOpen(false)}
-									/>
-								</DialogContent>
-							</Dialog>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent>
+								<DropdownMenuLabel>Blend Tank</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem disabled={!currentBlendTankName}>
+									{currentBlendTankName
+										? <Link href={`/tanks/view/${currentBlendTankName}`}>Go to Tank Details</Link>
+										: <span>Go to Tank Details</span>
+									}
+								</DropdownMenuItem>
+								<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+									<DialogTrigger>
+										<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+											{currentBlendTankName ? 'Change' : 'Set'} Tank...
+										</DropdownMenuItem>
+									</DialogTrigger>
+									<DialogContent>
+										<DialogHeader>
+											<DialogTitle>Select Blend Tank</DialogTitle>
+										</DialogHeader>
+										<BlendTankSelector
+											factoryId={factoryId}
+											blendId={blendId}
+											currentBlendTankName={currentBlendTankName}
+											closeDialog={() => setDialogOpen(false)}
+										/>
+									</DialogContent>
+								</Dialog>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						: <span
+							className="text-xl data-[has-warning=true]:text-red-500"
+							data-has-warning={Boolean(warning)}
+						>
+							{currentBlendTankName ?? '(None)'}
+						</span>
+					}
+					{
+						warning
+							? <TooltipProvider>
+								<Tooltip delayDuration={0}>
+									<TooltipTrigger>
+										<AlertTriangleIcon className="stroke-white text-red-500" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>{warning}</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 							: null
 					}
 				</div>
-				{
-					warning
-						? <TooltipProvider>
-							<Tooltip delayDuration={0}>
-								<TooltipTrigger>
-									<span className="flex justify-start items-stretch space-x-2 text-xl text-red-500">
-										{currentBlendTankName ?? '(No Tank)'}
-										<AlertTriangleIcon className="stroke-white text-red-500" />
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>{warning}</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-						: <span className="text-xl">{currentBlendTankName ?? '(No Tank)'}</span>
-				}
 			</div>
 			{
 				currentBlendTankName
@@ -345,7 +378,7 @@ function DestinationTank({
 	destinationTankCapacity?: Prisma.Decimal;
 	totalActualQuantity: Prisma.Decimal;
 }): React.JSX.Element {
-	const [open, setOpen] = useState(false);
+	const [dialogOpen, setDialogOpen] = useState(false);
 
 	const warning = destinationTankCapacity
 		&& destinationTankQuantity
@@ -354,51 +387,78 @@ function DestinationTank({
 		: null;
 
 	return (
-		<div className="p-4 flex flex-col justify-between">
-			<div className="flex flex-col items-center space-y-1">
-				<div className="flex justify-start items-stretch space-x-2">
-					<span className="text-2xl font-semibold">Destination Tank</span>
-					{
-						inEditMode
-							? <Dialog open={open} onOpenChange={(value) => setOpen(value)}>
-								<Button variant='ghost' type="button" onClick={() => void setOpen(true)}>
-									<Edit2Icon />
+		<div className="p-4 flex flex-col justify-between items-center">
+			<div className="flex flex-col items-center space-y-3">
+				<h3 className="text-2xl font-semibold">Destination Tank</h3>
+				<div className="flex justify-center items-center space-x-1">
+					{inEditMode
+						? <DropdownMenu modal={false}>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant='outline'
+									className="data-[has-warning=true]:border-red-500 data-[has-warning=true]:bg-red-100"
+									data-has-warning={Boolean(warning)}
+								>
+									{currentDestinationTankName ?? '(None)'}
 								</Button>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Select Destination Tank</DialogTitle>
-									</DialogHeader>
-									<DestinationTankSelector factoryId={factoryId} blendId={blendId} baseCode={baseCode} currentDestinationTankName={currentDestinationTankName} closeDialog={() => setOpen(false)} />
-								</DialogContent>
-							</Dialog>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent>
+								<DropdownMenuLabel>Blend Tank</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem disabled={!currentDestinationTankName}>
+									{currentDestinationTankName
+										? <Link href={`/tanks/view/${currentDestinationTankName}`}>Go to Tank Details</Link>
+										: <span>Go to Tank Details</span>
+									}
+								</DropdownMenuItem>
+								<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+									<DialogTrigger>
+										<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+											{currentDestinationTankName ? 'Change' : 'Set'} Tank...
+										</DropdownMenuItem>
+									</DialogTrigger>
+									<DialogContent>
+										<DialogHeader>
+											<DialogTitle>Select Destination Tank</DialogTitle>
+										</DialogHeader>
+										<DestinationTankSelector
+											factoryId={factoryId}
+											blendId={blendId}
+											baseCode={baseCode}
+											currentDestinationTankName={currentDestinationTankName}
+											closeDialog={() => setDialogOpen(false)}
+										/>
+									</DialogContent>
+								</Dialog>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						: <span
+							className="text-xl data-[has-warning=true]:text-red-500"
+							data-has-warning={Boolean(warning)}
+						>{currentDestinationTankName ?? '(None)'}</span>
+					}
+					{
+						warning
+							? <TooltipProvider>
+								<Tooltip delayDuration={0}>
+									<TooltipTrigger>
+										<AlertTriangleIcon className="stroke-white text-red-500" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>{warning}</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 							: null
 					}
 				</div>
-				{
-					warning
-						? <TooltipProvider>
-							<Tooltip delayDuration={0}>
-								<TooltipTrigger>
-									<span className="flex justify-start items-stretch space-x-2 text-xl text-red-500">
-										{currentDestinationTankName ?? '(No Tank)'}
-										<AlertTriangleIcon className="stroke-white text-red-500" />
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>{warning}</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-						: <span className="text-xl">{currentDestinationTankName ?? '(No Tank)'}</span>
-				}
 			</div>
-			{
-				destinationTankQuantity && destinationTankCapacity
-					? <div className="text-2xl flex flex-col justify-end items-center">
-						<h3 className="font-semibold">Destination Tank Qty.</h3>
-						<span className="font-mono">{destinationTankQuantity.toFixed(0)}/{destinationTankCapacity?.toFixed(0)}</span>
-					</div>
-					: null
+			{destinationTankQuantity && destinationTankCapacity
+				? <div className="text-2xl flex flex-col justify-end items-center">
+					<h3 className="font-semibold">Destination Tank Qty.</h3>
+					<span className="font-mono">{destinationTankQuantity.toFixed(0)}/{destinationTankCapacity?.toFixed(0)}</span>
+				</div>
+				: null
 			}
 		</div>
 	);

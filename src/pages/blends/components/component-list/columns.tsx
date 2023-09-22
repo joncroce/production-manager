@@ -1,18 +1,25 @@
 "use client";
 
 import React, { useRef, useState } from 'react';
-import { AlertOctagonIcon, AlertTriangleIcon, ArrowUpDown, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import { api } from '@/utils/api';
+import { sortDecimal } from '@/utils/tableSorts';
+import { parseProductCode } from '@/utils/product';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
+import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { sortDecimal } from '@/utils/tableSorts';
-import { z } from 'zod';
-import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
-import type { BlendRouterOutputs } from '@/server/api/routers/blend';
-import { Prisma } from '@prisma/client';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from '@/components/ui/dialog';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -21,9 +28,16 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from 'next/link';
-import { parseProductCode } from '@/utils/product';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AlertOctagonIcon, AlertTriangleIcon, ArrowUpDown, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import SourceTankSelector from '../source-tank-selector';
+import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
+import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 
 export type TBlendComponentSummary =
 	Pick<
@@ -34,6 +48,7 @@ export type TBlendComponentSummary =
 		productCode: string;
 		productDescription: string;
 		hasBlendTank: boolean;
+		sourceTankAvailableQuantity: Prisma.Decimal;
 		blendTotalActualQuantity: Prisma.Decimal;
 	};
 
@@ -122,11 +137,39 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 		{
 			accessorKey: 'targetQuantity',
 			header: (ctx) => sortableHeader(ctx, 'Qty (Target)'),
-			cell({ getValue }) {
+			cell({ row, getValue }) {
+				const { sourceTankAvailableQuantity } = row.original;
 				const targetQuantity = getValue<TBlendComponentSummary['targetQuantity']>();
 				const formatted = targetQuantity.toFixed(2);
 
-				return <span>{formatted}</span>;
+				const warning = sourceTankAvailableQuantity.lessThan(targetQuantity)
+					? 'Insufficient available quantity in source tank (excluding tank heel).'
+					: null;
+
+				return (
+					<div className="flex items-center space-x-1">
+						<span
+							className="data-[has-warning=true]:text-red-500"
+							data-has-warning={Boolean(warning)}
+						>
+							{formatted}
+						</span>
+						{warning
+							? <TooltipProvider>
+								<Tooltip delayDuration={0}>
+									<TooltipTrigger>
+										<AlertTriangleIcon className="stroke-white text-red-500" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>{warning}</p>
+										<p>Available: {sourceTankAvailableQuantity.toFixed(2)}</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							: null
+						}
+					</div>
+				);
 			},
 			sortingFn: sortDecimal
 		},
