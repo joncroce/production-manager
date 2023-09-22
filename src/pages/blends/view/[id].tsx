@@ -347,9 +347,9 @@ function DestinationTank({
 }): React.JSX.Element {
 	const [open, setOpen] = useState(false);
 
-	const warning = destinationTankCapacity !== undefined &&
-		destinationTankQuantity !== undefined &&
-		totalActualQuantity.lessThan(destinationTankCapacity.sub(destinationTankQuantity))
+	const warning = destinationTankCapacity
+		&& destinationTankQuantity
+		&& totalActualQuantity.greaterThan(destinationTankCapacity.sub(destinationTankQuantity))
 		? 'Destination Tank remaining capacity is lower than the blend\'s actual quantity!'
 		: null;
 
