@@ -13,7 +13,7 @@ export default function MainNav({
 			<Link href="/blends" className="transition-colors hover:text-primary">
 				Blends
 			</Link>
-			<Link href="/product" className="transition-colors hover:text-primary">
+			<Link href="/products" className="transition-colors hover:text-primary">
 				Products
 			</Link>
 			<Link href="/tanks" className="transition-colors hover:text-primary">
