@@ -8,8 +8,8 @@ import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTable } from './table/data-table';
-import { columns, type TProductSummary } from './table/columns';
+import { DataTable } from './components/table/data-table';
+import { columns, type TProductSummary } from './components/table/columns';
 import { buildProductCode } from '@/utils/product';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
@@ -77,7 +77,7 @@ const ProductsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) 
 				<h2 className="text-3xl font-bold">Products</h2>
 
 				<div className="flex items-end space-x-2 text-2xl">
-					<Link href="tanks/add-tank"><Button>Add Product</Button></Link>
+					<Link href="products/add"><Button>Add Product</Button></Link>
 				</div>
 			</div>
 
