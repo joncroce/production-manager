@@ -278,7 +278,7 @@ const AddProductPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }
 				</div>
 				: <Form {...form}>
 					<form
-						className="p-4 w-8/12 flex flex-col space-y-4"
+						className="p-4 flex flex-col space-y-4"
 						onSubmit={(event) => {
 							event.preventDefault();
 							void form.handleSubmit(onSubmit)(event);
