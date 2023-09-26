@@ -56,6 +56,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 					factoryId: props.user?.factoryId ?? ''
 				});
 
+			await helpers.productVariant.getAll
+				.prefetch({
+					factoryId: props.user?.factoryId ?? ''
+				});
+
 			return {
 				props: {
 					...props,
