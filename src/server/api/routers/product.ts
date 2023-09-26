@@ -24,6 +24,42 @@ export const productRouter = createTRPCRouter({
 				}
 			})
 		),
+	getByCode: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			baseCode: z.coerce.number(),
+			sizeCode: z.coerce.number(),
+			variantCode: z.coerce.number()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.product.findUnique({
+				where: {
+					factoryId_baseCode_sizeCode_variantCode: {
+						factoryId: input.factoryId,
+						baseCode: input.baseCode,
+						sizeCode: input.sizeCode,
+						variantCode: input.variantCode
+					}
+				},
+			});
+		}),
+	getManyByCodeParts: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			baseCode: z.coerce.number().optional(),
+			sizeCode: z.coerce.number().optional(),
+			variantCode: z.coerce.number().optional()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.product.findMany({
+				where: {
+					factoryId: input.factoryId,
+					baseCode: input.baseCode,
+					sizeCode: input.sizeCode,
+					variantCode: input.variantCode
+				},
+			});
+		}),
 	getAllBlendableProducts: publicProcedure.query(({ ctx }) => {
 		return ctx.prisma.product.findMany({
 			where: {

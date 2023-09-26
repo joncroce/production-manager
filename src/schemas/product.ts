@@ -7,7 +7,7 @@ export const addProductSchema = z.object({
 	variantCode: z.coerce.number(),
 	description: z.string().optional().default(''),
 	quantityInStock: z.coerce.number().optional().default(0),
-	salesPrice: z.coerce.number().optional().default(99999)
+	salesPrice: z.coerce.number().optional()
 });
 export type TAddProductSchema = z.infer<typeof addProductSchema>;
 

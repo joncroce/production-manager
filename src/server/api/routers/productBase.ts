@@ -8,8 +8,7 @@ export const productBaseRouter = createTRPCRouter({
 	getAll: publicProcedure
 		.input(z.object({ factoryId: z.string() }))
 		.query(({ ctx, input }) => {
-			if (input.factoryId)
-				return ctx.prisma.productBase.findMany({ where: { factoryId: input.factoryId } });
+			return ctx.prisma.productBase.findMany({ where: { factoryId: input.factoryId } });
 		}),
 	add: publicProcedure
 		.input(addProductCodePartSchema)
