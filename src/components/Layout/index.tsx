@@ -18,7 +18,7 @@ const Layout: React.FC<PropsWithChildren> = ({ children }) => {
 				</div>
 			</div>
 
-			<main className="flex-1 space-y-4 mt-6 border rounded-md">
+			<main className="flex-1 space-y-4 mt-6 mb-4 border rounded-md">
 				{children}
 			</main>
 			<Toaster />
