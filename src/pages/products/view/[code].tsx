@@ -129,13 +129,19 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 
 	return (
 		<>
-			<div className="p-2 flex justify-between items-end space-x-2 border-b">
-				<h2 className="text-3xl font-bold">Product Details</h2>
-				{
-					inEditMode
-						? <Button variant='default' onClick={() => setInEditMode(false)}>Switch to View Mode</Button>
-						: <Button variant='destructive' onClick={() => setInEditMode(true)}>Switch to Edit Mode</Button>
-				}
+			<div className="p-2 grid grid-cols-3 border-b">
+				<h2 className="col-span-1 text-3xl font-bold">Product Details</h2>
+				<div className="col-span-1 flex justify-center items-end space-x-1">
+					<span className="text-2xl font-semibold">Code: </span>
+					<span className="text-2xl font-bold">{productCode}</span>
+				</div>
+				<div className="col-span-1 flex justify-end">
+					{
+						inEditMode
+							? <Button variant='default' onClick={() => setInEditMode(false)}>Switch to View Mode</Button>
+							: <Button variant='destructive' onClick={() => setInEditMode(true)}>Switch to Edit Mode</Button>
+					}
+				</div>
 			</div>
 			<div className="flex justify-center items-baseline space-x-4">
 				<Timestamp time={product.updatedAt} label="Updated" />
