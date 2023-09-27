@@ -142,6 +142,8 @@ model Product {
     description       String             @default("")
     quantityInStock   Decimal            @default(0)
     salesPrice        Decimal?
+    createdAt         DateTime           @default(now())
+    updatedAt         DateTime           @default(now())
     Code              ProductCode        @relation(fields: [factoryId, baseCode, sizeCode, variantCode], references: [factoryId, baseCode, sizeCode, variantCode], onDelete: Cascade)
     Factory           Factory            @relation(fields: [factoryId], references: [id], onDelete: Cascade)
     SalesOrderItems   SalesOrderItem[]
