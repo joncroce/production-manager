@@ -29,7 +29,7 @@ import type { ProductRouterInputs, ProductRouterOutputs } from '@/server/api/rou
 import { addProductSchema } from '@/schemas/product';
 import { useToast } from '@/components/ui/use-toast';
 
-type TProduct = ProductRouterOutputs['getManyByCodeParts'][number];
+type TProduct = Omit<ProductRouterOutputs['getManyByCodeParts'][number], 'Code'>;
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -168,9 +168,11 @@ const AddProductPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }
 	const productOfSelectedCodeParts = api.product.getByCode
 		.useQuery({
 			factoryId: user.factoryId!,
-			baseCode: parseInt(form.getValues('baseCode')),
-			sizeCode: parseInt(form.getValues('sizeCode')),
-			variantCode: parseInt(form.getValues('variantCode')),
+			productCode: buildProductCode(
+				parseInt(form.getValues('baseCode')),
+				parseInt(form.getValues('sizeCode')),
+				parseInt(form.getValues('variantCode'))
+			),
 		}, {
 			enabled: user.factoryId !== undefined
 				&& validateCodePartInputs(['baseCode', 'sizeCode', 'variantCode']),
