@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import { addProductSchema, getBlendableProductSchema } from '@/schemas/product';
 import type { Product } from '@prisma/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { parseProductCode } from '@/utils/product';
 
 export const productRouter = createTRPCRouter({
 
@@ -27,19 +28,32 @@ export const productRouter = createTRPCRouter({
 	getByCode: publicProcedure
 		.input(z.object({
 			factoryId: z.string(),
-			baseCode: z.coerce.number(),
-			sizeCode: z.coerce.number(),
-			variantCode: z.coerce.number()
+			productCode: z.string(),
 		}))
 		.query(({ ctx, input }) => {
+			const { baseCode, sizeCode, variantCode } = parseProductCode(input.productCode);
 			return ctx.prisma.product.findUnique({
 				where: {
 					factoryId_baseCode_sizeCode_variantCode: {
 						factoryId: input.factoryId,
-						baseCode: input.baseCode,
-						sizeCode: input.sizeCode,
-						variantCode: input.variantCode
+						baseCode, sizeCode, variantCode
 					}
+				},
+				include: {
+					Code: {
+						include: {
+							ProductBase: true,
+							ProductSize: true,
+							ProductVariant: true
+						}
+					},
+					Blends: true,
+					BlendComponents: {
+						include: {
+							Blend: true
+						}
+					},
+					SourceTanks: true
 				},
 			});
 		}),
@@ -58,6 +72,15 @@ export const productRouter = createTRPCRouter({
 					sizeCode: input.sizeCode,
 					variantCode: input.variantCode
 				},
+				include: {
+					Code: {
+						include: {
+							ProductBase: true,
+							ProductSize: true,
+							ProductVariant: true
+						}
+					},
+				}
 			});
 		}),
 	getAllBlendableProducts: publicProcedure.query(({ ctx }) => {
@@ -248,7 +271,73 @@ export const productRouter = createTRPCRouter({
 			}
 
 			return products;
-		})
+		}),
+	updateDescription: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			productCode: z.string(),
+			description: z.string(),
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const { baseCode, sizeCode, variantCode } = parseProductCode(input.productCode);
+
+			return ctx.prisma.product.update({
+				where: {
+					factoryId_baseCode_sizeCode_variantCode: {
+						factoryId: input.factoryId,
+						baseCode, sizeCode, variantCode
+					}
+				},
+				data: {
+					description: input.description,
+					updatedAt: new Date()
+				}
+			});
+		}),
+	updateQuantity: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			productCode: z.string(),
+			quantityInStock: z.coerce.number().min(0),
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const { baseCode, sizeCode, variantCode } = parseProductCode(input.productCode);
+
+			return ctx.prisma.product.update({
+				where: {
+					factoryId_baseCode_sizeCode_variantCode: {
+						factoryId: input.factoryId,
+						baseCode, sizeCode, variantCode
+					}
+				},
+				data: {
+					quantityInStock: input.quantityInStock,
+					updatedAt: new Date()
+				}
+			});
+		}),
+	updatePrice: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			productCode: z.string(),
+			salesPrice: z.coerce.number().min(0).nullable(),
+		}))
+		.mutation(async ({ ctx, input }) => {
+			const { baseCode, sizeCode, variantCode } = parseProductCode(input.productCode);
+
+			return ctx.prisma.product.update({
+				where: {
+					factoryId_baseCode_sizeCode_variantCode: {
+						factoryId: input.factoryId,
+						baseCode, sizeCode, variantCode
+					}
+				},
+				data: {
+					salesPrice: input.salesPrice,
+					updatedAt: new Date()
+				}
+			});
+		}),
 });
 
 export type ProductRouter = typeof productRouter;
