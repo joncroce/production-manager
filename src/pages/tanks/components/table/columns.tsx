@@ -3,10 +3,12 @@
 import React from 'react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { TankRouterOutputs } from '@/server/api/routers/tank';
+import { buildProductCode } from '@/utils/product';
 
 dayjs.extend(relativeTime);
 
@@ -34,7 +36,20 @@ export const columns: ColumnDef<TTankSummary>[] = [
 	},
 	{
 		accessorKey: 'baseCode',
-		header: (ctx) => sortableHeader(ctx, 'Base Code')
+		header: (ctx) => sortableHeader(ctx, 'Base Code'),
+		cell({ getValue }): React.JSX.Element {
+			const baseCode = getValue<TTankSummary['baseCode']>();
+
+			if (baseCode) {
+				const productCode = buildProductCode(baseCode, 1, 0);
+
+				return <Link className="underline" href={`/products/view/${productCode}`} onClick={(e) => e.stopPropagation()}>{productCode}</Link>;
+			} else {
+				return <></>;
+			}
+
+
+		}
 	},
 	{
 		accessorKey: 'quantity',

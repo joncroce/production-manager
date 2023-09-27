@@ -8,6 +8,8 @@ import { ArrowUpDown } from 'lucide-react';
 import { sortDecimal } from '@/utils/tableSorts';
 import type { ColumnDef, HeaderContext } from '@tanstack/react-table';
 import type { BlendRouterOutputs } from '@/server/api/routers/blend';
+import { buildProductCode } from '@/utils/product';
+import Link from 'next/link';
 
 
 dayjs.extend(relativeTime);
@@ -32,7 +34,15 @@ function sortableHeader(
 export const columns: ColumnDef<TBlendSummary>[] = [
 	{
 		accessorKey: 'baseCode',
-		header: (ctx) => sortableHeader(ctx, 'Base Code')
+		header: (ctx) => sortableHeader(ctx, 'Base Code'),
+		cell({ getValue }): React.JSX.Element {
+			const baseCode = getValue<TBlendSummary['baseCode']>();
+			const productCode = buildProductCode(baseCode, 1, 0);
+
+			return (
+				<Link className="underline" href={`/products/view/${productCode}`} onClick={(e) => e.stopPropagation()}>{productCode}</Link>
+			);
+		}
 	},
 	{
 		accessorKey: 'targetQuantity',
@@ -52,11 +62,25 @@ export const columns: ColumnDef<TBlendSummary>[] = [
 	},
 	{
 		accessorKey: 'blendTankName',
-		header: (ctx) => sortableHeader(ctx, 'Tank (Blending)')
+		header: (ctx) => sortableHeader(ctx, 'Tank (Blending)'),
+		cell({ getValue }): React.JSX.Element {
+			const blendTankName = getValue<TBlendSummary['blendTankName']>();
+
+			return (
+				<Link className="underline" href={`/tanks/view/${blendTankName}`} onClick={(e) => e.stopPropagation()}>{blendTankName}</Link>
+			);
+		}
 	},
 	{
 		accessorKey: 'destinationTankName',
-		header: (ctx) => sortableHeader(ctx, 'Tank (Destination)')
+		header: (ctx) => sortableHeader(ctx, 'Tank (Destination)'),
+		cell({ getValue }): React.JSX.Element {
+			const destinationTankName = getValue<TBlendSummary['destinationTankName']>();
+
+			return (
+				<Link className="underline" href={`/tanks/view/${destinationTankName}`} onClick={(e) => e.stopPropagation()}>{destinationTankName}</Link>
+			);
+		}
 	},
 	{
 		accessorKey: 'status',

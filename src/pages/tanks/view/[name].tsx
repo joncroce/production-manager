@@ -18,11 +18,12 @@ import {
 import {
 	Card,
 	CardContent,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon } from 'lucide-react';
+import { AlertOctagonIcon, AlertTriangleIcon, ArrowUpRightIcon, Edit2Icon } from 'lucide-react';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { useRouter } from 'next/router';
@@ -37,6 +38,7 @@ import { buildProductCode } from '@/utils/product';
 import { columns, type TBlendSummary } from '@/pages/blends/components/blend-list/columns';
 import { DataTable } from '@/pages/blends/components/blend-list/data-table';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -85,14 +87,16 @@ const ViewTankPage: NextPageWithLayout<{ user: Session['user']; name: string; }>
 
 	return (
 		<>
-			<div className="p-2 flex justify-between items-end space-x-2 border-b">
-				<h2 className="text-3xl font-bold">Tank Details</h2>
+			<div className="p-2 grid grid-cols-3 border-b">
+				<h2 className="col-span-1 text-3xl font-bold">Tank Details</h2>
 				<TankName inEditMode={inEditMode} factoryId={factoryId} currentName={name} />
-				{
-					inEditMode
-						? <Button variant='default' onClick={() => setInEditMode(false)}>Switch to View Mode</Button>
-						: <Button variant='destructive' onClick={() => setInEditMode(true)}>Switch to Edit Mode</Button>
-				}
+				<div className="col-span-1 flex justify-end">
+					{
+						inEditMode
+							? <Button variant='default' onClick={() => setInEditMode(false)}>Switch to View Mode</Button>
+							: <Button variant='destructive' onClick={() => setInEditMode(true)}>Switch to Edit Mode</Button>
+					}
+				</div>
 			</div>
 			<div className="flex justify-center items-baseline space-x-4">
 				<Timestamp time={tank.updatedAt} label="Updated" />
@@ -254,7 +258,7 @@ function TankName({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<div className="flex justify-center items-end space-x-1">
+			<div className="col-span-1 flex justify-center items-end space-x-1">
 				<span className="text-2xl font-semibold">Name: </span>
 				<span className="text-2xl font-bold">{currentName}</span>
 				{
@@ -365,10 +369,14 @@ function TankProduct({
 						? <div className="space-y-2">
 							<span className="text-xl font-semibold">Code: <span className="font-mono">{productCode}</span></span>
 							<p className="text-xl">{currentTankProduct.description}</p>
+							<p>{currentTankProduct.quantityInStock.toFixed(2)} in stock</p>
 						</div>
 						: <span>There is no Product assigned to this Tank.</span>
 				}
 			</CardContent>
+			<CardFooter>
+				<Link href={`/products/view/${productCode}`}><Button>Product Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
+			</CardFooter>
 		</Card>
 	);
 }
@@ -485,9 +493,17 @@ function TankQuantity({
 		} else if (parseFloat(value).toFixed(2) !== initialValue) {
 			setShowWarning(true);
 		} else {
-			setValue(initialValue);
-			setOpen(false);
+			reset();
 		}
+	}
+
+	function reset() {
+		setValue(initialValue);
+		if (inputRef.current) inputRef.current.value = initialValue;
+		setOpen(false);
+		setShowWarning(false);
+		setInputValid(true);
+		setErrorMessage(null);
 	}
 
 	return (
@@ -530,12 +546,7 @@ function TankQuantity({
 							<Button variant='outline' onClick={() => setShowWarning(false)}>Cancel</Button>
 							<Button
 								variant='destructive'
-								onClick={() => {
-									setShowWarning(false);
-									setOpen(false);
-									setValue(initialValue);
-									setInputValid(true);
-								}}
+								onClick={() => reset()}
 							>
 								Confirm
 							</Button>
@@ -558,7 +569,12 @@ function TankQuantity({
 							data-valid={inputValid}
 						/>
 						<DialogFooter className="flex justify-between">
-							<Button variant={parseFloat(value).toFixed(2) !== initialValue ? 'destructive' : 'outline'} onClick={() => setOpen(false)}>Cancel</Button>
+							<Button
+								variant={parseFloat(value).toFixed(2) !== initialValue ? 'destructive' : 'outline'}
+								onClick={() => setOpen(false)}
+							>
+								Cancel
+							</Button>
 							<Button variant='default' onClick={saveQuantity}>Save</Button>
 						</DialogFooter>
 					</>

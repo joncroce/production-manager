@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
-import { AlertOctagonIcon, AlertTriangleIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
+import { AlertOctagonIcon, AlertTriangleIcon, ArrowUpRightIcon, Edit2Icon, ScrollTextIcon } from 'lucide-react';
 import BlendStatusSelector from '../components/blend-status-selector';
 import BlendTankSelector from '../components/blend-tank-selector';
 import DestinationTankSelector from '../components/destination-tank-selector';
@@ -349,12 +349,14 @@ function Product({
 				<span className="text-2xl font-semibold">Product</span>
 				<span className="text-xl">{productCode}</span>
 				<span className="text-xl">{description}</span>
+				<Link className="pt-2" href={`/products/view/${productCode}`}><Button>Product Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
 			</div>
 
 			<div className="text-2xl flex flex-col items-center space-y-1">
 				<h3 className="font-semibold">Target Quantity</h3>
 				<span className="font-mono">{targetQuantity.toFixed(0)}</span>
 			</div>
+
 		</div>
 	);
 }
@@ -452,6 +454,11 @@ function DestinationTank({
 							: null
 					}
 				</div>
+				{
+					currentDestinationTankName
+						? <Link href={`/tanks/view/${currentDestinationTankName}`}><Button>Tank Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
+						: null
+				}
 			</div>
 			{destinationTankQuantity && destinationTankCapacity
 				? <div className="text-2xl flex flex-col justify-end items-center">

@@ -71,7 +71,14 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 	return [
 		{
 			accessorKey: 'productCode',
-			header: (ctx) => sortableHeader(ctx, 'Code')
+			header: (ctx) => sortableHeader(ctx, 'Code'),
+			cell({ getValue }): React.JSX.Element {
+				const productCode = getValue<TBlendComponentSummary['productCode']>();
+
+				return (
+					<Link className="underline" href={`/products/view/${productCode}`} onClick={(e) => e.stopPropagation()}>{productCode}</Link>
+				);
+			}
 		},
 		{
 			accessorKey: 'productDescription',
@@ -131,7 +138,7 @@ export function getColumns({ inEditMode }: { inEditMode: boolean; }): ColumnDef<
 							</Dialog>
 						</DropdownMenuContent>
 					</DropdownMenu>
-				) : <span>{sourceTankName}</span>;
+				) : <Link className="underline" href={`/tanks/view/${sourceTankName}`} onClick={(e) => e.stopPropagation()}>{sourceTankName}</Link>;
 			}
 		},
 		{
