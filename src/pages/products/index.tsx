@@ -16,7 +16,7 @@ import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
 import type { ProductRouterOutputs } from '@/server/api/routers/product';
 
-function extendProducts(products: ProductRouterOutputs['getAll']): Array<TProductSummary> {
+export function extendProducts(products: ProductRouterOutputs['getAll']): Array<TProductSummary> {
 	return products.map(product => {
 		const { baseCode, sizeCode, variantCode } = product;
 		const productCode = buildProductCode(baseCode, sizeCode, variantCode);
