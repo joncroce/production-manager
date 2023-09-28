@@ -1,88 +1,110 @@
-import styles from './add-blend.module.css';
-import React, { forwardRef, useRef, useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import Layout from '@/components/Layout';
 import Head from 'next/head';
-import Form from '@/components/Form';
-import Modal from '@/components/Modal';
-import ChooseProductModalForm from '@/components/ChooseProductModalForm';
-import IcBaselineChevronLeft from '@/components/Icons/IcBaselineChevronLeft';
-import IcBaselineChevronRight from '@/components/Icons/IcBaselineChevronRight';
-import { authenticatedSSProps } from '@/server/auth';
+import { authenticatedSSProps, getServerAuthSession } from '@/server/auth';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { api } from '@/utils/api';
-import { useZodForm } from '@/hooks/useZodForm';
-import { addBlendSchema, type TAddBlendSchema } from '@/schemas/blend';
+import { appRouter } from '@/server/api/root';
+import { createInnerTRPCContext } from '@/server/api/trpc';
+import superjson from '@/utils/superjson';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { addBlendSchema } from '@/schemas/blend';
 import { buildProductCode } from '@/utils/product';
-import type { ComponentProps, PropsWithChildren, ChangeEvent } from 'react';
-import type { SubmitHandler } from 'react-hook-form';
-import type {
-	Formula as TFormula,
-	FormulaComponent as TFormulaComponent,
-	Product as TProduct,
-	ProductCode as TProductCode,
-	ProductBase as TProductBase,
-	ProductSize as TProductSize,
-	ProductVariant as TProductVariant,
-	Tank as TTank
-} from '@prisma/client';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';
+import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import BlendProductSelector from './components/blend-product-selector';
+import BlendFormulaSelector from './components/blend-formula-selector';
+import ProductCard from '../products/components/product-card';
+import TankCard from '../tanks/components/tank-card';
+import type { z } from 'zod';
 import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
-
-type TDetailedProduct = TProduct & {
-	Code: TDetailedProductCode;
-	Formulas: TFormula[];
-};
-
-type TDetailedProductCode = TProductCode & {
-	ProductBase: TProductBase;
-	ProductSize: TProductSize;
-	ProductVariant: TProductVariant;
-};
-
-type TDetailedFormula = TFormula & {
-	Components: TDetailedFormulaComponent[];
-};
-
-type TDetailedFormulaComponent = TFormulaComponent & {
-	Product: TProduct & {
-		Code: TDetailedProductCode;
-		SourceTanks: TTank[];
-	};
-};
+import type { ProductRouterOutputs } from '@/server/api/routers/product';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-	return authenticatedSSProps(context);
+	const session = await getServerAuthSession(context);
+
+	return authenticatedSSProps(context)
+		.then(async ({ props, redirect }) => {
+			if (redirect) {
+				return { props, redirect };
+			}
+
+			if (!props.user?.factoryId) {
+				return { props, redirect: { destination: '/onboard', permanent: false } };
+			}
+
+			const helpers = createServerSideHelpers({
+				router: appRouter,
+				ctx: createInnerTRPCContext({ session }),
+				transformer: superjson
+			});
+
+			await helpers.product.getAllBlendableProducts
+				.prefetch({
+					factoryId: props.user.factoryId
+				});
+
+			return {
+				props: {
+					...props,
+					trpcState: helpers.dehydrate()
+				},
+				redirect
+			};
+		});
 };
 
-const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TDetailedProduct>();
-	const [formulaComponents, setFormulaComponents] = useState<TDetailedFormulaComponent[]>([]);
-	const [selectedDestinationTank, setSelectedDestinationTank] = useState<TTank>();
-	const [selectedFormula, setSelectedFormula] = useState<TDetailedFormula>();
-	const [selectedComponentSourceTankIds, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
-	const [modalOpen, setModalOpen] = useState<boolean>(false);
+type TFormula = NonNullable<ProductRouterOutputs['getBlendableProduct']>['Formulas'][number];
+type TFormulaComponent = TFormula['Components'][number];
 
-	const blendableProducts = api.product.getAllBlendableProducts.useQuery(undefined, { refetchOnWindowFocus: false });
+const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<ProductRouterOutputs['getAllBlendableProducts'][number] | null>(null);
+	const [formulaComponents, setFormulaComponents] = useState<TFormulaComponent[]>([]);
+	const [selectedFormula, setSelectedFormula] = useState<TFormula>();
+	const [selectedComponentSourceTankNames, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
+
+	const factoryId = user?.factoryId;
+
+	if (!factoryId) {
+		throw new Error('No Factory found.');
+	}
+
+	const blendableProductsQuery = api.product.getAllBlendableProducts
+		.useQuery({ factoryId });
+
+	const { data: blendableProducts } = blendableProductsQuery;
+
+	if (!blendableProducts) {
+		throw new Error('Error retrieving Blendable Products');
+	}
+
 	const selectedBlendableProduct = api.product.getBlendableProduct.useQuery(
-		matchingBlendableProduct ?? { factoryId: user.factoryId ?? '', baseCode: undefined, sizeCode: undefined, variantCode: undefined },
+		matchingBlendableProduct!,
 		{
+			enabled: matchingBlendableProduct !== undefined,
 			refetchOnWindowFocus: false,
 			onSuccess: (data) => {
 				if (data) {
-					setSelectedDestinationTankToDefault(data.SourceTanks);
 					setSelectedFormulaToDefault(data.Formulas);
 				}
 			}
 		}
 	);
 
-	const containerRef = useRef(null);
-
-	const form = useZodForm({
-		schema: addBlendSchema,
+	const form = useForm<z.infer<typeof addBlendSchema>>({
+		resolver: zodResolver(addBlendSchema),
 		mode: 'onBlur',
 		defaultValues: {
-			factoryId: user.factoryId ?? ''
+			factoryId,
+			destinationTankName: ''
 		}
 	});
 
@@ -99,55 +121,26 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	});
 
-	const submitForm: SubmitHandler<TAddBlendSchema> = (data) => {
+	function onSubmit(data: z.infer<typeof addBlendSchema>) {
 		addBlend.mutate(data);
 	};
 
 	const resetForm = () => {
 		form.reset();
-		setMatchingBlendableProduct(undefined);
+		setMatchingBlendableProduct(null);
 		setFormulaComponents([]);
-		setSelectedDestinationTank(undefined);
 		setSelectedFormula(undefined);
 		setSelectedComponentSourceTankIds([]);
 	};
 
-	const openModal = () => {
-		setModalOpen(true);
-	};
+	function updateProduct(product: ProductRouterOutputs['getAllBlendableProducts'][number]) {
+		setMatchingBlendableProduct(product);
+		form.setValue('baseCode', product.baseCode);
+		form.setValue('sizeCode', product.sizeCode);
+		form.setValue('variantCode', product.variantCode);
+	}
 
-	const closeModal = (selectedProductCode?: TDetailedProductCode) => {
-		if (selectedProductCode) {
-			setMatchingBlendableProduct(findMatchingBlendableProductByProductCode(selectedProductCode));
-			form.setValue('baseCode', selectedProductCode.baseCode);
-			form.setValue('sizeCode', selectedProductCode.sizeCode);
-			form.setValue('variantCode', selectedProductCode.variantCode);
-		}
-		setModalOpen(false);
-	};
-
-	const findMatchingBlendableProductByProductCode = (selectedProductCode: TDetailedProductCode) => {
-		return blendableProducts.data?.find((blendableProduct) =>
-			selectedProductCode.ProductBase.code === blendableProduct.Code.ProductBase.code
-			&& selectedProductCode.ProductSize.code === blendableProduct.Code.ProductSize.code
-			&& selectedProductCode.ProductVariant.code === blendableProduct.Code.ProductVariant.code
-		);
-	};
-
-	const setSelectedDestinationTankToDefault = (destinationTanks?: TTank[]) => {
-		if (destinationTanks && destinationTanks.length) {
-			const defaultDestinationTank = destinationTanks.find(
-				(tank) => tank.isDefaultSource
-			) ?? destinationTanks[0];
-
-			if (defaultDestinationTank) {
-				setSelectedDestinationTank(defaultDestinationTank);
-				form.setValue('destinationTankName', defaultDestinationTank.name);
-			}
-		}
-	};
-
-	const setSelectedFormulaToDefault = (formulas: TDetailedFormula[]) => {
+	function setSelectedFormulaToDefault(formulas: TFormula[]) {
 		const defaultFormula = formulas[0];
 		if (defaultFormula) {
 			form.setValue('formulaId', defaultFormula.id);
@@ -159,7 +152,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	};
 
-	const setFormulaComponentsToDefaults = (formulaComponents?: TDetailedFormulaComponent[]) => {
+	function setFormulaComponentsToDefaults(formulaComponents?: TFormulaComponent[]) {
 		if (formulaComponents) {
 			const defaultComponentSourceTankIds = formulaComponents.map(
 				(component) => component.Product.SourceTanks.find(
@@ -182,29 +175,10 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	};
 
-	const updateSelectedDestinationTank = (offset: -1 | 1) => {
-		if (selectedDestinationTank) {
-			const destinationTanks = selectedBlendableProduct.data?.SourceTanks;
-			if (destinationTanks && destinationTanks.length) {
-				const selectedTankIndex = destinationTanks.findIndex((tank) => tank.name === selectedDestinationTank.name);
-				const newIndex =
-					offset === -1
-						? selectedTankIndex - 1 < 0
-							? destinationTanks.length - 1
-							: 0
-						: selectedTankIndex + 1 >= destinationTanks.length
-							? 0
-							: selectedTankIndex + 1;
-				setSelectedDestinationTank(destinationTanks[newIndex]);
-				form.setValue('destinationTankName', destinationTanks[newIndex]?.name ?? '');
-			}
-		}
-	};
-
-	const updateSelectedFormula = (offset: -1 | 1) => {
+	function updateSelectedFormula(offset: -1 | 1) {
 		if (selectedFormula) {
 			const formulas = selectedBlendableProduct.data?.Formulas;
-			if (formulas && formulas.length) {
+			if (formulas?.length) {
 				const selectedFormulaIndex = formulas.findIndex((formula) => formula.id === selectedFormula.id);
 				const newIndex = offset === -1
 					? selectedFormulaIndex - 1 < 0
@@ -224,12 +198,12 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	};
 
-	const updateSelectedComponentSourceTankId = (componentIndex: number, offset: 1 | -1) => {
+	function updateSelectedComponentSourceTankName(componentIndex: number, offset: 1 | -1) {
 		if (selectedFormula) {
 			const sourceTanks = selectedFormula.Components[componentIndex]?.Product?.SourceTanks;
-			if (sourceTanks && sourceTanks.length) {
+			if (sourceTanks?.length) {
 				setSelectedComponentSourceTankIds((prev) => {
-					if (prev && prev[componentIndex]) {
+					if (prev?.[componentIndex]) {
 						const sourceTankIndex = sourceTanks.findIndex((sourceTank) => prev[componentIndex] === sourceTank.name);
 						if (sourceTankIndex === -1) {
 							return prev;
@@ -253,7 +227,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	};
 
-	const updateComponentsTargetQuantity = (formulaComponents: TDetailedFormulaComponent[], blendQuantity: number) => {
+	function updateComponentsTargetQuantity(formulaComponents: TFormulaComponent[], blendQuantity: number) {
 		if (formulaComponents) {
 			formulaComponents.forEach((component, index) => {
 				form.setValue(
@@ -264,8 +238,10 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		}
 	};
 
-	const blendQuantityChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-		updateComponentsTargetQuantity(formulaComponents, parseInt(event.target.value));
+	function blendQuantityChangeHandler(event: ChangeEvent<HTMLInputElement>) {
+		const updatedValue = parseInt(event.target.value);
+		updateComponentsTargetQuantity(formulaComponents, updatedValue);
+		form.setValue('targetQuantity', updatedValue);
 	};
 
 	return (
@@ -275,71 +251,130 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 				<meta name="description" content="Add a new blend." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<main ref={containerRef}>
-				<article className={styles['add-blend']}>
-					<h1 className={styles['add-blend__header']}>Add Blend</h1>
-					<Form
-						className={styles['add-blend__form']}
-						form={form}
-						onSubmit={submitForm}
-					>
-						<BlendProduct
-							product={selectedBlendableProduct?.data}
-							openProductSelector={() => openModal()}
+			<div className="p-2 flex justify-between border-b">
+				<h2 className="text-3xl font-bold">Add Blend</h2>
+			</div>
+			<Form {...form}>
+				<form
+					className="p-4 flex flex-col space-y-10"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void form.handleSubmit(onSubmit)(event);
+					}}>
+					<div className="flex justify-evenly items-stretch">
+						<div className="flex flex-col justify-between space-y-2">
+							<BlendProductSelector
+								blendableProducts={blendableProducts}
+								currentBlendableProduct={matchingBlendableProduct}
+								update={updateProduct}
+							/>
+
+							{matchingBlendableProduct
+								? <ProductCard {...matchingBlendableProduct} />
+								: null}
+						</div>
+						{selectedBlendableProduct.data
+							? <>
+								<div className="flex flex-col justify-between items-center space-y-6">
+									<FormField
+										control={form.control}
+										name="targetQuantity"
+										render={({ field }) => (
+											<FormItem className="flex flex-col items-center space-y-2">
+												<FormLabel className="text-3xl font-semibold">
+													Quantity
+												</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														placeholder="Enter target quantity..."
+														value={field.value}
+														onChange={blendQuantityChangeHandler}
+													/>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+
+									<BlendFormulaSelector
+										numberOfFormulas={selectedBlendableProduct.data.Formulas?.length ?? 0}
+										selectedFormulaIndex={selectedBlendableProduct.data.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
+										selectPrevious={() => updateSelectedFormula(-1)}
+										selectNext={() => updateSelectedFormula(1)}
+										selectionDisabled={selectedBlendableProduct.data.Formulas.length < 2}
+									/>
+								</div>
+
+								<FormField
+									control={form.control}
+									name="destinationTankName"
+									render={({ field }) => {
+										const selectedTank = field.value.length
+											? selectedBlendableProduct.data!.SourceTanks.find((tank) => tank.name === field.value)
+											: null;
+
+										return (
+
+											<FormItem className="flex flex-col items-center space-y-2">
+												<FormLabel className="text-3xl font-semibold">Destination Tank</FormLabel>
+												<Select onValueChange={field.onChange} defaultValue={field.value}>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue placeholder="Destination Tank" />
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value={''}>(Not Specified)</SelectItem>
+														{
+															selectedBlendableProduct.data!.SourceTanks.map((tank) => <SelectItem key={tank.name} value={tank.name}>{tank.name}</SelectItem>)
+														}
+													</SelectContent>
+												</Select>
+												{
+													selectedTank
+														? <TankCard {...selectedTank} baseCode={selectedTank.baseCode!} />
+														: null
+												}
+
+											</FormItem>
+										);
+									}}
+								/>
+							</>
+							: null
+						}
+					</div>
+
+					{formulaComponents.length
+						? <FormulaComponents
+							blendTargetQuantity={form.getValues('targetQuantity') ?? 0}
+							formulaComponents={formulaComponents}
+							selectedComponentSourceTankNames={selectedComponentSourceTankNames}
+							updateSelectedComponentSourceTankName={updateSelectedComponentSourceTankName}
 						/>
-						<BlendQuantity
-							{...form.register('targetQuantity', { onChange: blendQuantityChangeHandler })}
-						/>
-						<BlendDestinationTank>
-							<TankSelector
-								show={Boolean(selectedDestinationTank)}
-								selectedTankId={selectedDestinationTank ? selectedDestinationTank.name : undefined}
-								selectPrevious={() => updateSelectedDestinationTank(-1)}
-								selectNext={() => updateSelectedDestinationTank(1)}
-								selectionDisabled={selectedBlendableProduct.data?.SourceTanks ? selectedBlendableProduct.data?.SourceTanks.length < 2 : true}
-							/>
-						</BlendDestinationTank>
-						<BlendFormula show={Boolean(selectedBlendableProduct.data)}>
-							<FormulaSelector
-								show={Boolean(selectedBlendableProduct.data && selectedBlendableProduct.data?.Formulas && selectedFormula)}
-								numberOfFormulas={selectedBlendableProduct.data?.Formulas?.length ?? 0}
-								selectedFormulaIndex={selectedBlendableProduct.data?.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
-								selectPrevious={() => updateSelectedFormula(-1)}
-								selectNext={() => updateSelectedFormula(1)}
-								selectionDisabled={selectedBlendableProduct.data?.Formulas ? selectedBlendableProduct.data?.Formulas.length < 2 : true}
-							/>
-							<FormulaComponents
-								show={Boolean(formulaComponents.length)}
-								blendTargetQuantity={form.getValues('targetQuantity') ?? 0}
-								formulaComponents={formulaComponents}
-								selectedComponentSourceTankIds={selectedComponentSourceTankIds}
-								updateSelectedComponentSourceTankId={updateSelectedComponentSourceTankId}
-							/>
-						</BlendFormula>
-						<section className={styles['form-controls']}>
-							<button className={styles['form-controls__button']} type="button" onClick={resetForm}>Reset</button>
-							<button
-								className={styles['form-controls__button']}
-								type="submit"
-								disabled={!selectedBlendableProduct.data || !form.getValues('targetQuantity')}
-							>
-								Submit
-							</button>
-						</section>
-					</Form>
-				</article>
-				<Modal
-					open={modalOpen}
-					onOpenChange={setModalOpen}
-					containerRef={containerRef}
-					title="Choose Blendable Product"
-				>
-					<ChooseProductModalForm
-						productCodes={blendableProducts.data?.map((blendableProduct) => blendableProduct.Code)}
-						closeModal={closeModal}
-					/>
-				</Modal>
-			</main >
+						: null}
+
+					{
+						selectedBlendableProduct?.data
+							? <div className="py-4 flex justify-evenly items-center">
+								<Button
+									variant='destructive'
+									type="button"
+									onClick={resetForm}
+								>
+									Reset
+								</Button>
+								<Button
+									type="submit"
+									disabled={!selectedBlendableProduct.data || !form.getValues('targetQuantity')}
+								>
+									Submit
+								</Button>
+							</div>
+							: null
+					}
+				</form>
+			</Form>
 		</>
 	);
 };
@@ -354,268 +389,152 @@ AddBlend.getLayout = function getLayout(page) {
 	);
 };
 
-const BlendProduct: React.FC<
-	{
-		product?: TDetailedProduct | null;
-		openProductSelector: () => void;
-	}
-> = ({ product, openProductSelector }) => {
-	const productSelected = Boolean(product);
-	const formattedProductCode = product?.Code
-		? buildProductCode(
-			product?.Code.baseCode,
-			product?.Code.sizeCode,
-			product?.Code.variantCode
-		)
-		: '';
-	const productDescription = product?.description ?? '';
-
-	return (
-		<section className={styles['blend-product']}>
-			<h2 className={styles['blend-product__header']}>Product</h2>
-			<button className={styles['blend-product__selector']} type="button" onClick={openProductSelector}>
-				{
-					Boolean(product)
-						? 'Change Product...'
-						: 'Choose Product...'
-				}
-			</button>
-			{
-				productSelected
-					? (
-						<div className={styles['blend-product__value']}>
-							<p>{formattedProductCode}</p>
-							<p>{productDescription}</p>
-						</div>
-					)
-					: null
-			}
-		</section>
-	);
-};
-
-const BlendQuantity = forwardRef<HTMLInputElement, ComponentProps<'input'>>((props, ref) => (
-	<section className={styles['blend-quantity']}>
-		<h2 className={styles['blend-quantity__header']} id={props.name}>Quantity</h2>
-		<input className={styles['blend-quantity__input']} type="text" {...props} id={props.name} ref={ref} aria-labelledby={props.name} />
-	</section>
-));
-BlendQuantity.displayName = 'BlendQuantity';
-
-
-const BlendDestinationTank: React.FC<PropsWithChildren> = ({ children }) => (
-	<section className={styles['blend-destination-tank']}>
-		<h2 className={styles['blend-destination-tank__header']}>Destination Tank</h2>
-		{children}
-	</section>
-);
-
-const BlendFormula: React.FC<{ show: boolean; } & PropsWithChildren> = ({ show, children }) =>
-	show ? (
-		<section className={styles['blend-formula']}>
-			<h2 className={styles['blend-formula__header']}>Formula</h2>
-			{children}
-		</section>
-	) : null;
-
-const FormulaSelector: React.FC<{
-	show: boolean;
-	numberOfFormulas: number;
-	selectedFormulaIndex: number;
-	selectPrevious: () => void;
-	selectNext: () => void;
-	selectionDisabled: boolean;
-}> = ({
+function TankSelector({
 	show,
-	numberOfFormulas,
-	selectedFormulaIndex,
+	selectedTankName,
 	selectPrevious,
 	selectNext,
 	selectionDisabled
-}) => show ? (
-	<section
-		className={styles['formula-selector']}
-		data-selection-disabled={selectionDisabled}
-	>
-		<button
-			className={styles['formula-selector__button']}
-			type="button"
-			onClick={selectPrevious}
-			disabled={selectionDisabled}
-		>
-			<IcBaselineChevronLeft />
-		</button>
-		<span className={styles['formula-selector__value']}>
-			{selectedFormulaIndex + 1}/{numberOfFormulas}
-		</span>
-		<button
-			className={styles['formula-selector__button']}
-			type="button"
-			onClick={selectNext}
-			disabled={selectionDisabled}
-		>
-			<IcBaselineChevronRight />
-		</button>
-	</section>
-) : null;
-
-const TankSelector: React.FC<{
+}: {
 	show: boolean;
-	selectedTankId?: string;
+	selectedTankName?: string;
 	selectPrevious: () => void;
 	selectNext: () => void;
 	selectionDisabled: boolean;
-}> = ({ show, selectedTankId, selectPrevious, selectNext, selectionDisabled }) =>
-		show ? (
-			<section
-				className={styles['tank-selector']}
-				data-selection-disabled={selectionDisabled}
+}) {
+	return show ? (
+		<div className="flex items-center space-x-2">
+			<Button
+				variant='outline'
+				size='icon'
+				type="button"
+				onClick={selectPrevious}
+				disabled={selectionDisabled}
 			>
-				<button
-					className={styles['tank-selector__button']}
-					type="button"
-					onClick={selectPrevious}
-				>
-					<IcBaselineChevronLeft />
-				</button>
-				<span className={styles['tank-selector__value']}>
-					{selectedTankId}
-				</span>
-				<button
-					className={styles['tank-selector__button']}
-					type="button"
-					onClick={selectNext}
-				>
-					<IcBaselineChevronRight />
-				</button>
-			</section>
-		) : null;
+				<ChevronLeftIcon className="h-4 w-4" />
+			</Button>
 
-const FormulaComponents: React.FC<{
-	show: boolean;
-	blendTargetQuantity: number;
-	formulaComponents: TDetailedFormulaComponent[];
-	selectedComponentSourceTankIds: (string | undefined)[];
-	updateSelectedComponentSourceTankId: (componentIndex: number, offset: -1 | 1) => void;
-}> = (
-	{ show,
+			<span className="text-xl">
+				{selectedTankName}
+			</span>
+
+			<Button
+				variant='outline'
+				size='icon'
+				type="button"
+				onClick={selectNext}
+				disabled={selectionDisabled}
+			>
+				<ChevronRightIcon className="h-4 w-4" />
+			</Button>
+		</div>
+	) : null;
+}
+
+function FormulaComponents(
+	{
 		blendTargetQuantity,
 		formulaComponents,
-		selectedComponentSourceTankIds,
-		updateSelectedComponentSourceTankId
-	}
-) => show ? (
-	<section className={styles['formula-components']}>
-		<h3 className={styles['formula-components__header']}>Formula Components</h3>
-		<ol className={styles['formula-components__list']}>
-			{
-				formulaComponents.map((component, index) =>
-					<li className={styles['formula-components__list-item']} key={`${component.formulaId}-${component.baseCode}`}>
-						<ComponentNumber number={index + 1} />
-						<ComponentProduct
-							productCode={component.Product.Code}
-							productDescription={component.Product.description}
-						/>
-						<ComponentSource>
-							<TankSelector
-								show={Boolean(selectedComponentSourceTankIds)}
-								selectedTankId={selectedComponentSourceTankIds ? selectedComponentSourceTankIds[index] : undefined}
-								selectPrevious={() => updateSelectedComponentSourceTankId(index, -1)}
-								selectNext={() => updateSelectedComponentSourceTankId(index, 1)}
-								selectionDisabled={component.Product?.SourceTanks.length < 2}
-							/>
-						</ComponentSource>
-						<ComponentProportion proportion={Number(component.proportion)} />
-						<ComponentQuantity
-							proportion={Number(component.proportion)}
-							blendTargetQuantity={blendTargetQuantity}
-						/>
-					</li>
-				)
+		selectedComponentSourceTankNames,
+		updateSelectedComponentSourceTankName
+	}: {
+		blendTargetQuantity: number;
+		formulaComponents: TFormulaComponent[];
+		selectedComponentSourceTankNames: (string | undefined)[];
+		updateSelectedComponentSourceTankName: (componentIndex: number, offset: -1 | 1) => void;
+	}): React.JSX.Element {
+	const columns: Array<ColumnDef<TFormulaComponent>> = [
+		{
+			accessorKey: 'Product',
+			header: 'Product',
+			cell({ getValue }) {
+				const { baseCode, sizeCode, variantCode, description } = getValue<TFormulaComponent['Product']>();
+				const productCode = buildProductCode(baseCode, sizeCode, variantCode);
+
+				return (
+					<div className="flex flex-col space-y-1 text-sm">
+						<p>{productCode}</p>
+						<p>{description}</p>
+					</div>
+				);
 			}
-		</ol>
-	</section>
-) : null;
+		},
+		{
+			header: 'Source',
+			cell({ row }) {
+				const index = formulaComponents.findIndex((component) => component.Product === row.original.Product);
+				const sourceTankCount = row.original.Product.SourceTanks.length;
 
-const ComponentNumber: React.FC<
-	{
-		number: number;
-	}
-> = ({ number }) => {
+				return <TankSelector
+					show={Boolean(selectedComponentSourceTankNames)}
+					selectedTankName={selectedComponentSourceTankNames ? selectedComponentSourceTankNames[index] : undefined}
+					selectPrevious={() => updateSelectedComponentSourceTankName(index, -1)}
+					selectNext={() => updateSelectedComponentSourceTankName(index, 1)}
+					selectionDisabled={sourceTankCount < 2}
+				/>;
+			}
+		},
+		{
+			accessorKey: 'proportion',
+			header: 'Proportion',
+			cell({ getValue }) {
+				const proportion = getValue<TFormulaComponent['proportion']>();
+
+				return proportion.toFixed(3);
+			}
+		},
+		{
+			header: 'Quantity',
+			cell({ row }) {
+				const quantity = row.original.proportion.mul(blendTargetQuantity).toFixed(2);
+
+				return `${quantity} gal.`;
+			}
+		}
+	];
+
+	const table = useReactTable({
+		data: formulaComponents,
+		columns,
+		getCoreRowModel: getCoreRowModel()
+	});
+
 	return (
-		<section className={styles['component-number']}>
-			<h4 className={styles['component-number__header']}>
-				#
-			</h4>
-			<span className={styles['component-number__value']}>
-				{number}
-			</span>
-		</section>
-	);
-};
+		<Table>
+			<TableHeader>
+				{table.getHeaderGroups().map((headerGroup) => (
+					<TableRow key={headerGroup.id}>
+						{headerGroup.headers.map((header) => {
+							return (
+								<TableHead key={header.id}>
+									{header.isPlaceholder
+										? null
+										: flexRender(
+											header.column.columnDef.header,
+											header.getContext()
+										)}
+								</TableHead>
+							);
+						})}
+					</TableRow>
+				))}
+			</TableHeader>
 
-const ComponentProduct: React.FC<
-	{
-		productCode: {
-			ProductBase: TProductBase;
-			ProductSize: TProductSize;
-			ProductVariant: TProductVariant;
-		};
-		productDescription: string | null;
-	}
-> = ({ productCode, productDescription }) => {
-	const { ProductBase, ProductSize, ProductVariant } = productCode;
-	const formattedProductCode = buildProductCode(ProductBase.code, ProductSize.code, ProductVariant.code);
-
-	return (
-		<section className={styles['component-product']}>
-			<h4 className={styles['component-product__header']}>
-				Product
-			</h4>
-			<div className={styles['component-product__value']}>
-				<p>{formattedProductCode}</p>
+			<TableBody>
 				{
-					productDescription
-						? <p>{productDescription}</p>
-						: null
+					table.getRowModel().rows.map((row) => (
+						<TableRow
+							key={row.id}
+						>
+							{row.getVisibleCells().map((cell) => (
+								<TableCell key={cell.id}>
+									{flexRender(cell.column.columnDef.cell, cell.getContext())}
+								</TableCell>
+							))}
+						</TableRow>
+					))
 				}
-			</div>
-		</section>
+			</TableBody>
+		</Table>
 	);
-};
-
-const ComponentProportion: React.FC<
-	{
-		proportion: number;
-	}
-> = ({ proportion }) => {
-	const formattedProportion = Number(proportion).toFixed(3);
-
-	return (
-		<section className={styles['component-proportion']}>
-			<h4 className={styles['component-proportion__header']}>Proportion</h4>
-			<span className={styles['component-proportion__value']}>{formattedProportion}</span>
-		</section>
-	);
-};
-
-const ComponentSource: React.FC<PropsWithChildren> = ({ children }) => (
-	<section className={styles['component-source']}>
-		<h4 className={styles['component-source__header']}>Source</h4>
-		{children}
-	</section>
-);
-
-const ComponentQuantity: React.FC<{
-	proportion: number;
-	blendTargetQuantity: number;
-}> = ({ proportion, blendTargetQuantity }) => {
-	const quantity = (blendTargetQuantity ? (Number(proportion) * blendTargetQuantity) : 0).toFixed(2);
-
-	return (
-		<section className={styles['component-quantity']}>
-			<h4 className={styles['component-quantity__header']}>Quantity</h4>
-			<span className={styles['component-quantity__value']}>{quantity}</span>
-		</section>
-	);
-};
+}

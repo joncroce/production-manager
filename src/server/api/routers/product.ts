@@ -83,36 +83,32 @@ export const productRouter = createTRPCRouter({
 				}
 			});
 		}),
-	getAllBlendableProducts: publicProcedure.query(({ ctx }) => {
-		return ctx.prisma.product.findMany({
-			where: {
-				Formulas: {
-					some: {}
-				}
-			},
-			include: {
-				Code: {
-					include: {
-						ProductBase: true,
-						ProductSize: true,
-						ProductVariant: true,
+	getAllBlendableProducts: publicProcedure
+		.input(z.object({
+			factoryId: z.string()
+		}))
+		.query(({ ctx, input }) => {
+			return ctx.prisma.product.findMany({
+				where: {
+					factoryId: input.factoryId,
+					Formulas: {
+						some: {}
 					}
 				},
-				Formulas: {
-					include: {
-						_count: true
+				include: {
+					Formulas: {
+						include: {
+							_count: true
+						}
 					}
 				}
-			}
-		});
-	}),
+			});
+		}),
 	getBlendableProduct: publicProcedure
 		.input(getBlendableProductSchema)
 		.query(({ ctx, input }) => {
 			const { factoryId, baseCode, sizeCode, variantCode } = input;
-			if (baseCode === undefined) {
-				return null;
-			}
+
 			return ctx.prisma.product.findUnique({
 				where: {
 					factoryId_baseCode_sizeCode_variantCode: {
@@ -144,6 +140,9 @@ export const productRouter = createTRPCRouter({
 											SourceTanks: true,
 										}
 									}
+								},
+								orderBy: {
+									proportion: 'desc'
 								}
 							}
 						}

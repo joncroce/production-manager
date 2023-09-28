@@ -13,9 +13,9 @@ export type TAddProductSchema = z.infer<typeof addProductSchema>;
 
 export const getBlendableProductSchema = z.object({
 	factoryId: z.string(),
-	baseCode: z.coerce.number().min(100).max(999).optional(),
+	baseCode: z.coerce.number().min(1).max(999),
 	sizeCode: z.coerce.number().min(1).optional().default(1),
-	variantCode: z.coerce.number().optional().default(1)
+	variantCode: z.coerce.number().optional().default(0)
 });
 export type TGetBlendableProductSchema = z.infer<typeof getBlendableProductSchema>;
 
