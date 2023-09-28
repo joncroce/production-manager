@@ -78,18 +78,21 @@ export const getServerAuthSession = (ctx: {
 
 export const authenticatedSSProps = async (context: GetServerSidePropsContext) => {
   const session = await getSession({ req: context.req });
-  let redirect;
 
-  if (!session) {
-    redirect = { destination: '/login', permanent: false };
-  } else if (!session.user.factoryId) {
-    redirect = { destination: '/onboard', permanent: false };
-  }
-
-  return {
-    props: {
-      user: session?.user
-    },
-    redirect
-  };
+  return !session
+    ? {
+      redirect: { destination: '/login', permanent: false }
+    }
+    : !session.user.factoryId
+      ? {
+        props: {
+          user: session.user
+        },
+        redirect: { destination: '/onboard', permanent: false }
+      }
+      : {
+        props: {
+          user: session.user
+        }
+      };
 };
