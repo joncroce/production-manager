@@ -374,9 +374,13 @@ function TankProduct({
 						: <span>There is no Product assigned to this Tank.</span>
 				}
 			</CardContent>
-			<CardFooter>
-				<Link href={`/products/view/${productCode}`}><Button>Product Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
-			</CardFooter>
+			{
+				currentTankProduct
+					? <CardFooter>
+						<Link href={`/products/view/${productCode}`}><Button>Product Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
+					</CardFooter>
+					: null
+			}
 		</Card>
 	);
 }
