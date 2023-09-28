@@ -107,7 +107,7 @@ export const tankRouter = createTRPCRouter({
 				}
 			});
 		}),
-	addTank: publicProcedure
+	add: publicProcedure
 		.input(addTankSchema)
 		.mutation(async ({ ctx, input }) => {
 			const {
@@ -155,7 +155,7 @@ export const tankRouter = createTRPCRouter({
 			});
 
 		}),
-	addTanks: publicProcedure
+	addMany: publicProcedure
 		.input(z.array(addTankSchema))
 		.mutation(async ({ ctx, input }) => {
 			const tanks: Tank[] = [];

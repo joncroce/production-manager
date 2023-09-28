@@ -88,7 +88,7 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 		);
 
 	type TBulkProduct = Omit<TProduct, 'sizeCode' | 'variantCode'> & { sizeCode: 1; variantCode: 0; };
-	const addTanksForBulkProducts = api.tank.addTanks.useMutation();
+	const addTanksForBulkProducts = api.tank.addMany.useMutation();
 	const seedTanksForBulkProducts = (products: TBulkProduct[]) =>
 		new Promise<TTank[]>((resolve, reject) => {
 
@@ -292,7 +292,7 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 				: <button
 					className={styles['factory-seeder__button']}
 					type="button"
-					onClick={() => startSeeding()}>
+					onClick={() => void startSeeding()}>
 					Seed Factory
 				</button>
 			}
