@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { authenticatedSSProps } from '@/server/auth';
+import { authenticatedSSProps, getServerAuthSession } from '@/server/auth';
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { appRouter } from '@/server/api/root';
+import { createInnerTRPCContext } from '@/server/api/trpc';
+import { api } from '@/utils/api';
+import superjson from '@/utils/superjson';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { addTankSchema, type TAddTankSchema } from '@/schemas/tank';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { api } from '@/utils/api';
+import { z } from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
+import { ArrowUpRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -44,26 +50,58 @@ import type { ProductBase } from '@prisma/client';
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from 'next';
+import type { TankRouterOutputs } from '@/server/api/routers/tank';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-	return authenticatedSSProps(context);
+	const session = await getServerAuthSession(context);
+
+	return authenticatedSSProps(context)
+		.then(async ({ props, redirect }) => {
+			if (redirect) {
+				return { props, redirect };
+			}
+
+			const factoryId = props.user.factoryId!;
+
+			const helpers = createServerSideHelpers({
+				router: appRouter,
+				ctx: createInnerTRPCContext({ session }),
+				transformer: superjson
+			});
+
+			await helpers.productBase.getAll
+				.prefetch({ factoryId });
+
+			return {
+				props: {
+					...props,
+					trpcState: helpers.dehydrate()
+				},
+				redirect
+			};
+		});
 };
 
 const AddTankPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const [baseCodes, setBaseCodes] = useState<Array<ProductBase>>([]);
+	const [newTank, setNewTank] = useState<TankRouterOutputs['add'] | null>(null);
 
-	api.productBase.getAll.useQuery({ factoryId: user.factoryId ?? '' }, {
-		refetchOnWindowFocus: false,
-		onSuccess(data) {
-			setBaseCodes(data ?? []);
-		}
-	});
+	const factoryId = user.factoryId!;
+
+	api.productBase.getAll.useQuery(
+		{ factoryId },
+		{
+			refetchOnWindowFocus: false,
+			onSuccess(data) {
+				setBaseCodes(data ?? []);
+			}
+		});
 
 	const form = useForm({
 		mode: 'onBlur',
 		resolver: zodResolver(addTankSchema),
 		defaultValues: {
-			factoryId: user?.factoryId ?? '',
+			factoryId,
 			name: '',
 			baseCode: undefined,
 			sizeCode: 1,
@@ -80,14 +118,15 @@ const AddTankPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =
 
 	const { toast } = useToast();
 
-	const addTank = api.tank.addTank.useMutation({
+	const addTank = api.tank.add.useMutation({
 		onSuccess(data) {
 			toast({
 				variant: 'default',
 				title: 'Success!',
 				description: `Added ${data.isBlendTank ? 'Blend' : ''} Tank ${data.name} (${data.capacity.toNumber()}).`
-			}),
-				resetForm();
+			});
+
+			setNewTank(data);
 		},
 		onError(error) {
 			console.error(error);
@@ -113,6 +152,9 @@ const AddTankPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =
 	function resetForm() {
 		form.reset();
 		hasProductForm.reset();
+		if (newTank) {
+			setNewTank(null);
+		}
 	}
 
 	const hasProductSchema = z.object({
@@ -132,146 +174,165 @@ const AddTankPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =
 			<div className="flex justify-between border-b p-2">
 				<h2 className="text-3xl font-bold">Add Tank</h2>
 			</div>
-			<Form {...form}>
-				<form className="p-2 space-y-8" onSubmit={(event) => {
-					event.preventDefault();
-					void form.handleSubmit(submitForm)(event);
-				}}>
-					<FormField
-						control={form.control}
-						name='name'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Name</FormLabel>
-								<FormControl>
-									<Input placeholder="Enter name..." {...field} />
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name='capacity'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Capacity</FormLabel>
-								<FormControl>
-									<Input placeholder="Enter capacity in gallons..." {...field} />
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name='heel'
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Heel</FormLabel>
-								<FormControl>
-									<Input placeholder="Enter heel in gallons..." {...field} />
-								</FormControl>
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name='isBlendTank'
-						render={({ field }) => (
-							<FormItem className="flex flex-col justify-start items-start space-y-2">
-								<FormLabel>Is this a Blend Tank?</FormLabel>
-								<div className="flex justify-start items-center space-x-1">
-									<span>No</span>
-									<FormControl>
-										<Switch checked={field.value} onCheckedChange={field.onChange} />
-									</FormControl>
-									<span>Yes</span>
-								</div>
-							</FormItem>
-						)}
-					/>
-					<Form {...hasProductForm}>
-						<FormField
-							control={hasProductForm.control}
-							name='hasProduct'
-							render={({ field }) => (
-								<FormItem className="flex flex-col justify-start items-start space-y-2">
-									<FormLabel>Does this tank contain a product?</FormLabel>
-									<div className="flex justify-start items-center space-x-1">
-										<span>No</span>
+			{
+				newTank
+					? <div className="flex flex-col items-center space-y-6">
+						<h3 className="text-2xl font-semibold">Successfully added new tank.</h3>
+						<div className="flex justify-center items-center space-x-8">
+							<Link href={`/tanks/view/${newTank.name}`}>
+								<Button>
+									Tank Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" />
+								</Button>
+							</Link>
+							<Button
+								variant='outline'
+								onClick={resetForm}
+							>
+								Add Another Tank
+							</Button>
+						</div>
+					</div>
+					: <Form {...form}>
+						<form className="p-2 space-y-8" onSubmit={(event) => {
+							event.preventDefault();
+							void form.handleSubmit(submitForm)(event);
+						}}>
+							<FormField
+								control={form.control}
+								name='name'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Name</FormLabel>
 										<FormControl>
-											<Switch checked={field.value} onCheckedChange={field.onChange} />
+											<Input placeholder="Enter name..." {...field} />
 										</FormControl>
-										<span>Yes</span>
-									</div>
-								</FormItem>
-							)}
-						/>
-					</Form>
-					{hasProductForm.getValues('hasProduct')
-						? <>
-							<TankProduct
-								baseCodes={baseCodes}
-								fieldValue={form.getValues('baseCode')}
-								updateFieldValue={(value) => { form.setValue('baseCode', value); }}
+									</FormItem>
+								)}
 							/>
-							{form.getValues('baseCode')
-								? <>
-									<FormField
-										control={form.control}
-										name='quantity'
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Quantity</FormLabel>
+							<FormField
+								control={form.control}
+								name='capacity'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Capacity</FormLabel>
+										<FormControl>
+											<Input placeholder="Enter capacity in gallons..." {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name='heel'
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Heel</FormLabel>
+										<FormControl>
+											<Input placeholder="Enter heel in gallons..." {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name='isBlendTank'
+								render={({ field }) => (
+									<FormItem className="flex flex-col justify-start items-start space-y-2">
+										<FormLabel>Is this a Blend Tank?</FormLabel>
+										<div className="flex justify-start items-center space-x-1">
+											<span>No</span>
+											<FormControl>
+												<Switch checked={field.value} onCheckedChange={field.onChange} />
+											</FormControl>
+											<span>Yes</span>
+										</div>
+									</FormItem>
+								)}
+							/>
+							<Form {...hasProductForm}>
+								<FormField
+									control={hasProductForm.control}
+									name='hasProduct'
+									render={({ field }) => (
+										<FormItem className="flex flex-col justify-start items-start space-y-2">
+											<FormLabel>Does this tank contain a product?</FormLabel>
+											<div className="flex justify-start items-center space-x-1">
+												<span>No</span>
 												<FormControl>
-													<Input placeholder="Enter quantity in gallons..." {...field} />
+													<Switch checked={field.value} onCheckedChange={field.onChange} />
 												</FormControl>
-											</FormItem>
-										)}
+												<span>Yes</span>
+											</div>
+										</FormItem>
+									)}
+								/>
+							</Form>
+							{hasProductForm.getValues('hasProduct')
+								? <>
+									<TankProduct
+										baseCodes={baseCodes}
+										fieldValue={form.getValues('baseCode')}
+										updateFieldValue={(value) => { form.setValue('baseCode', value); }}
 									/>
-									<FormField
-										control={form.control}
-										name='isDefaultSource'
-										render={({ field }) => (
-											<FormItem className="flex flex-col justify-start items-start space-y-2">
-												<FormLabel>Is this tank the default source for the product?</FormLabel>
-												<div className="flex justify-start items-center space-x-1">
-													<span>No</span>
-													<FormControl>
-														<Switch checked={field.value} onCheckedChange={field.onChange} />
-													</FormControl>
-													<span>Yes</span>
-												</div>
-											</FormItem>
-										)}
-									/>
+									{form.getValues('baseCode')
+										? <>
+											<FormField
+												control={form.control}
+												name='quantity'
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>Quantity</FormLabel>
+														<FormControl>
+															<Input placeholder="Enter quantity in gallons..." {...field} />
+														</FormControl>
+													</FormItem>
+												)}
+											/>
+											<FormField
+												control={form.control}
+												name='isDefaultSource'
+												render={({ field }) => (
+													<FormItem className="flex flex-col justify-start items-start space-y-2">
+														<FormLabel>Is this tank the default source for the product?</FormLabel>
+														<div className="flex justify-start items-center space-x-1">
+															<span>No</span>
+															<FormControl>
+																<Switch checked={field.value} onCheckedChange={field.onChange} />
+															</FormControl>
+															<span>Yes</span>
+														</div>
+													</FormItem>
+												)}
+											/>
+										</>
+										: null
+									}
 								</>
 								: null
 							}
-						</>
-						: null
-					}
-					<div className="flex justify-end space-x-4">
-						<AlertDialog>
-							<AlertDialogTrigger>
-								<Button type="button" variant='destructive'>Reset</Button>
-							</AlertDialogTrigger>
-							<AlertDialogContent>
-								<AlertDialogHeader>
-									<AlertDialogTitle>Confirm Form Reset</AlertDialogTitle>
-									<AlertDialogDescription>
-										Are you sure you want to reset the form?
-									</AlertDialogDescription>
-								</AlertDialogHeader>
-								<AlertDialogFooter>
-									<AlertDialogCancel>Cancel</AlertDialogCancel>
-									<AlertDialogAction variant='destructive' onClick={() => resetForm()}>Confirm Form Reset</AlertDialogAction>
-								</AlertDialogFooter>
-							</AlertDialogContent>
-						</AlertDialog>
-						<Button type="submit">Submit</Button>
-					</div>
-				</form>
-			</Form>
+							<div className="flex justify-end space-x-4">
+								<AlertDialog>
+									<AlertDialogTrigger>
+										<Button type="button" variant='destructive'>Reset</Button>
+									</AlertDialogTrigger>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>Confirm Form Reset</AlertDialogTitle>
+											<AlertDialogDescription>
+												Are you sure you want to reset the form?
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>Cancel</AlertDialogCancel>
+											<AlertDialogAction variant='destructive' onClick={() => resetForm()}>Confirm Form Reset</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+								<Button type="submit">Submit</Button>
+							</div>
+						</form>
+					</Form>
+			}
 		</>
 	);
 };
