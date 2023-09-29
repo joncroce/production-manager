@@ -18,7 +18,7 @@ import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tan
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import BlendProductSelector from './components/blend-product-selector';
+import { ProductSelector as BlendProductSelector } from './components/product-selector';
 import BlendFormulaSelector from './components/blend-formula-selector';
 import ProductCard from '../products/components/product-card';
 import TankCard from '../tanks/components/tank-card';
@@ -37,10 +37,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 				return { props, redirect };
 			}
 
-			if (!props.user?.factoryId) {
-				return { props, redirect: { destination: '/onboard', permanent: false } };
-			}
-
 			const helpers = createServerSideHelpers({
 				router: appRouter,
 				ctx: createInnerTRPCContext({ session }),
@@ -49,7 +45,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 			await helpers.product.getAllBlendableProducts
 				.prefetch({
-					factoryId: props.user.factoryId
+					factoryId: props.user.factoryId!
 				});
 
 			return {
@@ -62,11 +58,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 		});
 };
 
+type TBlendableProduct = ProductRouterOutputs['getAllBlendableProducts'][number];
 type TFormula = NonNullable<ProductRouterOutputs['getBlendableProduct']>['Formulas'][number];
 type TFormulaComponent = TFormula['Components'][number];
 
 const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<ProductRouterOutputs['getAllBlendableProducts'][number] | null>(null);
+	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TBlendableProduct | null>(null);
 	const [formulaComponents, setFormulaComponents] = useState<TFormulaComponent[]>([]);
 	const [selectedFormula, setSelectedFormula] = useState<TFormula>();
 	const [selectedComponentSourceTankNames, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
@@ -133,7 +130,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 		setSelectedComponentSourceTankIds([]);
 	};
 
-	function updateProduct(product: ProductRouterOutputs['getAllBlendableProducts'][number]) {
+	function updateProduct(product: TBlendableProduct) {
 		setMatchingBlendableProduct(product);
 		form.setValue('baseCode', product.baseCode);
 		form.setValue('sizeCode', product.sizeCode);
@@ -263,12 +260,12 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 					}}>
 					<div className="flex justify-evenly items-stretch">
 						<div className="flex flex-col justify-between space-y-2">
+							<h3 className="text-3xl font-semibold">Product</h3>
 							<BlendProductSelector
-								blendableProducts={blendableProducts}
-								currentBlendableProduct={matchingBlendableProduct}
+								products={blendableProducts}
+								currentProduct={matchingBlendableProduct}
 								update={updateProduct}
 							/>
-
 							{matchingBlendableProduct
 								? <ProductCard {...matchingBlendableProduct} />
 								: null}
