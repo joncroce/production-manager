@@ -15,18 +15,21 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { ArrowUpRightIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProductSelector as BlendProductSelector } from './components/product-selector';
+import { useToast } from '@/components/ui/use-toast';
 import BlendFormulaSelector from './components/blend-formula-selector';
 import ProductCard from '../products/components/product-card';
 import TankCard from '../tanks/components/tank-card';
+import Link from 'next/link';
 import type { z } from 'zod';
 import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { ProductRouterOutputs } from '@/server/api/routers/product';
+import type { BlendRouterOutputs } from '@/server/api/routers/blend';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -67,6 +70,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const [formulaComponents, setFormulaComponents] = useState<TFormulaComponent[]>([]);
 	const [selectedFormula, setSelectedFormula] = useState<TFormula>();
 	const [selectedComponentSourceTankNames, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
+	const [newBlend, setNewBlend] = useState<BlendRouterOutputs['add']>();
 
 	const factoryId = user?.factoryId;
 
@@ -107,14 +111,28 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 
 	form.watch(['targetQuantity', 'formulaId']);
 
+	const { toast } = useToast();
+
 	const addBlend = api.blend.add.useMutation({
-		onSuccess() {
-			alert(`Successfully created new Blend.`);
-			resetForm();
+		onSuccess(data) {
+			const productCode = buildProductCode(data.baseCode, data.sizeCode, data.variantCode);
+			toast({
+				title: 'Successfully added new blend.',
+				description: (
+					<>
+						<p className="font-semibold">{productCode}</p>
+						<p>{data.targetQuantity.toFixed(2)} gal.</p>
+					</>
+				)
+			});
+			setNewBlend(data);
 		},
 		onError(error) {
 			console.error(error);
-			alert(`Error: ${error.message}`);
+			toast({
+				title: 'Error adding blend!',
+				description: error.message
+			});
 		}
 	});
 
@@ -251,127 +269,142 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 			<div className="p-2 flex justify-between border-b">
 				<h2 className="text-3xl font-bold">Add Blend</h2>
 			</div>
-			<Form {...form}>
-				<form
-					className="p-4 flex flex-col space-y-10"
-					onSubmit={(event) => {
-						event.preventDefault();
-						void form.handleSubmit(onSubmit)(event);
-					}}>
-					<div className="flex justify-evenly items-stretch">
-						<div className="flex flex-col justify-between space-y-2">
-							<h3 className="text-3xl font-semibold">Product</h3>
-							<BlendProductSelector
-								products={blendableProducts}
-								currentProduct={matchingBlendableProduct}
-								update={updateProduct}
-							/>
-							{matchingBlendableProduct
-								? <ProductCard {...matchingBlendableProduct} />
-								: null}
+			{
+				newBlend
+					? <div className="p-4 flex flex-col items-center space-y-6">
+						<h3 className="text-3xl font-semibold">Successfully created new Blend.</h3>
+						<div className="flex items-center space-x-8">
+							<Link href={`/blends/view/${newBlend.id}`}><Button>Blend Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
+							<Button
+								variant='outline'
+								onClick={resetForm}
+							>
+								Add Another Blend
+							</Button>
 						</div>
-						{selectedBlendableProduct.data
-							? <>
-								<div className="flex flex-col justify-between items-center space-y-6">
-									<FormField
-										control={form.control}
-										name="targetQuantity"
-										render={({ field }) => (
-											<FormItem className="flex flex-col items-center space-y-2">
-												<FormLabel className="text-3xl font-semibold">
-													Quantity
-												</FormLabel>
-												<FormControl>
-													<Input
-														{...field}
-														placeholder="Enter target quantity..."
-														value={field.value}
-														onChange={blendQuantityChangeHandler}
-													/>
-												</FormControl>
-											</FormItem>
-										)}
-									/>
-
-									<BlendFormulaSelector
-										numberOfFormulas={selectedBlendableProduct.data.Formulas?.length ?? 0}
-										selectedFormulaIndex={selectedBlendableProduct.data.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
-										selectPrevious={() => updateSelectedFormula(-1)}
-										selectNext={() => updateSelectedFormula(1)}
-										selectionDisabled={selectedBlendableProduct.data.Formulas.length < 2}
-									/>
-								</div>
-
-								<FormField
-									control={form.control}
-									name="destinationTankName"
-									render={({ field }) => {
-										const selectedTank = field.value.length
-											? selectedBlendableProduct.data!.SourceTanks.find((tank) => tank.name === field.value)
-											: null;
-
-										return (
-
-											<FormItem className="flex flex-col items-center space-y-2">
-												<FormLabel className="text-3xl font-semibold">Destination Tank</FormLabel>
-												<Select onValueChange={field.onChange} defaultValue={field.value}>
-													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Destination Tank" />
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														<SelectItem value={''}>(Not Specified)</SelectItem>
-														{
-															selectedBlendableProduct.data!.SourceTanks.map((tank) => <SelectItem key={tank.name} value={tank.name}>{tank.name}</SelectItem>)
-														}
-													</SelectContent>
-												</Select>
-												{
-													selectedTank
-														? <TankCard {...selectedTank} baseCode={selectedTank.baseCode!} />
-														: null
-												}
-
-											</FormItem>
-										);
-									}}
-								/>
-							</>
-							: null
-						}
 					</div>
+					: <Form {...form}>
+						<form
+							className="p-4 flex flex-col space-y-10"
+							onSubmit={(event) => {
+								event.preventDefault();
+								void form.handleSubmit(onSubmit)(event);
+							}}>
+							<div className="flex justify-evenly items-stretch">
+								<div className="flex flex-col justify-between space-y-2">
+									<h3 className="text-3xl font-semibold">Product</h3>
+									<BlendProductSelector
+										products={blendableProducts}
+										currentProduct={matchingBlendableProduct}
+										update={updateProduct}
+									/>
+									{matchingBlendableProduct
+										? <ProductCard {...matchingBlendableProduct} />
+										: null}
+								</div>
+								{selectedBlendableProduct.data
+									? <>
+										<div className="flex flex-col justify-between items-center space-y-6">
+											<FormField
+												control={form.control}
+												name="targetQuantity"
+												render={({ field }) => (
+													<FormItem className="flex flex-col items-center space-y-2">
+														<FormLabel className="text-3xl font-semibold">
+															Quantity
+														</FormLabel>
+														<FormControl>
+															<Input
+																{...field}
+																placeholder="Enter target quantity..."
+																value={field.value}
+																onChange={blendQuantityChangeHandler}
+															/>
+														</FormControl>
+													</FormItem>
+												)}
+											/>
 
-					{formulaComponents.length
-						? <FormulaComponents
-							blendTargetQuantity={form.getValues('targetQuantity') ?? 0}
-							formulaComponents={formulaComponents}
-							selectedComponentSourceTankNames={selectedComponentSourceTankNames}
-							updateSelectedComponentSourceTankName={updateSelectedComponentSourceTankName}
-						/>
-						: null}
+											<BlendFormulaSelector
+												numberOfFormulas={selectedBlendableProduct.data.Formulas?.length ?? 0}
+												selectedFormulaIndex={selectedBlendableProduct.data.Formulas?.findIndex((formula) => formula.id === selectedFormula?.id) ?? -1}
+												selectPrevious={() => updateSelectedFormula(-1)}
+												selectNext={() => updateSelectedFormula(1)}
+												selectionDisabled={selectedBlendableProduct.data.Formulas.length < 2}
+											/>
+										</div>
 
-					{
-						selectedBlendableProduct?.data
-							? <div className="py-4 flex justify-evenly items-center">
-								<Button
-									variant='destructive'
-									type="button"
-									onClick={resetForm}
-								>
-									Reset
-								</Button>
-								<Button
-									type="submit"
-									disabled={!selectedBlendableProduct.data || !form.getValues('targetQuantity')}
-								>
-									Submit
-								</Button>
+										<FormField
+											control={form.control}
+											name="destinationTankName"
+											render={({ field }) => {
+												const selectedTank = field.value.length
+													? selectedBlendableProduct.data!.SourceTanks.find((tank) => tank.name === field.value)
+													: null;
+
+												return (
+
+													<FormItem className="flex flex-col items-center space-y-2">
+														<FormLabel className="text-3xl font-semibold">Destination Tank</FormLabel>
+														<Select onValueChange={field.onChange} defaultValue={field.value}>
+															<FormControl>
+																<SelectTrigger>
+																	<SelectValue placeholder="Destination Tank" />
+																</SelectTrigger>
+															</FormControl>
+															<SelectContent>
+																<SelectItem value={''}>(Not Specified)</SelectItem>
+																{
+																	selectedBlendableProduct.data!.SourceTanks.map((tank) => <SelectItem key={tank.name} value={tank.name}>{tank.name}</SelectItem>)
+																}
+															</SelectContent>
+														</Select>
+														{
+															selectedTank
+																? <TankCard {...selectedTank} baseCode={selectedTank.baseCode!} />
+																: null
+														}
+
+													</FormItem>
+												);
+											}}
+										/>
+									</>
+									: null
+								}
 							</div>
-							: null
-					}
-				</form>
-			</Form>
+
+							{formulaComponents.length
+								? <FormulaComponents
+									blendTargetQuantity={form.getValues('targetQuantity') ?? 0}
+									formulaComponents={formulaComponents}
+									selectedComponentSourceTankNames={selectedComponentSourceTankNames}
+									updateSelectedComponentSourceTankName={updateSelectedComponentSourceTankName}
+								/>
+								: null}
+
+							{
+								selectedBlendableProduct?.data
+									? <div className="py-4 flex justify-evenly items-center">
+										<Button
+											variant='destructive'
+											type="button"
+											onClick={resetForm}
+										>
+											Reset
+										</Button>
+										<Button
+											type="submit"
+											disabled={!selectedBlendableProduct.data || !form.getValues('targetQuantity')}
+										>
+											Submit
+										</Button>
+									</div>
+									: null
+							}
+						</form>
+					</Form>
+			}
 		</>
 	);
 };
