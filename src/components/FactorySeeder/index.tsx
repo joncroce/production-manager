@@ -129,7 +129,7 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 			});
 		});
 
-	const addFormulasForBulkProducts = api.formula.addFormulas.useMutation();
+	const addFormulasForBulkProducts = api.formula.addMany.useMutation();
 	const seedFormulasForBulkProducts = (products: TBulkProduct[]) =>
 		new Promise<TFormulaWithComponents[]>((resolve, reject) => {
 			let formulasToAdd: TAddFormulaSchema[] = [];

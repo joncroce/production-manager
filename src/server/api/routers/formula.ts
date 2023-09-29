@@ -2,6 +2,7 @@ import { addFormulaSchema } from '@/schemas/formula';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { z } from 'zod';
 import type { Formula, FormulaComponent } from '@prisma/client';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 export type TFormulaWithComponents = Formula & {
 	Components: FormulaComponent[];
@@ -21,7 +22,7 @@ export const formulaRouter = createTRPCRouter({
 			});
 			return formulas ?? [];
 		}),
-	addFormula: publicProcedure
+	add: publicProcedure
 		.input(addFormulaSchema)
 		.mutation(async ({ ctx, input }) => {
 			const { factoryId, baseCode, sizeCode, variantCode, formulaComponents } = input;
@@ -74,7 +75,7 @@ export const formulaRouter = createTRPCRouter({
 
 			return formulaWithComponents;
 		}),
-	addFormulas: publicProcedure
+	addMany: publicProcedure
 		.input(z.array(addFormulaSchema))
 		.mutation(async ({ ctx, input }) => {
 			const formulas: TFormulaWithComponents[] = [];
@@ -138,3 +139,6 @@ export const formulaRouter = createTRPCRouter({
 			return formulas;
 		})
 });
+
+export type FormulaRouterInputs = inferRouterInputs<typeof formulaRouter>;
+export type FormulaRouterOutputs = inferRouterOutputs<typeof formulaRouter>;
