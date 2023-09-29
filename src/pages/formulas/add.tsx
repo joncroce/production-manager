@@ -12,7 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { addFormulaSchema } from '@/schemas/formula';
 import { buildProductCode } from '@/utils/product';
 import { Form } from '@/components/ui/form';
-import { ProductSelector } from './components/product-selector';
+import { ProductSelector } from '../blends/components/product-selector';
 import ProductCard from '../products/components/product-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,6 @@ import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { ProductRouterOutputs } from '@/server/api/routers/product';
 import type { FormulaRouterInputs } from '@/server/api/routers/formula';
-
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -284,7 +283,6 @@ const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 							</div>
 						</div>
 						: null}
-
 				</form>
 			</Form >
 		</>
