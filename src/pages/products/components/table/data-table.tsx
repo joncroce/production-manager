@@ -3,11 +3,11 @@ import React from 'react';
 import {
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getSortedRowModel,
 	useReactTable,
 	type ColumnDef,
 	type SortingState,
-	getPaginationRowModel,
 } from "@tanstack/react-table";
 
 import {
@@ -19,6 +19,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/router';
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
@@ -51,6 +52,16 @@ export function DataTable<TData, TValue>({
 		},
 	});
 
+	const router = useRouter();
+
+	function handleRowClick(rowData: TData) {
+		const { productCode } = rowData as { productCode: string; };
+
+		if (productCode) {
+			void router.push(`/products/view/${productCode}`);
+		}
+	}
+
 	return (
 		<div>
 			<div className="rounded-md border">
@@ -79,7 +90,7 @@ export function DataTable<TData, TValue>({
 								<TableRow
 									key={row.id}
 									className='cursor-pointer'
-									data-state={row.getIsSelected() && "selected"}
+									onClick={() => handleRowClick(row.original)}
 								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
