@@ -26,14 +26,11 @@ import { columns as tankColumns } from '@/pages/tanks/components/table/columns';
 import { DataTable as TankDataTable } from '@/pages/tanks/components/table/data-table';
 import { columns as blendColumns } from '@/pages/blends/components/blend-list/columns';
 import { DataTable as BlendDataTable } from '@/pages/blends/components/blend-list/data-table';
-import { columns as productColumns } from '@/pages/products/components/table/columns';
-import { DataTable as ProductDataTable } from '@/pages/products/components/table/data-table';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../../_app';
-import { extendProducts } from '..';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -56,18 +53,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 				try {
 					const productCode = context.params.code;
-					const { baseCode } = parseProductCode(productCode);
 
 					await helpers.product.getByCode
 						.prefetch({
 							factoryId: props.user?.factoryId ?? '',
 							productCode
-						});
-
-					await helpers.product.getManyByCodeParts
-						.prefetch({
-							factoryId: props.user?.factoryId ?? '',
-							baseCode
 						});
 
 					return {
@@ -97,7 +87,7 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 		redirect('/onboard');
 	}
 
-	const { baseCode, sizeCode } = parseProductCode(productCode);
+	const { sizeCode } = parseProductCode(productCode);
 
 	const productQuery = api.product.getByCode
 		.useQuery({
@@ -105,19 +95,11 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 			productCode
 		});
 
-	const relatedProductsQuery = api.product.getManyByCodeParts
-		.useQuery({
-			factoryId,
-			baseCode
-		});
-
 	const { data: product } = productQuery;
-	const { data: relatedProducts } = relatedProductsQuery;
 
 	if (!product) {
 		throw new Error('Error retrieving product data.');
 	}
-
 
 	type TBlend = typeof product.Blends[number];
 	const blendsAsTarget: Array<TBlend> = product.Blends;
@@ -202,15 +184,6 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 					</TabsContent>
 				</Tabs>
 			</div>
-
-			{
-				relatedProducts?.length
-					? <div className="p-4">
-						<h3 className="py-4 font-semibold text-2xl">Related Products</h3>
-						<ProductDataTable columns={productColumns} data={extendProducts(relatedProducts)} usePagination={true} />
-					</div>
-					: null
-			}
 		</>
 	);
 };
