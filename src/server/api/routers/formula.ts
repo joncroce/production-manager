@@ -11,8 +11,8 @@ export type TFormulaWithComponents = Formula & {
 export const formulaRouter = createTRPCRouter({
 	getAll: publicProcedure
 		.input(z.object({ factoryId: z.string() }))
-		.query(async ({ ctx, input }) => {
-			const formulas = await ctx.prisma.formula.findMany({
+		.query(({ ctx, input }) => {
+			return ctx.prisma.formula.findMany({
 				where: {
 					factoryId: input.factoryId
 				},
@@ -20,7 +20,24 @@ export const formulaRouter = createTRPCRouter({
 					Components: true
 				}
 			});
-			return formulas ?? [];
+		}),
+	get: publicProcedure
+		.input(z.object({
+			factoryId: z.string(),
+			id: z.string()
+		}))
+		.query(async ({ ctx, input }) => {
+			return ctx.prisma.formula.findUnique({
+				where: {
+					factoryId: input.factoryId,
+					id: input.id
+				},
+				include: {
+					Components: true,
+					Product: true,
+					Blends: true
+				}
+			});
 		}),
 	add: publicProcedure
 		.input(addFormulaSchema)
