@@ -70,27 +70,34 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
 
 	return authenticatedSSProps(context).then(async ({ props, redirect }) => {
+		if (redirect) {
+			return { props, redirect };
+		}
+
 		if (typeof context.params?.id !== 'string') {
 			return { props, redirect: { destination: '/404', permanent: false } };
-		} else {
-			const id = context.params?.id ?? '';
-			const helpers = createServerSideHelpers({
-				router: appRouter,
-				ctx: createInnerTRPCContext({ session }),
-				transformer: superjson
-			});
-
-			await helpers.blend.get.prefetch({ factoryId: props.user?.factoryId ?? '', id });
-
-			return {
-				props: {
-					...props,
-					id,
-					trpcState: helpers.dehydrate()
-				},
-				redirect
-			};
 		}
+
+		const factoryId = props.user.factoryId!;
+		const id = context.params.id;
+
+		const helpers = createServerSideHelpers({
+			router: appRouter,
+			ctx: createInnerTRPCContext({ session }),
+			transformer: superjson
+		});
+
+		await helpers.blend.get.prefetch({ factoryId, id });
+
+		return {
+			props: {
+				...props,
+				id,
+				trpcState: helpers.dehydrate()
+			},
+			redirect
+		};
+
 	});
 };
 
