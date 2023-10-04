@@ -3,7 +3,7 @@ import { authenticatedSSProps, getServerAuthSession } from '@/server/auth';
 import { createInnerTRPCContext } from '@/server/api/trpc';
 import { appRouter } from '@/server/api/root';
 import { redirect } from 'next/navigation';
-import { parseProductCode } from '@/utils/product';
+import { buildProductCode, parseProductCode } from '@/utils/product';
 import { api } from '@/utils/api';
 import superjson from '@/utils/superjson';
 import { useRef, useState } from 'react';
@@ -26,11 +26,14 @@ import { columns as tankColumns } from '@/pages/tanks/components/table/columns';
 import { DataTable as TankDataTable } from '@/pages/tanks/components/table/data-table';
 import { columns as blendColumns } from '@/pages/blends/components/blend-list/columns';
 import { DataTable as BlendDataTable } from '@/pages/blends/components/blend-list/data-table';
+import { columns as formulaColumns, type TFormulaListItem } from '@/pages/formulas/components/formula-list/columns';
+import { DataTable as FormulaDataTable } from '@/pages/formulas/components/formula-list/data-table';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../../_app';
+import type { ProductRouterOutputs } from '@/server/api/routers/product';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -109,6 +112,32 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 		}, new Set<TBlend>())
 	);
 
+	function mapFormulaToListItem(formula: NonNullable<ProductRouterOutputs['getByCode']>['Formulas'][number]): TFormulaListItem {
+		const { baseCode, sizeCode, variantCode } = formula;
+		const targetProductCode = buildProductCode(baseCode, sizeCode, variantCode);
+
+		return {
+			id: formula.id,
+			targetProductCode,
+			blendCount: formula._count.Blends,
+			components: formula.Components.map((component) => {
+				const { baseCode, sizeCode, variantCode } = component;
+				const componentProductCode = buildProductCode(baseCode, sizeCode, variantCode);
+
+				return {
+					componentProductCode,
+					proportion: component.proportion
+				};
+			})
+		};
+	}
+
+	const formulasAsTarget = product.Formulas
+		.map(mapFormulaToListItem);
+
+	const formulasAsComponent = product.FormulaComponents
+		.map((component) => mapFormulaToListItem(component.Formula));
+
 	return (
 		<>
 			<div className="p-2 grid grid-cols-3 border-b">
@@ -181,6 +210,36 @@ const ViewProductPage: NextPageWithLayout<{ user: Session['user']; productCode: 
 					}
 					<TabsContent value="component">
 						<BlendDataTable columns={blendColumns} data={blendsAsComponent} usePagination={true} />
+					</TabsContent>
+				</Tabs>
+			</div>
+
+			<div className="p-4">
+				<h3 className="py-4 font-semibold text-2xl">Related Formulas</h3>
+				<Tabs defaultValue={sizeCode === 1 ? 'target' : 'component'}>
+					<TabsList>
+						{
+							sizeCode === 1
+								? <TabsTrigger value="target">As Target</TabsTrigger>
+								: null
+						}
+						<TabsTrigger value="component">As Component</TabsTrigger>
+					</TabsList>
+					{
+						sizeCode === 1
+							? <TabsContent value="target">
+								<FormulaDataTable
+									columns={formulaColumns}
+									data={formulasAsTarget}
+								/>
+							</TabsContent>
+							: null
+					}
+					<TabsContent value="component">
+						<FormulaDataTable
+							columns={formulaColumns}
+							data={formulasAsComponent}
+						/>
 					</TabsContent>
 				</Tabs>
 			</div>

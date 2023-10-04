@@ -53,7 +53,31 @@ export const productRouter = createTRPCRouter({
 							Blend: true
 						}
 					},
-					SourceTanks: true
+					Formulas: {
+						include: {
+							_count: {
+								select: {
+									Blends: true
+								}
+							},
+							Components: true
+						}
+					},
+					FormulaComponents: {
+						include: {
+							Formula: {
+								include: {
+									_count: {
+										select: {
+											Blends: true
+										}
+									},
+									Components: true
+								}
+							}
+						}
+					},
+					SourceTanks: true,
 				},
 			});
 		}),
