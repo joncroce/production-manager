@@ -102,11 +102,10 @@ const AddProductPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }
 
 	function resetForm() {
 		form.reset();
+		setNewProduct(undefined);
 	}
 
-	const { watch } = form;
-
-	watch(['baseCode', 'sizeCode', 'variantCode']);
+	form.watch(['baseCode', 'sizeCode', 'variantCode']);
 
 	const { toast } = useToast();
 
@@ -126,6 +125,11 @@ const AddProductPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }
 			};
 
 			addProduct.mutate(newProduct);
+		} else {
+			toast({
+				title: 'Error validating product.',
+				description: parsed.error.issues.map((issue, index) => <p key={index}>{issue.message}</p>)
+			});
 		}
 	}
 
