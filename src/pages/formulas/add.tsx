@@ -14,18 +14,19 @@ import { buildProductCode } from '@/utils/product';
 import { Form } from '@/components/ui/form';
 import { ProductSelector } from '../blends/components/product-selector';
 import ProductCard from '../products/components/product-card';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '@/components/ui/table';
-import { PlusIcon } from 'lucide-react';
+import { ArrowUpRightIcon, PlusIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { z } from 'zod';
 import type { NextPageWithLayout } from '../_app';
 import type { GetServerSideProps } from "next";
 import type { Session } from 'next-auth';
 import type { ProductRouterOutputs } from '@/server/api/routers/product';
-import type { FormulaRouterInputs } from '@/server/api/routers/formula';
+import type { FormulaRouterInputs, FormulaRouterOutputs } from '@/server/api/routers/formula';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
 	const session = await getServerAuthSession(context);
@@ -78,8 +79,9 @@ const schema = z.object({
 });
 
 const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const [matchingProduct, setMatchingProduct] = useState<TProduct | null>(null);
+	const [matchingProduct, setMatchingProduct] = useState<TProduct>();
 	const [matchingComponentProducts, setMatchingComponentProducts] = useState<Array<TProduct>>([]);
+	const [newFormula, setNewFormula] = useState<FormulaRouterOutputs['add']>();
 
 	const factoryId = user.factoryId!;
 
@@ -98,6 +100,31 @@ const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 	if (!products) {
 		throw new Error('Error retrieving products.');
 	}
+
+	const { toast } = useToast();
+
+	const addFormula = api.formula.add.useMutation({
+		onSuccess(data) {
+			const productCode = buildProductCode(data.baseCode, data.sizeCode, data.variantCode);
+			toast({
+				title: 'Successfully added new blend formula.',
+				description: (
+					<>
+						<p className="font-semibold">{productCode}</p>
+					</>
+				)
+			});
+			setNewFormula(data);
+		},
+		onError(error) {
+			console.error(error);
+			toast({
+				title: 'Error adding blend!',
+				description: error.message
+			});
+		}
+	});
+
 
 	const defaultFormulaComponentFormValue = {
 		baseCode: '',
@@ -167,30 +194,6 @@ const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 		});
 	};
 
-	const addFormula = api.formula.add.useMutation({
-		onSuccess(data) {
-			const productCode = buildProductCode(data.baseCode, data.sizeCode, data.variantCode);
-			toast({
-				title: 'Successfully added new blend formula.',
-				description: (
-					<>
-						<p className="font-semibold">{productCode}</p>
-					</>
-				)
-			});
-			resetForm();
-		},
-		onError(error) {
-			console.error(error);
-			toast({
-				title: 'Error adding blend!',
-				description: error.message
-			});
-		}
-	});
-
-	const { toast } = useToast();
-
 	function onSubmit(data: z.infer<typeof schema>): void {
 		console.log(data);
 
@@ -224,8 +227,9 @@ const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 
 	const resetForm = () => {
 		form.reset();
-		setMatchingProduct(null);
+		setMatchingProduct(undefined);
 		setMatchingComponentProducts([]);
+		setNewFormula(undefined);
 	};
 
 	return (
@@ -238,53 +242,69 @@ const AddFormula: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 			<div className="p-2 flex justify-between border-b">
 				<h2 className="text-3xl font-bold">Add Formula</h2>
 			</div>
-			<Form {...form}>
-				<form
-					className="p-4 flex flex-col space-y-10"
-					onSubmit={(event) => {
-						event.preventDefault();
-						void form.handleSubmit(onSubmit)(event);
-					}}>
 
-					<div className="flex flex-col items-center space-y-2">
-						<h3 className="text-3xl font-semibold">Product</h3>
-						<ProductSelector
-							products={products.filter(({ sizeCode, variantCode }) => sizeCode === 1 && variantCode === 0)}
-							currentProduct={matchingProduct}
-							update={updateProduct}
-						/>
-						{matchingProduct
-							? <ProductCard {...matchingProduct} />
-							: null}
-					</div>
-					{matchingProduct
-						? < div className="flex flex-col space-y-4">
-							<div className="flex justify-start items-center space-x-4">
-								<h3 className="text-3xl font-semibold">Formula Components</h3>
-								<Button
-									type='button'
-									variant='outline'
-									onClick={() => { addFormulaComponent(); }}
-								>
-									<PlusIcon className="h-4 w-4 mr-1 stroke-black fill-transparent" /> Add Component
-								</Button>
-							</div>
-							<FormulaComponents
-								register={form.register}
-								matchingComponentProducts={fields.map((_, i) => ({ ...matchingComponentProducts[i], index: i }))}
-								availableProducts={products}
-								updateComponentProduct={updateComponentProduct}
-								removeFormulaComponent={removeFormulaComponent}
-							/>
-
-							<div className="pt-12 w-full flex justify-evenly items-center">
-								<Button variant='destructive' type="button" onClick={resetForm}>Reset</Button>
-								<Button type="submit">Submit</Button>
-							</div>
+			{
+				newFormula
+					? <div className="p-4 flex flex-col items-center space-y-6">
+						<h3 className="text-3xl font-semibold">Successfully created new Formula.</h3>
+						<div className="flex items-center space-x-8">
+							<Link href={`/formulas/view/${newFormula.id}`}><Button>Formula Details <ArrowUpRightIcon className="ml-2 stroke-white fill-black" /></Button></Link>
+							<Button
+								variant='outline'
+								onClick={resetForm}
+							>
+								Add Another Formula
+							</Button>
 						</div>
-						: null}
-				</form>
-			</Form >
+					</div>
+					: <Form {...form}>
+						<form
+							className="p-4 flex flex-col space-y-10"
+							onSubmit={(event) => {
+								event.preventDefault();
+								void form.handleSubmit(onSubmit)(event);
+							}}>
+
+							<div className="flex flex-col items-center space-y-2">
+								<h3 className="text-3xl font-semibold">Product</h3>
+								<ProductSelector
+									products={products.filter(({ sizeCode, variantCode }) => sizeCode === 1 && variantCode === 0)}
+									currentProduct={matchingProduct}
+									update={updateProduct}
+								/>
+								{matchingProduct
+									? <ProductCard {...matchingProduct} />
+									: null}
+							</div>
+							{matchingProduct
+								? < div className="flex flex-col space-y-4">
+									<div className="flex justify-start items-center space-x-4">
+										<h3 className="text-3xl font-semibold">Formula Components</h3>
+										<Button
+											type='button'
+											variant='outline'
+											onClick={() => { addFormulaComponent(); }}
+										>
+											<PlusIcon className="h-4 w-4 mr-1 stroke-black fill-transparent" /> Add Component
+										</Button>
+									</div>
+									<FormulaComponents
+										register={form.register}
+										matchingComponentProducts={fields.map((_, i) => ({ ...matchingComponentProducts[i], index: i }))}
+										availableProducts={products}
+										updateComponentProduct={updateComponentProduct}
+										removeFormulaComponent={removeFormulaComponent}
+									/>
+
+									<div className="pt-12 w-full flex justify-evenly items-center">
+										<Button variant='destructive' type="button" onClick={resetForm}>Reset</Button>
+										<Button type="submit">Submit</Button>
+									</div>
+								</div>
+								: null}
+						</form>
+					</Form >
+			}
 		</>
 	);
 };

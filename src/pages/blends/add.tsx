@@ -66,7 +66,7 @@ type TFormula = NonNullable<ProductRouterOutputs['getBlendableProduct']>['Formul
 type TFormulaComponent = TFormula['Components'][number];
 
 const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
-	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TBlendableProduct | null>(null);
+	const [matchingBlendableProduct, setMatchingBlendableProduct] = useState<TBlendableProduct>();
 	const [formulaComponents, setFormulaComponents] = useState<TFormulaComponent[]>([]);
 	const [selectedFormula, setSelectedFormula] = useState<TFormula>();
 	const [selectedComponentSourceTankNames, setSelectedComponentSourceTankIds] = useState<(string | undefined)[]>([]);
@@ -142,10 +142,11 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 
 	const resetForm = () => {
 		form.reset();
-		setMatchingBlendableProduct(null);
+		setMatchingBlendableProduct(undefined);
 		setFormulaComponents([]);
 		setSelectedFormula(undefined);
 		setSelectedComponentSourceTankIds([]);
+		setNewBlend(undefined);
 	};
 
 	function updateProduct(product: TBlendableProduct) {
@@ -291,7 +292,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 								void form.handleSubmit(onSubmit)(event);
 							}}>
 							<div className="flex justify-evenly items-stretch">
-								<div className="flex flex-col justify-between space-y-2">
+								<div className="flex flex-col items-center space-y-2">
 									<h3 className="text-3xl font-semibold">Product</h3>
 									<BlendProductSelector
 										products={blendableProducts}

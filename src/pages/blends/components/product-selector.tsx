@@ -17,11 +17,11 @@ export function ProductSelector<T extends {
 }: {
 	buttonText?: string;
 	products: Array<T>;
-	currentProduct: T | null;
+	currentProduct?: T;
 	update: (value: T) => void;
 }): React.JSX.Element {
 	const [dialogOpen, setDialogOpen] = React.useState(false);
-	const [selectedProduct, setSelectedProduct] = React.useState<T | null>(currentProduct);
+	const [selectedProduct, setSelectedProduct] = React.useState<T | undefined>(currentProduct);
 
 	function onOpenChange(open: boolean) {
 		if (open) {
