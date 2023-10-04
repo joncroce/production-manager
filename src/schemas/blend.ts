@@ -27,8 +27,8 @@ export const addBlendSchema = z.object({
 	baseCode: z.coerce.number(),
 	sizeCode: z.coerce.number(),
 	variantCode: z.coerce.number(),
-	targetQuantity: z.coerce.number(),
-	destinationTankName: z.string(),
+	targetQuantity: z.coerce.number().min(1),
+	destinationTankName: z.string().optional(),
 	note: z.string().optional(),
 	status: blendStatusSchema.optional().default('CREATED'),
 	components: z.array(

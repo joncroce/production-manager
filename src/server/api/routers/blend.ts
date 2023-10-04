@@ -162,13 +162,13 @@ export const blendRouter = createTRPCRouter({
 									}
 								}
 							},
-							DestinationTank: {
+							DestinationTank: destinationTankName ? {
 								connect: {
 									name_factoryId: {
 										name: destinationTankName, factoryId
 									}
 								}
-							},
+							} : undefined,
 							targetQuantity,
 							status,
 							note

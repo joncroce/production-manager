@@ -38,7 +38,15 @@ export const formulaRouter = createTRPCRouter({
 					id: input.id
 				},
 				include: {
-					Components: true,
+					Components: {
+						include: {
+							Product: {
+								include: {
+									SourceTanks: true
+								}
+							}
+						},
+					},
 					Product: true,
 					Blends: true
 				}
@@ -159,7 +167,7 @@ export const formulaRouter = createTRPCRouter({
 			}
 
 			return formulas;
-		})
+		}),
 });
 
 export type FormulaRouterInputs = inferRouterInputs<typeof formulaRouter>;
