@@ -17,6 +17,11 @@ export const formulaRouter = createTRPCRouter({
 					factoryId: input.factoryId
 				},
 				include: {
+					_count: {
+						select: {
+							Blends: true
+						}
+					},
 					Components: true
 				}
 			});
