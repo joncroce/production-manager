@@ -30,7 +30,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 				transformer: superjson
 			});
 
-			await helpers.blend.getAll.prefetch({ factoryId: props.user?.factoryId ?? '' });
+			await helpers.blend.getAll.prefetch({
+				factoryId: props.user.factoryId!
+			});
 
 			return {
 				props: {
@@ -47,12 +49,15 @@ function getCurrentlyActive(blends: Array<TBlendSummary>): Array<TBlendSummary> 
 }
 
 const BlendsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+	const factoryId = user.factoryId!;
+
+	if (!factoryId) {
+		throw new Error('No Factory found.');
+	}
+
 	const blendsQuery = api.blend.getAll.useQuery(
-		{ factoryId: user?.factoryId ?? '' },
-		{
-			enabled: user.factoryId !== undefined,
-			refetchOnWindowFocus: false,
-		}
+		{ factoryId },
+		{ refetchOnWindowFocus: false }
 	);
 
 	const { data: blends } = blendsQuery;
