@@ -34,7 +34,7 @@ function sortableHeader(
 export const columns: ColumnDef<TBlendSummary>[] = [
 	{
 		accessorKey: 'baseCode',
-		header: (ctx) => sortableHeader(ctx, 'Base Code'),
+		header: (ctx) => sortableHeader(ctx, 'Code'),
 		cell({ getValue }): React.JSX.Element {
 			const baseCode = getValue<TBlendSummary['baseCode']>();
 			const productCode = buildProductCode(baseCode, 1, 0);
