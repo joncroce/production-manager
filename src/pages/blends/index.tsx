@@ -72,8 +72,8 @@ const BlendsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) =>
 				<h2 className="text-3xl font-bold">Blends</h2>
 
 				<div className="flex items-end space-x-2 text-2xl">
-					<Link href="blends/add-blend"><Button>Add Blend</Button></Link>
-					<Link href="formulas/add"><Button>Add Formula</Button></Link>
+					<Link href="/blends/add"><Button>Add Blend</Button></Link>
+					<Link href="/formulas/add"><Button>Add Formula</Button></Link>
 				</div>
 			</div>
 			<div className="p-4">

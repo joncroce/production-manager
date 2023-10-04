@@ -338,7 +338,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 											control={form.control}
 											name="destinationTankName"
 											render={({ field }) => {
-												const selectedTank = field.value.length
+												const selectedTank = field.value?.length
 													? selectedBlendableProduct.data!.SourceTanks.find((tank) => tank.name === field.value)
 													: null;
 
