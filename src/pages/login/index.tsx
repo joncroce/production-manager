@@ -1,6 +1,7 @@
-import styles from './index.module.css';
-import LoginButton from '@/components/LoginButton';
+import Head from 'next/head';
 import { getSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 import type { GetServerSideProps, NextPage } from 'next';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -17,12 +18,21 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	};
 };
 
-const Login: NextPage = () => {
+const LoginPage: NextPage = () => {
 	return (
-		<main className={styles['login']}>
-			<LoginButton />
-		</main>
+		<>
+			<Head>
+				<title>Production Manager | Login</title>
+				<meta name="description" content="User login for Production Manager." />
+				<link rel="icon" href="/favicon.svg" />
+			</Head>
+			<main className="grid place-items-center">
+				<Button onClick={() => void signIn('discord')}>
+					Sign In
+				</Button>
+			</main>
+		</>
 	);
 };
 
-export default Login;
+export default LoginPage;
