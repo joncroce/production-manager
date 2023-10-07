@@ -1,25 +1,25 @@
 import type { SalesOrder, SalesOrderItem } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime';
 import products from './products';
 import dayjs from 'dayjs';
+import Decimal from 'decimal.js';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 const getRandomProduct = () => products[Math.floor(Math.random() * products.length)]!;
 
-export const generateRandomSalesOrderItem = (): Omit<SalesOrderItem, 'id' | 'orderId'> => {
-	const { baseCodeId, sizeCodeId, variantCodeId, salesPrice } = getRandomProduct();
+export const generateRandomSalesOrderItem = (): Omit<SalesOrderItem, 'factoryId' | 'id' | 'orderId'> => {
+	const { baseCode, sizeCode, variantCode, salesPrice } = getRandomProduct();
 
 	return {
-		baseCodeId,
-		sizeCodeId,
-		variantCodeId,
+		baseCode,
+		sizeCode,
+		variantCode,
 		quantity: new Decimal(generateRandomInteger()),
-		pricePerUnit: salesPrice ?? new Decimal(generateRandomInteger()),
+		pricePerUnit: new Decimal(salesPrice ?? generateRandomInteger()),
 		notes: ''
 	};
 };
 
-export const generateRandomSalesOrder = (): Omit<SalesOrder, 'id' | 'customerId'> => {
+export const generateRandomSalesOrder = (): Omit<SalesOrder, 'factoryId' | 'id' | 'customerId'> => {
 	// Ordered on random day up to 30 days ago
 	const orderedDaysAgo = generateRandomInteger(0, 30);
 	let daysToOrderReady: number | null = getRandomArrayValue(probabilityDistribution);

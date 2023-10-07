@@ -9,7 +9,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	return authenticatedSSProps(context);
 };
 
-const DashboardPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+const DashboardPage: NextPageWithLayout<{ user: Session['user']; }> = () => {
 
 	return (
 		<>
