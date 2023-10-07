@@ -1,4 +1,3 @@
-import styles from './index.module.css';
 import Head from 'next/head';
 import Layout from '@/components/Layout';
 import { authenticatedSSProps } from '@/server/auth';
@@ -10,7 +9,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	return authenticatedSSProps(context);
 };
 
-const Dashboard: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+const DashboardPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 
 	return (
 		<>
@@ -19,14 +18,14 @@ const Dashboard: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => 
 				<meta name="description" content="Manage your factory's production demands with this state-of-the-art web app." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<article className={styles['dashboard']}>
-				<h2 className={styles['dashboard__header']}>Dashboard</h2>
-			</article>
+			<div className="flex justify-between border-b p-2">
+				<h2 className="text-3xl font-bold">Dashboard</h2>
+			</div>
 		</>
 	);
 };
 
-Dashboard.getLayout = function getLayout(page) {
+DashboardPage.getLayout = function getLayout(page) {
 	return (
 		<Layout>
 			{page}
@@ -34,4 +33,4 @@ Dashboard.getLayout = function getLayout(page) {
 	);
 };
 
-export default Dashboard;
+export default DashboardPage;
