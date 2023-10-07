@@ -1,7 +1,6 @@
 import Head from 'next/head';
 import { getSession } from 'next-auth/react';
-import { signIn } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
+import LoginButton from '@/components/LoginButton';
 import type { GetServerSideProps, NextPage } from 'next';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -26,10 +25,8 @@ const LoginPage: NextPage = () => {
 				<meta name="description" content="User login for Production Manager." />
 				<link rel="icon" href="/favicon.svg" />
 			</Head>
-			<main className="grid place-items-center">
-				<Button onClick={() => void signIn('discord')}>
-					Sign In
-				</Button>
+			<main className="min-h-screen grid place-items-center text-3xl">
+				<LoginButton />
 			</main>
 		</>
 	);
