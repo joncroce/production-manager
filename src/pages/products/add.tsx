@@ -110,8 +110,6 @@ const AddProductPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }
 	const { toast } = useToast();
 
 	function onSubmit(data: z.infer<typeof schema>): void {
-		console.log(data);
-
 		const parsed = addProductSchema.safeParse(data);
 
 		if (parsed.success) {
