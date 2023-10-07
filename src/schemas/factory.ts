@@ -13,6 +13,6 @@ export const changeFactoryNameSchema = z.object({
 export type TChangeFactoryNameSchema = z.infer<typeof changeFactoryNameSchema>;
 
 export const deleteFactorySchema = z.object({
-	id: z.string()
+	factoryId: z.string()
 });
 export type TDeleteFactorySchema = z.infer<typeof deleteFactorySchema>;

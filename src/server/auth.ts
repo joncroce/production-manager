@@ -76,14 +76,14 @@ export const getServerAuthSession = (ctx: {
   return getServerSession(ctx.req, ctx.res, authOptions);
 };
 
-export const authenticatedSSProps = async (context: GetServerSidePropsContext) => {
+export const authenticatedSSProps = async (context: GetServerSidePropsContext, requireFactory = true) => {
   const session = await getSession({ req: context.req });
 
   return !session
     ? {
       redirect: { destination: '/login', permanent: false }
     }
-    : !session.user.factoryId
+    : requireFactory && !session.user.factoryId
       ? {
         props: {
           user: session.user

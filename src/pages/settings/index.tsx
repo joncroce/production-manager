@@ -1,52 +1,86 @@
-import styles from './index.module.css';
+import Head from 'next/head';
 import Layout from '@/components/Layout';
-import { authenticatedSSProps } from '@/server/auth';
 import type { GetServerSideProps } from 'next';
 import type { Session } from 'next-auth';
 import type { NextPageWithLayout } from '../_app';
 import { api } from '@/utils/api';
-import { useRouter } from 'next/router';
+import FactoryDeleter from './components/FactoryDeleter';
+import { authenticatedSSProps, getServerAuthSession } from '@/server/auth';
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { createInnerTRPCContext } from '@/server/api/trpc';
+import { appRouter } from '@/server/api/root';
+import { useRouter } from 'next/navigation';
+import superjson from '@/utils/superjson';
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-	return authenticatedSSProps(context);
+	const session = await getServerAuthSession(context);
+
+	return authenticatedSSProps(context)
+		.then(async ({ props, redirect }) => {
+			if (redirect) {
+				return { props, redirect };
+			}
+
+			const helpers = createServerSideHelpers({
+				router: appRouter,
+				ctx: createInnerTRPCContext({ session }),
+				transformer: superjson
+			});
+
+			if (props.user.factoryId) {
+				await helpers.factory.getById.prefetch({ id: props.user.factoryId });
+			}
+
+			return {
+				props: {
+					...props,
+					trpcState: helpers.dehydrate()
+				},
+				redirect
+			};
+		});
 };
 
-const Settings: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
+const SettingsPage: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 	const router = useRouter();
-	const deleteFactory = api.factory.delete.useMutation();
 
-	const handleDeleteFactory = () => {
-		if (user.factoryId) {
-			deleteFactory.mutate({ id: user.factoryId }, {
-				onSuccess() {
-					alert('Factory Deleted.');
-					void router.push('/onboard');
-				}
-			});
+	const factoryQuery = api.factory.getById.useQuery(
+		{ id: user.factoryId! },
+		{
+			enabled: user.factoryId !== undefined,
+			refetchOnWindowFocus: false
 		}
-	};
+	);
+
+	const { data: factory } = factoryQuery;
+
+	if (!factory) {
+		throw new Error('Error loading factory data.');
+	}
+
+	function onFactoryDeleted() {
+		void router.push('/onboard');
+	}
 
 	return (
-		<article className={styles['settings']}>
-			<h2 className={styles['settings__header']}>
-				Settings
-			</h2>
-			<section>
-				<h3>Delete Factory</h3>
-				<button
-					className={styles['settings__button']}
-					type="button"
-					disabled={!user.factoryId}
-					onClick={handleDeleteFactory}
-				>
-					Delete
-				</button>
-			</section>
-		</article>
+		<>
+			<Head>
+				<title>Production Manager | Onboard</title>
+				<meta name="description" content="User onboarding for Production Manager." />
+				<link rel="icon" href="/favicon.svg" />
+			</Head>
+			<div className="p-2">
+				<h2 className="my-6 text-3xl font-bold">Settings</h2>
+				<FactoryDeleter
+					{...factory}
+					onFactoryDeleted={onFactoryDeleted}
+				/>
+			</div>
+		</>
 	);
 };
 
-Settings.getLayout = function getLayout(page) {
+SettingsPage.getLayout = function getLayout(page) {
 	return (
 		<Layout>
 			{page}
@@ -54,4 +88,4 @@ Settings.getLayout = function getLayout(page) {
 	);
 };
 
-export default Settings;
+export default SettingsPage;

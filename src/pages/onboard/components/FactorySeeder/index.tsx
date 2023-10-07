@@ -1,6 +1,4 @@
-import styles from './index.module.css';
-import Link from 'next/link';
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import { api } from '@/utils/api';
 import productBases, { BaseOilCategorizer } from './seedData/productBases';
 import productSizes from './seedData/productSizes';
@@ -20,12 +18,14 @@ import type {
 	Tank as TTank
 } from '@prisma/client';
 import type { TFormulaWithComponents } from '@/server/api/routers/formula';
+import { Progress } from '@/components/ui/progress';
 
-const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
-	const [seedLog, setSeedLog] = useState<{ type: 'success' | 'error'; message: string; }[]>([]);
+const FactorySeeder = forwardRef((props, ref) => {
 	const [seeding, setSeeding] = useState(false);
+	const [seedLog, setSeedLog] = useState<{ type: 'success' | 'error'; message: string; }[]>([]);
 	const [seeded, setSeeded] = useState(false);
 	const [error, setError] = useState(false);
+	const [progress, setProgress] = useState(0);
 
 	const addProductBases = api.productBase.addMany.useMutation();
 	const seedBaseCodes = (factoryId: string) =>
@@ -238,21 +238,31 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 		});
 	};
 
-	const seedFactory = async () => {
+	const seedFactory = async (factoryId: string) => {
+		const steps = 7;
+		function calcProgress(step: number): number {
+			const stepProgress = step / steps;
+
+			return Math.round(100 * stepProgress);
+		}
+
 		await seedBaseCodes(factoryId)
-			.then((data) => data)
+			.then(() => { setProgress(calcProgress(1)); })
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Base Codes'); });
 
 		await seedSizeCodes(factoryId)
-			.then((data) => data)
+			.then(() => { setProgress(calcProgress(2)); })
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Size Codes'); });
 
 		await seedVariantCodes(factoryId)
-			.then((data) => data)
+			.then(() => { setProgress(calcProgress(3)); })
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Variant Codes'); });
 
 		const products = await seedProducts(factoryId)
-			.then((data) => data)
+			.then((data) => {
+				setProgress(calcProgress(4));
+				return data;
+			})
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Products'); });
 
 		const bulkProducts = products
@@ -260,23 +270,32 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 			: [];
 
 		const tanks = await seedTanksForBulkProducts(bulkProducts)
-			.then((data) => data)
+			.then((data) => {
+				setProgress(calcProgress(5));
+				return data;
+			})
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Tanks'); });
 
 		const formulas = await seedFormulasForBulkProducts(bulkProducts)
-			.then((data) => data)
+			.then((data) => {
+				setProgress(calcProgress(6));
+				return data;
+			})
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Formulas'); });
 
 		await seedBlends(formulas, tanks)
-			.then((data) => data)
+			.then(() => { setProgress(calcProgress(7)); })
 			.catch((error: { message?: string; }) => { console.error(error?.message ?? 'Error adding Blends'); });
 	};
 
-	const startSeeding = async () => {
+	const startSeeding = async (factoryId: string, onSuccess: () => void) => {
 		setSeeding(true);
-		await seedFactory()
+		await seedFactory(factoryId)
 			.then(() => {
 				setSeeded(true);
+				setTimeout(() => {
+					onSuccess();
+				}, 2000);
 			})
 			.catch((error) => {
 				setError(true);
@@ -284,45 +303,48 @@ const FactorySeeder: React.FC<{ factoryId: string; }> = ({ factoryId }) => {
 			});
 	};
 
+	useImperativeHandle(ref, () => ({
+		startSeeding: startSeeding
+	}));
+
 	return (
-		<section className={styles['factory-seeder']}>
-			<h3 className={styles['factory-seeder__header']}>Factory Seeder</h3>
+		<div>
 			{seeding
-				? <SeedLog seedLog={seedLog} />
-				: <button
-					className={styles['factory-seeder__button']}
-					type="button"
-					onClick={() => void startSeeding()}>
-					Seed Factory
-				</button>
-			}
-			{
-				<p className={styles['factory-seeder__status']}>
-					{seeded
-						? 'Factory Seeded!'
-						: error
-							? 'Error seeding factory.'
-							: null
+				? <>
+					<Progress className="my-2" value={progress} />
+					<SeedLog seedLog={seedLog} />
+					{error
+						? <p className="my-4 text-lg font-semibold text-red-500">Error seeding factory.</p>
+						: null
 					}
-				</p>
-			}
-			{seeded
-				? <Link href="/dashboard">Go to Dashboard</Link>
+					{seeded
+						? <p className="my-4 text-lg italic">Seeding complete. Redirecting to Dashboard...</p>
+						: null
+					}
+				</>
 				: null
 			}
-		</section>
+		</div>
 	);
-};
+});
+
+FactorySeeder.displayName = 'Factory Seeder';
 
 export default FactorySeeder;
 
-const SeedLog: React.FC<{ seedLog: { type: 'error' | 'success'; message: string; }[]; }> = ({ seedLog }) =>
-	<ul>
-		{
-			seedLog.map((logEntry, i) =>
-				<li key={`${logEntry.message}-${i}`}>
-					<span><strong>{logEntry.type}</strong>: {logEntry.message}</span>
-				</li>
-			)
-		}
-	</ul>;
+function SeedLog(
+	{ seedLog }:
+		{ seedLog: { type: 'error' | 'success'; message: string; }[]; }
+): React.JSX.Element {
+	return (
+		<ul>
+			{
+				seedLog.map((logEntry, i) =>
+					<li key={`${logEntry.message}-${i}`}>
+						<span><strong>{logEntry.type}</strong>: {logEntry.message}</span>
+					</li>
+				)
+			}
+		</ul>
+	);
+}

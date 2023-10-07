@@ -22,3 +22,5 @@ export const addFormulaSchema = z.object({
 	variantCode: z.coerce.number().min(0),
 	formulaComponents: formulaComponentsSchema
 });
+
+export type TAddFormulaSchema = z.infer<typeof addFormulaSchema>;
