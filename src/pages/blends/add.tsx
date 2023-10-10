@@ -354,7 +354,7 @@ const AddBlend: NextPageWithLayout<{ user: Session['user']; }> = ({ user }) => {
 																</SelectTrigger>
 															</FormControl>
 															<SelectContent>
-																<SelectItem value={''}>(Not Specified)</SelectItem>
+																<SelectItem value={' '}>(Not Specified)</SelectItem>
 																{
 																	selectedBlendableProduct.data!.SourceTanks.map((tank) => <SelectItem key={tank.name} value={tank.name}>{tank.name}</SelectItem>)
 																}
