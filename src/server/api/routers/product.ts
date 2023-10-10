@@ -119,13 +119,6 @@ export const productRouter = createTRPCRouter({
 						some: {}
 					}
 				},
-				include: {
-					Formulas: {
-						include: {
-							_count: true
-						}
-					}
-				}
 			});
 		}),
 	getBlendableProduct: publicProcedure
